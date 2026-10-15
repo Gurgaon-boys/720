@@ -62,6 +62,7 @@ def create_app(scenario: str | None = None, validate: bool | None = None, opcua:
     @app.get("/health")
     def health():
         return {"status": "ok", "schema_version": SCHEMA_VERSION, "scenario": runtime.scenario.name,
+                "maintenance": runtime.maintenance_mode,
                 "opcua": bridge.endpoint if bridge is not None and bridge.running else None}
 
     @app.get("/scenarios")
@@ -77,6 +78,15 @@ def create_app(scenario: str | None = None, validate: bool | None = None, opcua:
             raise HTTPException(404, f"unknown scenario {name!r}; see GET /scenarios")
         runtime.select(name)
         return {"current": name}
+
+    @app.post("/maintenance/{mode}")
+    def maintenance(mode: str):
+        """Explicit maintenance/test mode: asset health shows CHECK_FUNCTION while nothing is wrong.
+        A latched alarm or an unclassified anomaly keeps its own health. Doesn't touch the rule layer."""
+        if mode not in ("on", "off"):
+            raise HTTPException(400, "use /maintenance/on or /maintenance/off")
+        runtime.set_maintenance(mode == "on")
+        return {"maintenance": runtime.maintenance_mode}
 
     @app.websocket("/ws/state")
     async def ws_state(ws: WebSocket):

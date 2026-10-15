@@ -49,7 +49,7 @@ def recv_json(ws, timeout=2.0):
 
 def test_http_helpers(server):
     host = server("healthy")
-    assert httpx.get(f"http://{host}/health").json() == {"status": "ok", "schema_version": "1.3", "scenario": "healthy", "opcua": None}
+    assert httpx.get(f"http://{host}/health").json() == {"status": "ok", "schema_version": "1.3", "scenario": "healthy", "maintenance": False, "opcua": None}
     names = [s["name"] for s in httpx.get(f"http://{host}/scenarios").json()["scenarios"]]
     assert {"healthy", "misfire", "unclassified", "offline", "real_p3"} <= set(names)
     assert httpx.post(f"http://{host}/scenario/nope").status_code == 404

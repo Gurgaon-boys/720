@@ -21,7 +21,7 @@ python -m backend.probe --seconds 15 --ack --bad-ack
 python -m pytest backend/tests -q
 ```
 
-Pick a scenario with `S720_SCENARIO=<name>` before starting, or switch while running with `POST /scenario/<name>` (resets the rule layer). `S720_VALIDATE=1` checks every outgoing message against `contract/schemas` and logs violations.
+Pick a scenario with `S720_SCENARIO=<name>` before starting, or switch while running with `POST /scenario/<name>` (resets the rule layer); `POST /maintenance/on|off` toggles maintenance/test mode. `S720_VALIDATE=1` checks every outgoing message against `contract/schemas` and logs violations.
 
 | Scenario | What happens |
 |---|---|
@@ -65,19 +65,22 @@ It mirrors the same `state`/`obd` broadcast the dashboard gets and decides nothi
 
 | Node | Content |
 |---|---|
-| `RunId`, `Source`, `Mode`, `StreamTimeS`, `SchemaVersion` | From `state` |
+| `RunId`, `Source` (REAL / SIMULATED / INJECTED), `Mode`, `StreamTimeS`, `SchemaVersion` | From `state` |
+| `DiagnosticTimestamp` | `state.sent_at` of the latest decision |
+| `MaintenanceMode` | The backend's explicit maintenance/test mode (see below) |
 | `OperatingPoint/Rpm`, `LoadPct` | AnalogItems with EURange and EngineeringUnits; NaN when unknown (real clips) |
 | `Obd/<channel>` | One AnalogItem per OBD channel, with a `Source` property (`simulator` / `real_carobd`) |
-| `Diagnostics/` | `AnomalyScore`, `AnomalyThreshold`, `CylinderAnomaly[]`, `LatencyMs`, `DiagnosticsOnline` (false after 3 s with no state), `LastStateAt` |
+| `Diagnostics/` | `AnomalyScore`, `AnomalyThreshold`, `CylinderAnomaly[]`, `LatencyMs`, `DiagnosticsOnline` (false after 3 s with no state) |
 | `Decision/` | `State`, `Fault`, `Cylinder` (0 = not localised), `Severity` (NaN = none), `AlarmId`, `Latched`, `Acked`, `AckedBy`, `AckedAt` (1601-01-01 = none), `Witnesses[]`, `ConsecutiveWindows`, `RootCause` (fault, `unclassified` or empty) |
 | `AssetHealth` + `AssetHealthText` | NE 107, asset layer |
-| `SensorHealth/<sensor>` | NE 107 per sensor, kept separate |
+| `SensorHealth/mic`, `accel`, `obd` | NE 107 per sensor, kept separate from asset health. A sensor the current recording doesn't have (e.g. accel and OBD on a real AudioSet clip) reads **Bad_NotConnected** instead of a fake NORMAL |
+| `SensorHealth/DiagnosticStream`, `LastStateAgeS` | Stream freshness: NE 107 NORMAL, or FAILURE after 3 s with no state; seconds since the last state |
 | `Acknowledge(AlarmId, Operator)` | → `(Accepted, Reason)`; same rules and reasons as the WebSocket ACK |
 | `Inject(Fault, Cylinder, Severity)` | → `(false, "not supported until L1")` |
 
 **NE 107 enum** `NE107DeviceHealth`: NORMAL 0, FAILURE 1, CHECK_FUNCTION 2, OFF_SPEC 3, MAINTENANCE_REQUIRED 4, the same values as the OPC UA DI `DeviceHealthEnumeration` (the DI nodeset itself isn't loaded).
 
-**Events** (`EngineFaultEventType`, fields `AlarmId`, `Fault`, `Cylinder`, `DecisionState`, `AssetHealth`, `Sensor`, `Acked`), fired on transitions only, from both `EngineAsset` and the `Server` object:
+**Events** (`EngineFaultEventType`, fields `AlarmId`, `Fault`, `Cylinder`, `DecisionState`, `AssetHealth`, `Sensor`, `Acked`, `DataSource`, plus the standard `Time`, `Severity`, `SourceName`, `Message`), fired on transitions only, from both `EngineAsset` and the `Server` object. `Time` is the decision's `sent_at`:
 
 | Severity | When |
 |---|---|
@@ -89,7 +92,11 @@ It mirrors the same `state`/`obd` broadcast the dashboard gets and decides nothi
 | 200 | Alarm acknowledged |
 | 100 | Alarm cleared, back to normal, sensor recovered, back online, run changed |
 
-asyncua has no server-side Alarms & Conditions, so these are plain events with a severity; the latch lives in the rule layer.
+asyncua has no server-side Alarms & Conditions, so these are plain events with a severity; the latch lives in the rule layer. **This is not OPC UA Alarms & Conditions.**
+
+**Asset health mapping** (the backend computes it once, in `rule_layer.asset_ne107`, for the dashboard and OPC UA alike): healthy or advisory → NORMAL, misfire/knock alarm → OFF_SPEC, injector clog alarm → MAINTENANCE_REQUIRED, unclassified → OFF_SPEC. **CHECK_FUNCTION only in explicit maintenance/test mode** (`POST /maintenance/on`, off with `/maintenance/off`), and never over a fault: a latched alarm or an unclassified anomaly keeps its own state. Sensor failures show only under `SensorHealth`.
+
+**Deferred:** `Inject` returns `(false, "not supported until L1")` until Dipen's simulator provides injection; there is no second injection or alarm state machine in the bridge.
 
 **UaExpert:** add server `opc.tcp://127.0.0.1:4840/720/` (security None, anonymous), browse `Objects/EngineAsset`, drag `Decision` and `AssetHealth` into the data access view, open an Event View on the `Server` object, and call `Acknowledge` from the context menu.
 

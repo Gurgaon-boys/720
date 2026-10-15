@@ -201,10 +201,16 @@ class RuleLayer:
         }
 
 
-def asset_ne107(decision: dict) -> str:
-    """NE 107 asset (engine) health for a decision. Sensor health is reported separately."""
+def asset_ne107(decision: dict, maintenance: bool = False) -> str:
+    """NE 107 asset (engine) health for a decision. Sensor health is reported separately.
+
+    CHECK_FUNCTION only in an explicit maintenance/test mode, and never over a fault's own health:
+    a latched alarm or an unclassified anomaly keeps OFF_SPEC / MAINTENANCE_REQUIRED.
+    """
     if decision["state"] == "ALARM":
         return ALARM_NE107.get(decision["fault"], "OFF_SPEC")
     if decision["state"] == "UNCLASSIFIED":
         return "OFF_SPEC"
+    if maintenance:
+        return "CHECK_FUNCTION"
     return "NORMAL"  # NORMAL, and ADVISORY (NORMAL + advisory event)

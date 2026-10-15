@@ -5,14 +5,16 @@ so OPC UA and the dashboard can't disagree (DECISIONS.md D16). ACKs through the 
 go into the same Runtime.ack() as dashboard ACKs.
 
 Address space (namespace urn:720:hackhive), under Objects/EngineAsset:
-  RunId, Source, Mode, StreamTimeS, SchemaVersion
+  RunId, Source, Mode, StreamTimeS, SchemaVersion, DiagnosticTimestamp, MaintenanceMode
   OperatingPoint/  Rpm, LoadPct (AnalogItems with EURange + EngineeringUnits), Regime
   Obd/             one AnalogItem per OBD channel, each with a Source property
-  Diagnostics/     AnomalyScore, AnomalyThreshold, CylinderAnomaly[], LatencyMs, DiagnosticsOnline, LastStateAt
+  Diagnostics/     AnomalyScore, AnomalyThreshold, CylinderAnomaly[], LatencyMs, DiagnosticsOnline
   Decision/        State, Fault, Cylinder, Severity, AlarmId, Latched, Acked, AckedBy, AckedAt,
                    Witnesses[], ConsecutiveWindows, RootCause
   AssetHealth      NE 107 enum (asset layer) + AssetHealthText
-  SensorHealth/    one NE 107 enum per sensor (sensor layer, kept separate)
+  SensorHealth/    one NE 107 enum per sensor (sensor layer, kept separate); a sensor the current
+                   recording doesn't have reads Bad_NotConnected. DiagnosticStream (NE 107: FAILURE
+                   after 3 s with no state) and LastStateAgeS give the stream's freshness
   Acknowledge(AlarmId, Operator) -> (Accepted, Reason)
   Inject(Fault, Cylinder, Severity) -> (Accepted, Reason)   not supported until L1
 
@@ -25,6 +27,10 @@ object (SourceNode = EngineAsset either way), so a client subscribed to either o
 
 Null contract values: Cylinder 0 = not localised, Severity NaN = none, empty strings for no alarm,
 AckedAt = OPC UA null DateTime (1601-01-01).
+
+CHECK_FUNCTION comes from the backend's explicit maintenance/test mode (Runtime.set_maintenance) via
+the same health mapping the dashboard sees; it never overrides a fault's health.
+
 """
 
 from __future__ import annotations
@@ -84,6 +90,7 @@ EVENT_FIELDS = [
     ("AssetHealth", ua.VariantType.String),
     ("Sensor", ua.VariantType.String),
     ("Acked", ua.VariantType.Boolean),
+    ("DataSource", ua.VariantType.String),  # REAL / SIMULATED / INJECTED
 ]
 
 
@@ -157,7 +164,7 @@ class OpcuaBridge:
     async def _var(self, parent, path: str, key: str, value, vtype: ua.VariantType, datatype=None):
         name = path.rsplit(".", 1)[-1]
         node = await parent.add_variable(self._nid(path), self._qn(name), ua.Variant(value, vtype), datatype=datatype)
-        self._vars[key] = [node, vtype, value]
+        self._vars[key] = [node, vtype, value, True]
         return node
 
     async def _analog(self, parent, path: str, key: str, lo: float, hi: float, code: str | None, unit: str, value=0.0):
@@ -171,7 +178,7 @@ class OpcuaBridge:
         await (await node.get_child(["EURange"])).write_value(ua.Range(Low=float(lo), High=float(hi)))
         await node.add_property(self._nid(f"{path}.EngineeringUnits"), ua.QualifiedName("EngineeringUnits", 0),
                                 eu_information(code, unit), datatype=ua.ObjectIds.EUInformation)
-        self._vars[key] = [node, ua.VariantType.Double, float(value)]
+        self._vars[key] = [node, ua.VariantType.Double, float(value), True]
         return node
 
     async def _build(self) -> None:
@@ -193,6 +200,8 @@ class OpcuaBridge:
         await self._var(eng, "EngineAsset.Mode", "mode", "", V.String)
         await self._var(eng, "EngineAsset.StreamTimeS", "t", 0.0, V.Double)
         await self._var(eng, "EngineAsset.SchemaVersion", "schema_version", SCHEMA_VERSION, V.String)
+        await self._var(eng, "EngineAsset.DiagnosticTimestamp", "sent_at", NULL_DATETIME, V.DateTime)
+        await self._var(eng, "EngineAsset.MaintenanceMode", "maintenance", False, V.Boolean)
 
         op = await eng.add_object(self._nid("EngineAsset.OperatingPoint"), self._qn("OperatingPoint"))
         await self._analog(op, "EngineAsset.OperatingPoint.Rpm", "rpm", 0, 8000, "RPM", "rev/min", math.nan)
@@ -209,7 +218,6 @@ class OpcuaBridge:
         await self._var(dg, "EngineAsset.Diagnostics.CylinderAnomaly", "per_location", [], V.Double)
         await self._analog(dg, "EngineAsset.Diagnostics.LatencyMs", "latency_ms", 0, 1000, "C26", "ms")
         await self._var(dg, "EngineAsset.Diagnostics.DiagnosticsOnline", "online", False, V.Boolean)
-        await self._var(dg, "EngineAsset.Diagnostics.LastStateAt", "sent_at", NULL_DATETIME, V.DateTime)
 
         de = await eng.add_object(self._nid("EngineAsset.Decision"), self._qn("Decision"))
         await self._var(de, "EngineAsset.Decision.State", "state", "NORMAL", V.String)
@@ -230,6 +238,9 @@ class OpcuaBridge:
         self.sensors = await eng.add_object(self._nid("EngineAsset.SensorHealth"), self._qn("SensorHealth"))
         for sensor in ("mic", "accel", "obd"):
             await self._sensor(sensor)
+        await self._var(self.sensors, "EngineAsset.SensorHealth.DiagnosticStream", "stream", 0, V.Int32,
+                        datatype=self.ne107.nodeid)
+        await self._var(self.sensors, "EngineAsset.SensorHealth.LastStateAgeS", "state_age_s", math.nan, V.Double)
 
         # uamethod wraps plain functions (parent, *args), so the methods are closures over self
         @uamethod
@@ -255,7 +266,7 @@ class OpcuaBridge:
     async def _obd_channel(self, name, lo, hi, code, unit):
         node = await self._analog(self.obd, f"EngineAsset.Obd.{name}", f"obd.{name}", lo, hi, code, unit, math.nan)
         src = await node.add_property(self._nid(f"EngineAsset.Obd.{name}.Source"), self._qn("Source"), "")
-        self._vars[f"obd.{name}.source"] = [src, ua.VariantType.String, ""]
+        self._vars[f"obd.{name}.source"] = [src, ua.VariantType.String, "", True]
 
     async def _sensor(self, sensor):
         await self._var(self.sensors, f"EngineAsset.SensorHealth.{sensor}", f"sensor.{sensor}", 0, ua.VariantType.Int32,
@@ -283,11 +294,21 @@ class OpcuaBridge:
 
     async def _set(self, key: str, value) -> None:
         entry = self._vars[key]
-        if entry[2] == value or (isinstance(value, float) and isinstance(entry[2], float)
-                                 and math.isnan(value) and math.isnan(entry[2])):
+        same = entry[2] == value or (isinstance(value, float) and isinstance(entry[2], float)
+                                     and math.isnan(value) and math.isnan(entry[2]))
+        if same and entry[3]:
             return
         await entry[0].write_value(ua.Variant(value, entry[1]))
-        entry[2] = value
+        entry[2], entry[3] = value, True
+
+    async def _not_connected(self, key: str) -> None:
+        """Keep the node but mark it Bad_NotConnected (e.g. no accelerometer on a real clip)."""
+        entry = self._vars[key]
+        if not entry[3]:
+            return
+        await entry[0].write_value(ua.DataValue(ua.Variant(entry[2], entry[1]),
+                                                StatusCode=ua.StatusCode(ua.StatusCodes.BadNotConnected)))
+        entry[3] = False
 
     async def _apply_state(self, m: dict) -> None:
         self._last_state_mono = time.monotonic()
@@ -327,6 +348,12 @@ class OpcuaBridge:
             if f"sensor.{sensor}" not in self._vars:
                 await self._sensor(sensor)
             await self._set(f"sensor.{sensor}", NE107.index(status))
+        for key in [k for k in self._vars if k.startswith("sensor.")]:
+            if key[len("sensor."):] not in h["sensors"]:
+                await self._not_connected(key)
+        await self._set("maintenance", bool(self.runtime.maintenance_mode))
+        await self._set("stream", NE107.index("NORMAL"))
+        await self._set("state_age_s", 0.0)
 
         if not self._online:
             self._online = True
@@ -379,7 +406,8 @@ class OpcuaBridge:
                 sev = SEV_SENSOR if status == "FAILURE" else SEV_INFO
                 await self._event(f"Sensor {sensor} {status}", sev, m, sensor=sensor)
 
-    async def _event(self, message: str, severity: int, m: dict | None, alarm_id: str | None = None, sensor: str = "") -> None:
+    async def _event(self, message: str, severity: int, m: dict | None, alarm_id: str | None = None, sensor: str = "",
+                     stale: bool = False) -> None:
         d = (m or {}).get("decision", {})
         fields = {
             "AlarmId": alarm_id or d.get("alarm_id") or "",
@@ -389,7 +417,10 @@ class OpcuaBridge:
             "AssetHealth": (m or {}).get("health", {}).get("asset_ne107", ""),
             "Sensor": sensor,
             "Acked": bool(d.get("acked", False)),
+            "DataSource": (m or {}).get("source", "").upper(),
         }
+        # the diagnostic time for state-driven events; server time for watchdog events
+        when = _dt(m["sent_at"]) if m and not stale else None
         log.info("OPC UA event [%d] %s", severity, message)
         for gen in self._gens:
             ev = gen.event
@@ -399,17 +430,25 @@ class OpcuaBridge:
             ev.SourceName = "EngineAsset"
             for k, v in fields.items():
                 setattr(ev, k, v)
-            await gen.trigger()
+            await gen.trigger(time_attr=when)
 
     async def _watchdog(self) -> None:
-        """No state for 3 s: DiagnosticsOnline = false and one event. Mirrors the UI watchdog."""
+        """Stream freshness. No state for 3 s: DiagnosticsOnline false, DiagnosticStream FAILURE and one
+        event. Mirrors the UI watchdog."""
         while True:
             await asyncio.sleep(0.25)
             last = self._last_state_mono
-            if self._online and last is not None and time.monotonic() - last > OFFLINE_S:
+            if last is None:
+                continue
+            age = time.monotonic() - last
+            if age >= 0.5:  # fresh states write 0.0 themselves; don't fight them at 10 Hz
+                await self._set("state_age_s", round(age, 1))
+            if self._online and age > OFFLINE_S:
                 self._online = False
                 await self._set("online", False)
-                await self._event(f"Diagnostics offline: no state for {OFFLINE_S:g} s", SEV_SENSOR, self._prev)
+                await self._set("stream", NE107.index("FAILURE"))
+                await self._event(f"Diagnostics offline: no state for {OFFLINE_S:g} s", SEV_SENSOR, self._prev,
+                                  sensor="DiagnosticStream", stale=True)
 
     # ------------------------------------------------------------ methods
 

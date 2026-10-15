@@ -62,7 +62,14 @@ class Runtime:
         self.state_hub, self.obd_hub, self.signal_hub = Hub(), Hub(), Hub()
         self._tasks: list[asyncio.Task] = []
         self._listeners: list = []
+        self.maintenance_mode = False  # explicit maintenance/test mode (asset health CHECK_FUNCTION)
         self.select(scenario)
+
+    def set_maintenance(self, on: bool) -> None:
+        """Explicit maintenance/test mode. Only changes the published asset health (CHECK_FUNCTION when
+        nothing is wrong); it never touches the rule layer, and a fault's health always wins."""
+        self.maintenance_mode = bool(on)
+        log.info("maintenance mode %s", "on" if on else "off")
 
     def add_listener(self, fn) -> None:
         """fn(kind, msg) is called with every outgoing 'state' and 'obd' message dict."""
@@ -128,7 +135,7 @@ class Runtime:
     def _publish_state(self, decision: dict, start: float) -> None:
         w = self.last_window
         now = self.clock()
-        health = {"asset_ne107": asset_ne107(decision), "sensors": self.watchdog.status(now)}
+        health = {"asset_ne107": asset_ne107(decision, self.maintenance_mode), "sensors": self.watchdog.status(now)}
         latency = round((time.perf_counter() - start) * 1000, 2)
         msg = messages.state_message(sent_at=now, decision=decision, health=health, latency_ms=latency, **w.fields)
         self.last_state = msg

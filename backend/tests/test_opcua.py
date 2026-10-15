@@ -13,6 +13,7 @@ import threading
 import time
 
 import httpx
+import pytest
 import uvicorn
 from asyncua import Client, ua
 from websockets.sync.client import connect
@@ -34,7 +35,8 @@ class Events:
 
     def event_notification(self, ev):
         self.items.append({"msg": ev.Message.Text, "sev": ev.Severity, "alarm_id": ev.AlarmId,
-                           "fault": ev.Fault, "sensor": ev.Sensor, "source": ev.SourceName})
+                           "fault": ev.Fault, "sensor": ev.Sensor, "source": ev.SourceName,
+                           "data_source": ev.DataSource, "time": ev.Time})
 
     def find(self, text):
         return [e for e in self.items if text in e["msg"]]
@@ -95,8 +97,12 @@ def test_address_space():
     async def go():
         async with Rig("healthy") as r:
             names = {(await c.read_browse_name()).Name for c in await r.node("EngineAsset").get_children()}
-            assert {"RunId", "Source", "OperatingPoint", "Obd", "Diagnostics", "Decision", "AssetHealth",
-                    "SensorHealth", "Acknowledge", "Inject"} <= names
+            assert {"RunId", "Source", "DiagnosticTimestamp", "MaintenanceMode", "OperatingPoint", "Obd",
+                    "Diagnostics", "Decision", "AssetHealth", "SensorHealth", "Acknowledge", "Inject"} <= names
+            sensors = {(await c.read_browse_name()).Name for c in await r.node("EngineAsset.SensorHealth").get_children()}
+            assert sensors == {"mic", "accel", "obd", "DiagnosticStream", "LastStateAgeS"}
+            stamp = await r.read("EngineAsset.DiagnosticTimestamp")
+            assert abs(stamp.timestamp() - time.time()) < 5
 
             rpm = r.node("EngineAsset.OperatingPoint.Rpm")
             assert (await rpm.read_type_definition()).Identifier == ua.ObjectIds.AnalogItemType
@@ -128,6 +134,10 @@ async def _ok(coro, pred):
 def test_misfire_alarm_ack_and_clear():
     async def go():
         async with Rig("misfire") as r:
+            # healthy for the first 2 s
+            await wait_for(lambda: _ok(r.read("EngineAsset.RunId"), lambda v: v == "fake_misfire"), timeout=3)
+            assert await r.read("EngineAsset.Decision.State") == "NORMAL"
+            assert await r.read("EngineAsset.AssetHealth") == 0
             await wait_for(lambda: _ok(r.read("EngineAsset.Decision.State"), lambda v: v == "ALARM"))
             assert await r.read("EngineAsset.Decision.AlarmId") == "a_0001"
             assert await r.read("EngineAsset.Decision.Cylinder") == 3
@@ -160,6 +170,8 @@ def test_misfire_alarm_ack_and_clear():
             for events in (r.server_events, r.engine_events):
                 raised = events.find("ALARM misfire cyl 3 (a_0001)")
                 assert len(raised) == 1 and raised[0]["sev"] == 800 and raised[0]["source"] == "EngineAsset"
+                assert raised[0]["fault"] == "misfire" and raised[0]["data_source"] == "SIMULATED"
+                assert abs(raised[0]["time"].timestamp() - time.time()) < 15
                 assert [e["sev"] for e in events.find("a_0001 acknowledged by judge")] == [200]
                 assert [e["sev"] for e in events.find("a_0001 cleared")] == [100]
                 assert events.find("Advisory: misfire")  # the first matching window
@@ -205,11 +217,16 @@ def test_unclassified_injector_clog_and_sensor_failure():
 def test_diagnostics_offline():
     async def go():
         async with Rig("offline") as r:  # healthy 4 s, silent 5 s
+            assert await r.read("EngineAsset.SensorHealth.DiagnosticStream") == 0
             await wait_for(lambda: _ok(r.read("EngineAsset.Diagnostics.DiagnosticsOnline"), lambda v: v is False))
+            assert await r.read("EngineAsset.SensorHealth.DiagnosticStream") == NE107.index("FAILURE")
+            assert await r.read("EngineAsset.SensorHealth.LastStateAgeS") > 3.0
+            assert await r.read("EngineAsset.AssetHealth") == 0  # stream health isn't engine health
             await asyncio.sleep(0.2)
             off = r.server_events.find("Diagnostics offline")
-            assert off and off[0]["sev"] == 500
+            assert off and off[0]["sev"] == 500 and off[0]["sensor"] == "DiagnosticStream"
             await wait_for(lambda: _ok(r.read("EngineAsset.Diagnostics.DiagnosticsOnline"), lambda v: v is True))
+            assert await r.read("EngineAsset.SensorHealth.DiagnosticStream") == 0
             await asyncio.sleep(0.2)
             assert r.server_events.find("Diagnostics back online")
     run(go())
@@ -274,3 +291,84 @@ def test_dashboard_and_opcua_agree():
     finally:
         srv.should_exit = True
         th.join(5)
+
+
+def test_check_function_only_in_maintenance_mode():
+    async def go():
+        async with Rig("healthy") as r:
+            await wait_for(lambda: _ok(r.read("EngineAsset.RunId"), lambda v: v == "fake_healthy"), timeout=3)
+            assert await r.read("EngineAsset.AssetHealth") == 0
+            r.runtime.set_maintenance(True)
+            await wait_for(lambda: _ok(r.read("EngineAsset.AssetHealth"), lambda v: v == NE107.index("CHECK_FUNCTION")), timeout=2)
+            assert await r.read("EngineAsset.MaintenanceMode") is True
+            assert r.runtime.last_state["health"]["asset_ne107"] == "CHECK_FUNCTION"  # the dashboard sees the same
+
+            r.runtime.select("misfire")  # a fault's health wins over maintenance mode
+            await wait_for(lambda: _ok(r.read("EngineAsset.Decision.State"), lambda v: v == "ALARM"))
+            assert await r.read("EngineAsset.AssetHealth") == NE107.index("OFF_SPEC")
+            assert r.runtime.last_state["health"]["asset_ne107"] == "OFF_SPEC"
+
+            r.runtime.set_maintenance(False)
+            r.runtime.select("healthy")
+            await wait_for(lambda: _ok(r.read("EngineAsset.AssetHealth"), lambda v: v == 0), timeout=2)
+            assert await r.read("EngineAsset.MaintenanceMode") is False
+    run(go())
+
+
+def test_real_clip_sensors_and_nulls():
+    async def go():
+        async with Rig("real_p3") as r:
+            await wait_for(lambda: _ok(r.read("EngineAsset.Source"), lambda v: v == "REAL"), timeout=3)
+            await asyncio.sleep(0.3)
+            assert math.isnan(await r.read("EngineAsset.OperatingPoint.Rpm"))
+            assert await r.read("EngineAsset.Decision.Cylinder") == 0
+            mic = await r.node("EngineAsset.SensorHealth.mic").read_data_value()
+            assert mic.StatusCode.is_good() and mic.Value.Value == 0
+            for absent in ("accel", "obd"):  # not on an AudioSet clip: Bad_NotConnected, not a fake NORMAL
+                dv = await r.node(f"EngineAsset.SensorHealth.{absent}").read_data_value(raise_on_bad_status=False)
+                assert dv.StatusCode.value == ua.StatusCodes.BadNotConnected
+            r.runtime.select("healthy")  # back on a recording that has them
+            await wait_for(lambda: _ok(r.read("EngineAsset.Source"), lambda v: v == "SIMULATED"), timeout=3)
+            await asyncio.sleep(0.3)
+            assert (await r.node("EngineAsset.SensorHealth.accel").read_data_value()).StatusCode.is_good()
+    run(go())
+
+
+def test_start_stop_restart_and_client_reconnect():
+    async def go():
+        endpoint = f"opc.tcp://127.0.0.1:{free_port()}/720/"
+        runtime = Runtime("healthy")
+        await runtime.start()
+        try:
+            bridge = OpcuaBridge(runtime, endpoint)
+            await bridge.start()
+            assert bridge.running
+            client = Client(endpoint)
+            await client.connect()
+            idx = await client.get_namespace_index("urn:720:hackhive")
+            state = client.get_node(ua.NodeId("EngineAsset.Decision.State", idx))
+            await wait_for(lambda: _ok(state.read_value(), lambda v: v == "NORMAL"), timeout=3)
+
+            await client.disconnect()  # client reconnects to a running server
+            await client.connect()
+            assert await state.read_value() == "NORMAL"
+
+            await bridge.stop()  # clean shutdown with a client still attached
+            assert not bridge.running
+            with pytest.raises(Exception):
+                await asyncio.wait_for(state.read_value(), 3)
+            try:
+                await client.disconnect()
+            except Exception:
+                pass
+
+            bridge2 = OpcuaBridge(runtime, endpoint)  # the same port is free again
+            await bridge2.start()
+            async with Client(endpoint) as c2:
+                idx2 = await c2.get_namespace_index("urn:720:hackhive")
+                await wait_for(lambda: _ok(c2.get_node(ua.NodeId("EngineAsset.RunId", idx2)).read_value(),
+                                           lambda v: v == "fake_healthy"), timeout=3)
+            await bridge2.stop()
+        finally:
+            await runtime.stop()
+    run(go())
