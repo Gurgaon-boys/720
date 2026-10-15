@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { fault } from '../lib/faults.js';
 import { FIRING_ORDER, SLOW_FACTOR, fireDeg, realCycleMs } from '../lib/geometry.js';
 import SourceBadge from './SourceBadge.jsx';
+import { fmtNum } from '../lib/format.js';
 
 // Pistons and spark flashes follow a crank angle that advances at operating_point.rpm,
 // slowed by SLOW_FACTOR (labelled on screen). Driven by requestAnimationFrame rather than CSS
@@ -56,8 +57,8 @@ export default function CylinderBank({ state }) {
 
   const tiles = [
     // schema 1.3: rpm and load_pct are null when unknown (real AudioSet clips skip order tracking)
-    { label: 'Engine speed', value: op.rpm == null ? '—' : op.rpm.toLocaleString(), unit: op.rpm == null ? '' : 'rpm' },
-    { label: 'Load', value: op.load_pct ?? '—', unit: op.load_pct == null ? '' : '%' },
+    { label: 'Engine speed', value: fmtNum(op.rpm), unit: op.rpm == null ? '' : 'rpm' },
+    { label: 'Load', value: fmtNum(op.load_pct), unit: op.load_pct == null ? '' : '%' },
     { label: 'Regime', value: op.regime, unit: '' },
     { label: 'Run time', value: state.t.toFixed(1), unit: 's' },
   ];

@@ -72,7 +72,7 @@ export default function Dashboard({ state, obd, signal, error, scenarios, scenar
           </div>
           <div className="dash-grid">
             <StatePanel state={state} />
-            <ObdPanel obd={obd} source={state.source} />
+            <ObdPanel obd={obd} source={state.source} hasObd={'obd' in state.health.sensors} />
           </div>
           <SignalStrip key={state.run_id} signal={signal} source={state.source} />
         </>
