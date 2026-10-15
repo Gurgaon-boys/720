@@ -1,22 +1,14 @@
-import { DECISION_STATES, decisionColor, fault } from '../lib/faults.js';
+import { decisionColor, decisionText, fault } from '../lib/faults.js';
 import SourceBadge from './SourceBadge.jsx';
 
 const BASIS = { crank_angle: 'crank angle', firing_event: 'firing event' };
 const clock = (unixS) => (unixS == null ? '—' : new Date(unixS * 1000).toLocaleTimeString());
 
-function headline(d) {
-  const f = fault(d.fault);
-  if (d.state === 'ALARM') return { title: f.title(d.location), sub: f.sub };
-  if (d.state === 'ADVISORY') return { title: `Watch · ${f.title(d.location)}`, sub: 'One witness only. Not an alarm.' };
-  if (d.state === 'UNCLASSIFIED') return { title: DECISION_STATES.UNCLASSIFIED.name, sub: 'The classifiers cannot name this pattern.' };
-  return { title: DECISION_STATES.NORMAL.name, sub: 'No rule or classifier witness.' };
-}
-
 // Read-only decision details. Acknowledging happens in the alarm banner.
 export default function Verdict({ state }) {
   const d = state.decision;
   const color = decisionColor(d);
-  const { title, sub } = headline(d);
+  const { panelTitle: title, sub } = decisionText(d);
   const hints = state.physics_rules.filter((r) => r.fired);
 
   const rows = [

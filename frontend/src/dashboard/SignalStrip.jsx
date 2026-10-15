@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import SourceBadge from './SourceBadge.jsx';
 
 // Instrument-style plots for the `signal` channel: mic + accelerometer traces and the mic STFT.
@@ -20,8 +20,12 @@ const LUT = Array.from({ length: 256 }, (_, i) => {
   const hi = [232, 237, 244];
   return lo.map((a, k) => Math.round(a + (hi[k] - a) * v));
 });
+// Spectrogram levels arrive in dB, clipped to [-90, 0]. We show a 60 dB window whose top follows
+// the strongest recent level (in 10 dB steps), so contrast fits the data; the colour bar always
+// shows the actual dB values, so nothing is hidden or rescaled silently.
 const DB_MIN = -90;
 const DB_MAX = 0;
+const DB_SPAN = 60;
 
 const reducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
 
@@ -126,10 +130,28 @@ function pushWave(st, frame) {
 }
 
 // ---------- spectrogram ----------
+// paint `cols` (dB arrays) into the history canvas starting at column x0, using the current window
+function paintCols(st, cols, x0) {
+  if (!cols.length) return;
+  const F = st.freqs.length;
+  const k = cols.length;
+  const img = st.hist.getContext('2d').createImageData(k, F);
+  const lo = st.top - DB_SPAN;
+  cols.forEach((col, x) => {
+    for (let fi = 0; fi < F; fi++) {
+      const v = Math.max(0, Math.min(1, (col[fi] - lo) / DB_SPAN));
+      const [r, g, b] = LUT[Math.round(v * 255)];
+      const o = ((F - 1 - fi) * k + x) * 4; // low frequencies at the bottom
+      img.data[o] = r; img.data[o + 1] = g; img.data[o + 2] = b; img.data[o + 3] = 255;
+    }
+  });
+  st.hist.getContext('2d').putImageData(img, x0, 0);
+}
+
 function pushSpec(st, frame) {
   const k = frame.columns.length;
   const F = frame.freqs_hz.length;
-  if (!st.hist) {
+  if (!st.hist || !st.cols) {
     st.dt = frame.dt_s;
     st.freqs = frame.freqs_hz;
     st.chunk = k;
@@ -137,25 +159,33 @@ function pushSpec(st, frame) {
     st.hist = document.createElement('canvas');
     st.hist.width = st.width;
     st.hist.height = F;
-    const hctx = st.hist.getContext('2d');
+    st.cols = [];
+    st.top = null;
+  }
+  st.cols = st.cols.concat(frame.columns).slice(-st.width);
+
+  // window top = strongest level on screen, rounded up to 10 dB
+  let peak = DB_MIN;
+  for (const col of st.cols) for (const v of col) if (v > peak) peak = v;
+  const top = Math.min(DB_MAX, Math.max(DB_MIN + DB_SPAN, Math.ceil(peak / 10) * 10));
+
+  const hctx = st.hist.getContext('2d');
+  if (top !== st.top) {
+    // window moved: repaint the whole history so old and new columns share one scale
+    st.top = top;
     hctx.fillStyle = `rgb(${LUT[0].join(',')})`;
     hctx.fillRect(0, 0, st.width, F);
+    paintCols(st, st.cols, st.width - st.cols.length);
+  } else {
+    // shift history left by k columns, then paint the new columns on the right
+    hctx.drawImage(st.hist, -k, 0);
+    paintCols(st, frame.columns, st.width - k);
   }
-  const hctx = st.hist.getContext('2d');
-  // shift history left by k columns, then paint the new columns on the right
-  hctx.drawImage(st.hist, -k, 0);
-  const img = hctx.createImageData(k, F);
-  frame.columns.forEach((col, x) => {
-    for (let fi = 0; fi < F; fi++) {
-      const v = Math.max(0, Math.min(1, (col[fi] - DB_MIN) / (DB_MAX - DB_MIN)));
-      const [r, g, b] = LUT[Math.round(v * 255)];
-      const o = ((F - 1 - fi) * k + x) * 4; // low frequencies at the bottom
-      img.data[o] = r; img.data[o + 1] = g; img.data[o + 2] = b; img.data[o + 3] = 255;
-    }
-  });
-  hctx.putImageData(img, st.width - k, 0);
   arrive(st);
 }
+
+// frequency tick step that gives ~4–6 labels for the range on screen
+const freqStep = (maxHz) => (maxHz <= 2500 ? 500 : maxHz <= 6000 ? 1000 : 2000);
 
 function drawSpec(cv, st, still) {
   const { ctx, w, h } = fit(cv);
@@ -175,9 +205,10 @@ function drawSpec(cv, st, still) {
   ctx.fillStyle = C.text;
   ctx.textAlign = 'right';
   ctx.textBaseline = 'middle';
-  for (let khz = 0; khz <= maxHz / 1000 + 1e-9; khz += 2) {
-    const y = p.t + ph - (khz * 1000 / maxHz) * ph;
-    ctx.fillText(`${khz}`, p.l - 6, y);
+  const step = freqStep(maxHz);
+  for (let hz = 0; hz <= maxHz + 1e-6; hz += step) {
+    const y = p.t + ph - (hz / maxHz) * ph;
+    ctx.fillText(`${+(hz / 1000).toFixed(1)}`, p.l - 6, y);
     ctx.strokeStyle = 'rgba(30, 40, 54, 0.6)';
     ctx.beginPath(); ctx.moveTo(p.l, Math.round(y) + 0.5); ctx.lineTo(p.l + 4, Math.round(y) + 0.5); ctx.stroke();
   }
@@ -195,7 +226,7 @@ function drawSpec(cv, st, still) {
   ctx.strokeRect(bx + 0.5, p.t + 0.5, bw - 1, ph - 1);
   ctx.fillStyle = C.text;
   ctx.textAlign = 'left';
-  [DB_MAX, (DB_MAX + DB_MIN) / 2, DB_MIN].forEach((db, i) => {
+  [st.top, st.top - DB_SPAN / 2, st.top - DB_SPAN].forEach((db, i) => {
     ctx.fillText(`${db}`, bx + bw + 4, p.t + (i / 2) * ph);
   });
 }
@@ -205,10 +236,14 @@ export default function SignalStrip({ signal, source }) {
   const micRef = useRef(null);
   const accelRef = useRef(null);
   const specRef = useRef(null);
+  // errors inside requestAnimationFrame are invisible to error boundaries: catch them, stop the
+  // loop, and re-throw on the next render so the panel's boundary shows them
+  const [loopError, setLoopError] = useState(null);
+  if (loopError) throw loopError;
   const streams = useRef({
     mic: { buf: [], fs: 1, chunk: 0, period: 200, lastAt: 0 },
     accel: { buf: [], fs: 1, chunk: 0, period: 200, lastAt: 0 },
-    stft: { hist: null, period: 200, lastAt: 0 },
+    stft: { hist: null, cols: [], top: null, period: 200, lastAt: 0 },
   });
 
   useEffect(() => { if (mic) pushWave(streams.current.mic, mic); }, [mic]);
@@ -220,14 +255,19 @@ export default function SignalStrip({ signal, source }) {
     const still = reducedMotion();
     let raf = 0;
     const frame = () => {
-      const s = streams.current;
-      [[micRef, s.mic, drawWave], [accelRef, s.accel, drawWave], [specRef, s.stft, drawSpec]].forEach(([ref, st, draw]) => {
-        const ready = st.hist || st.buf?.length;
-        if (!ref.current || !ready) return;
-        if (still && !st.dirty) return;
-        draw(ref.current, st, still);
-        st.dirty = false;
-      });
+      try {
+        const s = streams.current;
+        [[micRef, s.mic, drawWave], [accelRef, s.accel, drawWave], [specRef, s.stft, drawSpec]].forEach(([ref, st, draw]) => {
+          const ready = st.hist || st.buf?.length;
+          if (!ref.current || !ready) return;
+          if (still && !st.dirty) return;
+          draw(ref.current, st, still);
+          st.dirty = false;
+        });
+      } catch (e) {
+        setLoopError(e);
+        return; // stop the loop
+      }
       raf = requestAnimationFrame(frame);
     };
     raf = requestAnimationFrame(frame);

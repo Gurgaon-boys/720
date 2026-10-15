@@ -194,13 +194,15 @@ function audioFrame(shape, rpm, t0) {
 
 // ---------- scenarios ----------
 
-const RULE_BASIS = { misfire: 'firing_event', knock: 'crank_angle', injector_clog: 'firing_event', valve_tick: 'crank_angle' };
+// Physics rules for the simulated scenarios. Contract rule 8: rule_basis is `crank_angle` for
+// simulated/injected data (`firing_event` is for real audio, which has no crank reference).
+const RULES = ['misfire', 'knock', 'injector_clog', 'valve_tick'];
 const rules = (fired = {}) =>
-  Object.keys(RULE_BASIS).map((rule) => ({
+  RULES.map((rule) => ({
     rule,
     fired: rule in fired,
     location: fired[rule] ?? null,
-    rule_basis: RULE_BASIS[rule],
+    rule_basis: 'crank_angle',
   }));
 
 const models = (rows) => rows.map(([model, label, p]) => ({ model, label, p }));
