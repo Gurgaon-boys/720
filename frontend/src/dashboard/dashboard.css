@@ -248,3 +248,45 @@ details summary { cursor: pointer; }
 .banner-crash { border: 2px solid #ff5a6e; border-left-width: 10px; font-size: 14px; color: var(--text); }
 .banner-crash .banner-kind { color: var(--ink); background: #ff5a6e; padding: 3px 8px; border-radius: 4px; }
 .inline-crash { font-size: 11px; color: #ff5a6e; border: 1px solid #ff5a6e; border-radius: 6px; padding: 6px 10px; }
+
+/* ---------------------------------------------------------------------------------------------
+   Motion. Every change is interpolated instead of jumping; only transform, opacity and colours
+   animate; nothing moves without a data change or a click. Tokens in styles/global.css.
+   --------------------------------------------------------------------------------------------- */
+
+/* controls: colour eases, a press gives physical feedback */
+.run-pill, .sound-btn, .ack-btn {
+  transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out),
+    transform var(--dur-press) var(--ease-press);
+}
+.run-pill:active:not(:disabled), .sound-btn:active:not(:disabled), .ack-btn:active:not(:disabled) { transform: scale(0.97); }
+.ack-btn:hover:not(:disabled) { background-color: color-mix(in srgb, var(--accent) 14%, transparent); }
+.run-pill:focus-visible, .sound-btn:focus-visible, .ack-btn:focus-visible { outline: 2px solid var(--scan); outline-offset: 2px; }
+
+/* state colour changes (fault edges, health, decision) settle instead of snapping */
+.cyl-box, .verdict, .panel { transition: border-color var(--dur-state) var(--ease-out); }
+.health-chip { transition: border-color var(--dur-state) var(--ease-out), background-color var(--dur-state) var(--ease-out); }
+.health-chip strong, .cyl-tag, .loc-val { transition: color var(--dur-state) var(--ease-out), background-color var(--dur-state) var(--ease-out); }
+.banner { transition: border-color var(--dur-state) var(--ease-out), background-color var(--dur-state) var(--ease-out); }
+
+/* a new decision (NORMAL / WATCH / ALARM / INSPECT) slides its text in; the banner box never moves */
+/* fill-mode backwards: no transform is left behind after the slide, so :active press-scale still works */
+.banner-enter { animation: banner-in var(--dur-state) var(--ease-out) backwards; }
+@keyframes banner-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+/* per-cylinder anomaly bars: scaleX on the GPU instead of width jumps at the stream rate */
+.loc-fill {
+  width: 100%; transform-origin: left center; transform: scaleX(0);
+  transition: transform var(--dur-data) var(--ease-out), background-color var(--dur-state) var(--ease-out);
+  will-change: transform;
+}
+
+/* going offline / stale fades the content down rather than switching */
+.dash-grid, .strip, .obd > *, .plot canvas { transition: opacity var(--dur-state) var(--ease-out), filter var(--dur-state) var(--ease-out); }
+
+/* numbers that ease between readings keep their width steady */
+.tile-val, .loc-val { font-variant-numeric: tabular-nums; }
+.sig-observed { transition: stroke var(--dur-state) var(--ease-out); }
+/* an eased number inside a tile is the value, not the small unit label (.tile-val span) */
+.tile-val .tile-num { font-size: inherit; color: inherit; }

@@ -3,10 +3,14 @@ import { STAGES, VIDEO } from './stages.js';
 import { SignatureFrame } from './SignatureFrame.jsx';
 import { decisionColor, decisionText, traceColor } from '../lib/faults.js';
 import { FIRING_ORDER, hasSignature, polarPoint } from '../lib/geometry.js';
+import { reducedMotion } from '../lib/motion.js';
 import './intro.css';
 
 // Share of the scroll track spent scrubbing the video; the rest crossfades into the signature.
 const VIDEO_SHARE = 0.82;
+// Scroll easing: the shown progress closes 1 − e^(−dt/τ) of the gap to the scroll position each
+// frame, so a mouse-wheel notch glides instead of jumping. Off with prefers-reduced-motion.
+const SCROLL_TAU_MS = 110;
 
 const smooth = (a, b, x) => {
   const t = Math.max(0, Math.min(1, (x - a) / (b - a)));
@@ -44,51 +48,70 @@ export default function ScrollIntro({ state, onSkip }) {
     const ctx = canvas.getContext('2d');
     const images = new Array(VIDEO.frameCount);
     const ready = new Array(VIDEO.frameCount).fill(false);
-    let wanted = 0;
-    let drawn = -1;
+    let wanted = 0; // fractional frame index: neighbouring frames are blended
+    let drawnKey = null;
     let stageNow = 0;
-    let ticking = false;
     let count = 0;
+    let shown = null; // eased progress on screen
+    let target = 0; // progress the scroll position asks for
+    let raf = 0;
+    let last = 0;
 
     const sizeCanvas = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       canvas.width = Math.round(canvas.clientWidth * dpr);
       canvas.height = Math.round(canvas.clientHeight * dpr);
-      drawn = -1;
+      drawnKey = null;
     };
 
-    // draw the wanted frame, or the nearest one that has loaded
-    const draw = () => {
-      let k = wanted;
-      if (!ready[k]) {
-        for (let d = 1; d < VIDEO.frameCount; d++) {
-          if (ready[k - d]) { k -= d; break; }
-          if (ready[k + d]) { k += d; break; }
-        }
-      }
-      if (!ready[k] || k === drawn) return;
-      const img = images[k];
+    const paint = (img, alpha) => {
       const cw = canvas.width;
       const ch = canvas.height;
       const s = Math.max(cw / img.naturalWidth, ch / img.naturalHeight); // cover
       const w = img.naturalWidth * s;
       const h = img.naturalHeight * s;
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
+      ctx.globalAlpha = alpha;
       ctx.drawImage(img, (cw - w) / 2, (ch - h) / 2, w, h);
-      drawn = k;
+      ctx.globalAlpha = 1;
+    };
+    const nearestReady = (k) => {
+      if (ready[k]) return k;
+      for (let d = 1; d < VIDEO.frameCount; d++) {
+        if (ready[k - d]) return k - d;
+        if (ready[k + d]) return k + d;
+      }
+      return -1;
     };
 
-    const update = () => {
-      ticking = false;
-      const track = trackRef.current;
-      if (!track) return;
-      const total = track.offsetHeight - window.innerHeight;
-      const p = total > 0 ? Math.max(0, Math.min(1, -track.getBoundingClientRect().top / total)) : 0;
+    // draw the wanted frame (or the nearest loaded one), blended with the next frame by the
+    // fractional part, so 120 stills scrub like continuous video
+    const draw = () => {
+      const k0 = Math.floor(wanted);
+      const a = nearestReady(k0);
+      if (a < 0) return;
+      const k1 = Math.min(k0 + 1, VIDEO.frameCount - 1);
+      const frac = wanted - k0;
+      const blend = a === k0 && k1 !== k0 && ready[k1] && frac > 0.02 ? Math.round(frac * 50) / 50 : 0;
+      const key = blend ? `${a}:${k1}:${blend}` : `${a}`;
+      if (key === drawnKey) return;
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      paint(images[a], 1);
+      if (blend) paint(images[k1], blend);
+      drawnKey = key;
+    };
 
+    const scrollProgress = () => {
+      const track = trackRef.current;
+      if (!track) return 0;
+      const total = track.offsetHeight - window.innerHeight;
+      return total > 0 ? Math.max(0, Math.min(1, -track.getBoundingClientRect().top / total)) : 0;
+    };
+
+    const render = (p) => {
       const vp = Math.min(1, p / VIDEO_SHARE);
       const t = vp * VIDEO.duration;
-      wanted = Math.round(vp * (VIDEO.frameCount - 1));
+      wanted = vp * (VIDEO.frameCount - 1);
       draw();
 
       // hand-off: the last combustion frame stays, dims, and the fingerprint traces itself over it
@@ -123,13 +146,33 @@ export default function ScrollIntro({ state, onSkip }) {
       }
     };
 
+    // ease the shown progress toward the scroll position; the loop stops once it has arrived
+    const step = (now) => {
+      const k = 1 - Math.exp(-Math.max(0, now - last) / SCROLL_TAU_MS);
+      last = now;
+      shown += (target - shown) * k;
+      if (Math.abs(target - shown) < 0.0002) shown = target;
+      render(shown);
+      raf = shown === target ? 0 : requestAnimationFrame(step);
+    };
     const onScroll = () => {
-      if (!ticking) {
-        ticking = true;
-        requestAnimationFrame(update);
+      target = scrollProgress();
+      if (shown === null || reducedMotion()) {
+        shown = target;
+        render(shown);
+        return;
+      }
+      if (!raf) {
+        last = performance.now();
+        raf = requestAnimationFrame(step);
       }
     };
-    const onResize = () => { sizeCanvas(); onScroll(); };
+    const update = () => {
+      target = scrollProgress();
+      shown = target;
+      render(shown);
+    };
+    const onResize = () => { sizeCanvas(); update(); };
 
     // load frame 1 first, then the rest in order
     for (let i = 0; i < VIDEO.frameCount; i++) {
@@ -139,7 +182,7 @@ export default function ScrollIntro({ state, onSkip }) {
         ready[i] = true;
         count += 1;
         if (count % 10 === 0 || count === VIDEO.frameCount) setLoaded(count);
-        if (Math.abs(i - wanted) <= Math.abs(drawn - wanted) || drawn === -1) { drawn = -1; draw(); }
+        if (drawnKey === null || Math.abs(i - wanted) <= 1.5) { drawnKey = null; draw(); }
       };
       img.src = VIDEO.src(i);
       images[i] = img;
@@ -150,6 +193,7 @@ export default function ScrollIntro({ state, onSkip }) {
     window.addEventListener('resize', onResize);
     update();
     return () => {
+      cancelAnimationFrame(raf);
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', onResize);
       images.forEach((img) => { img.onload = null; });

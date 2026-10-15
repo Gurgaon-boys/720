@@ -3,6 +3,7 @@ import { fault } from '../lib/faults.js';
 import { FIRING_ORDER, SLOW_FACTOR, fireDeg, realCycleMs } from '../lib/geometry.js';
 import SourceBadge from './SourceBadge.jsx';
 import { fmtNum } from '../lib/format.js';
+import { SmoothNumber } from '../lib/motion.js';
 
 // Pistons and spark flashes follow a crank angle that advances at operating_point.rpm,
 // slowed by SLOW_FACTOR (labelled on screen). Driven by requestAnimationFrame rather than CSS
@@ -67,8 +68,9 @@ export default function CylinderBank({ state, offline }) {
 
   const tiles = [
     // schema 1.3: rpm and load_pct are null when unknown (real AudioSet clips skip order tracking)
-    { label: 'Engine speed', value: fmtNum(op.rpm), unit: op.rpm == null ? '' : 'rpm' },
-    { label: 'Load', value: fmtNum(op.load_pct), unit: op.load_pct == null ? '' : '%' },
+    // rpm and load ease between readings (≈0.3 s) instead of flickering at 10 Hz
+    { label: 'Engine speed', value: <SmoothNumber className="tile-num" value={op.rpm} format={fmtNum} tau={300} />, unit: op.rpm == null ? '' : 'rpm' },
+    { label: 'Load', value: <SmoothNumber className="tile-num" value={op.load_pct} format={fmtNum} tau={300} />, unit: op.load_pct == null ? '' : '%' },
     { label: 'Regime', value: op.regime, unit: '' },
     { label: 'Run time', value: state.t.toFixed(1), unit: 's' },
   ];
@@ -107,10 +109,10 @@ export default function CylinderBank({ state, offline }) {
                   {score != null && (
                     <div className="loc" title={`Anomaly score ${score.toFixed(2)}, threshold ${anomaly.threshold.toFixed(2)}`}>
                       <div className="loc-track">
-                        <div className={`loc-fill${over ? ' over' : ''}`} style={{ width: `${score * 100}%` }} />
+                        <div className={`loc-fill${over ? ' over' : ''}`} style={{ transform: `scaleX(${Math.max(0, Math.min(1, score))})` }} />
                         <div className="loc-thresh" style={{ left: `${anomaly.threshold * 100}%` }} />
                       </div>
-                      <span className={`mono loc-val${over ? ' over' : ''}`}>{score.toFixed(2)}</span>
+                      <SmoothNumber className={`mono loc-val${over ? ' over' : ''}`} value={score} format={(v) => v.toFixed(2)} tau={200} />
                     </div>
                   )}
                 </div>

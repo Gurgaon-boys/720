@@ -53,8 +53,8 @@ export default function AlarmBanner({ state, onAck, ackError, offline }) {
   if (d.state === 'NORMAL') {
     return (
       <div className="banner banner-normal" role="status">
-        <span className="banner-kind">NORMAL</span>
-        <span>No active alarms</span>
+        <span className="banner-kind banner-enter">NORMAL</span>
+        <span className="banner-enter">No active alarms</span>
         {shownError && <AckError err={shownError} />}
       </div>
     );
@@ -83,7 +83,8 @@ export default function AlarmBanner({ state, onAck, ackError, offline }) {
 
   return (
     <section className={`banner banner-active${unacked ? ' unacked' : ''}`} style={{ '--c': color }} aria-label="Active decision">
-      <div className="banner-main" role="status">
+      {/* keyed on the decision: a new state, alarm or ACK replays the short slide-in (motion = a change happened) */}
+      <div className="banner-main banner-enter" role="status" key={`${d.state}-${d.alarm_id ?? ''}-${d.acked}`}>
         <span className="banner-kind">{kind}</span>
         <strong className="banner-title">{title}</strong>
         <span className="banner-note">{note}</span>
@@ -96,7 +97,7 @@ export default function AlarmBanner({ state, onAck, ackError, offline }) {
       </div>
       {shownError && <AckError err={shownError} />}
       {d.alarm_id && !d.acked && (
-        <button type="button" className="ack-btn" onClick={ack} disabled={waiting || offline} title={offline ? 'Diagnostics offline: ACK cannot reach the rule layer' : undefined}>
+        <button type="button" className="ack-btn banner-enter" onClick={ack} disabled={waiting || offline} title={offline ? 'Diagnostics offline: ACK cannot reach the rule layer' : undefined}>
           {waiting ? 'Waiting…' : 'Acknowledge'}
         </button>
       )}
