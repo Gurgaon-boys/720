@@ -34,3 +34,14 @@ Newest entries go at the bottom. Each entry has a date, the decision, the reason
 | D21 | The example messages use one concrete value where the plan lists alternatives (e.g. `"source": "simulated"`). The schemas enforce the full enums | An example has to be a valid message |
 | D22 | The schemas are strict (`additionalProperties: false`). For `source: "real"` they enforce `localisation: "none"` and an empty `signature`. For `ALARM` they enforce 2 witnesses and ≥2 consecutive windows | Catches frontend/backend drift and contract violations at validation time |
 | D23 | `operating_point.rpm` and `load_pct` may be `null` | RPM is unknown on real AudioSet clips, which skip order tracking |
+
+## 2026-10-16 · Simulator v1 (`sim_version` 1.0.0)
+
+| # | Decision | Why |
+|---|---|---|
+| D24 | Crank angle 0° = cylinder 1 firing TDC; firing TDCs at 0 / 180 / 360 / 540° for cylinders 1 / 3 / 4 / 2 | One angle reference for sim, DSP, contract `signature.crank_deg` and the dashboard |
+| D25 | Faults are decided per engine cycle; an `inject` applies from the next cycle whose first compression hasn't begun. Random draws are made whether or not a fault is active | Clean labels per cycle; misfire p = 0 is bit-identical to healthy |
+| D26 | Fixed per-cylinder heat-release imbalance (1.5%) added on top of cycle-to-cycle variation (3%) | Without it the healthy half-order is unrealistically near zero and misfire detection is too easy (plan §6.2) |
+| D27 | Held-out parameter region for randomised engines = structural-mode frequency scale (train 0.90–1.05, test 1.05–1.15) | Tests that classifiers generalise to an engine that sounds different |
+| D28 | Idle defaults tuned to MAP ≈ 35 kPa, peak cylinder pressure ≈ 10 bar at 800 rpm; continuous single-cylinder misfire raises MAP to ≈ 45 kPa and holds 800 rpm | Plausible idle operating point; the controller keeps a misfiring engine from stalling |
+| D29 | `sim/analysis.py` holds minimal order-spectrum / 720° TSA / tooth-speed helpers for the demo and tests only | Production versions belong in `dsp/` |

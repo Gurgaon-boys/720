@@ -13,3 +13,4 @@ asyncua
 jsonschema
 yt-dlp
 tqdm
+pytest
