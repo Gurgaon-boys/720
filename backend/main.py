@@ -3,8 +3,10 @@
     python -m uvicorn backend.main:app --port 8000
 
 Environment:
-    S720_SCENARIO   fake scenario to start with (default: misfire); see GET /scenarios
-    S720_VALIDATE   1 = check every outgoing message against contract/schemas and log violations
+    S720_SCENARIO         fake scenario to start with (default: misfire); see GET /scenarios
+    S720_VALIDATE         1 = check every outgoing message against contract/schemas and log violations
+    S720_OPCUA            0 = don't start the OPC UA server (default: on)
+    S720_OPCUA_ENDPOINT   default opc.tcp://127.0.0.1:4840/720/
 """
 
 from __future__ import annotations
@@ -18,33 +20,49 @@ from fastapi import FastAPI, HTTPException, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.messages import SCHEMA_VERSION
+from backend.opcua_bridge import DEFAULT_ENDPOINT, OpcuaBridge
 from backend.runtime import Hub, Runtime, put_latest
 from backend.scenarios import SCENARIOS
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+log = logging.getLogger("backend")
 
 
-def create_app(scenario: str | None = None, validate: bool | None = None) -> FastAPI:
+def create_app(scenario: str | None = None, validate: bool | None = None, opcua: str | bool | None = None) -> FastAPI:
+    """opcua: None = from the environment, False = off, a string = the endpoint to serve on."""
     scenario = scenario or os.environ.get("S720_SCENARIO", "misfire")
     if validate is None:
         validate = os.environ.get("S720_VALIDATE", "0") == "1"
+    if opcua is None:
+        opcua = os.environ.get("S720_OPCUA_ENDPOINT", DEFAULT_ENDPOINT) if os.environ.get("S720_OPCUA", "1") != "0" else False
     runtime = Runtime(scenario, validate=validate)
+    bridge = OpcuaBridge(runtime, opcua) if opcua else None
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         await runtime.start()
+        if bridge is not None:
+            try:
+                await bridge.start()
+            except Exception:
+                # the dashboard keeps working without OPC UA (e.g. port 4840 already taken)
+                log.exception("OPC UA server failed to start on %s; continuing without it", bridge.endpoint)
         yield
+        if bridge is not None:
+            await bridge.stop()
         await runtime.stop()
 
     app = FastAPI(title="720 backend", version="L0", lifespan=lifespan)
     app.state.runtime = runtime
+    app.state.opcua = bridge
     # the Vite dev server on any local port (5173 by default) may call the HTTP helpers
     app.add_middleware(CORSMiddleware, allow_origin_regex=r"http://(localhost|127\.0\.0\.1)(:\d+)?",
                        allow_methods=["*"], allow_headers=["*"])
 
     @app.get("/health")
     def health():
-        return {"status": "ok", "schema_version": SCHEMA_VERSION, "scenario": runtime.scenario.name}
+        return {"status": "ok", "schema_version": SCHEMA_VERSION, "scenario": runtime.scenario.name,
+                "opcua": bridge.endpoint if bridge is not None and bridge.running else None}
 
     @app.get("/scenarios")
     def scenarios():

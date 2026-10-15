@@ -26,7 +26,7 @@ def server():
         with socket.socket() as s:
             s.bind(("127.0.0.1", 0))
             port = s.getsockname()[1]
-        srv = uvicorn.Server(uvicorn.Config(create_app(scenario, validate=True), host="127.0.0.1", port=port,
+        srv = uvicorn.Server(uvicorn.Config(create_app(scenario, validate=True, opcua=False), host="127.0.0.1", port=port,
                                             log_level="warning", ws="websockets"))
         th = threading.Thread(target=srv.run, daemon=True)
         th.start()
@@ -49,7 +49,7 @@ def recv_json(ws, timeout=2.0):
 
 def test_http_helpers(server):
     host = server("healthy")
-    assert httpx.get(f"http://{host}/health").json() == {"status": "ok", "schema_version": "1.3", "scenario": "healthy"}
+    assert httpx.get(f"http://{host}/health").json() == {"status": "ok", "schema_version": "1.3", "scenario": "healthy", "opcua": None}
     names = [s["name"] for s in httpx.get(f"http://{host}/scenarios").json()["scenarios"]]
     assert {"healthy", "misfire", "unclassified", "offline", "real_p3"} <= set(names)
     assert httpx.post(f"http://{host}/scenario/nope").status_code == 404

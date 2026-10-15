@@ -4,8 +4,12 @@
   obd     ~1 Hz   one sample per OBD channel -> `obd` JSON
   signal  ~20 Hz  mic + accel waveforms and a mic STFT column -> binary frames
 
-ACKs come in on /ws/state. Only the rule layer decides what they do; a valid ACK triggers an
-immediate `state` broadcast, an invalid one gets an `ack_error` reply on that socket only.
+ACKs come in on /ws/state, or through the OPC UA Acknowledge method; both go through ack().
+Only the rule layer decides what they do; a valid ACK triggers an immediate `state` broadcast,
+an invalid one gets an `ack_error` reply on that socket only.
+
+Listeners (the OPC UA bridge) get every `state` and `obd` message the WebSocket clients get, as the
+same dict, so the dashboard and OPC UA can never disagree (DECISIONS.md D16).
 """
 
 from __future__ import annotations
@@ -16,7 +20,7 @@ import logging
 import time
 
 from backend import messages
-from backend.rule_layer import RuleLayer, asset_ne107
+from backend.rule_layer import AckResult, RuleLayer, asset_ne107
 from backend.scenarios import OBD_S, SCENARIOS, SIGNAL_S, WINDOW_S, obd_sample, signal_frames, window
 from backend.signal_frame import encode_frame
 from backend.watchdog import Watchdog
@@ -57,7 +61,12 @@ class Runtime:
         self.clock = clock
         self.state_hub, self.obd_hub, self.signal_hub = Hub(), Hub(), Hub()
         self._tasks: list[asyncio.Task] = []
+        self._listeners: list = []
         self.select(scenario)
+
+    def add_listener(self, fn) -> None:
+        """fn(kind, msg) is called with every outgoing 'state' and 'obd' message dict."""
+        self._listeners.append(fn)
 
     # ------------------------------------------------------------ control
 
@@ -152,6 +161,11 @@ class Runtime:
         if self.validate and (errs := messages.errors(schema, msg)):
             log.error("%s message violates contract 1.3: %s", schema, errs)
         hub.publish(json.dumps(msg, separators=(",", ":")))
+        for fn in self._listeners:
+            try:
+                fn(schema, msg)
+            except Exception:
+                log.exception("listener failed")
 
     # ------------------------------------------------------------ ack
 
@@ -168,13 +182,19 @@ class Runtime:
         if errs := messages.errors("ack", msg):
             return self._reject(alarm_id, "invalid_message", "; ".join(errs), now)
 
-        res = self.rules.ack(msg["alarm_id"], msg["operator"], now)
+        res = self.ack(msg["alarm_id"], msg["operator"], via="websocket")
+        return None if res.ok else messages.ack_error(sent_at=now, alarm_id=alarm_id, reason=res.reason, detail=res.detail)
+
+    def ack(self, alarm_id: str, operator: str, via: str) -> AckResult:
+        """The one ACK path (WebSocket and OPC UA). On success, broadcasts the new state at once."""
+        res = self.rules.ack(alarm_id, operator, self.clock())
         if not res.ok:
-            return self._reject(alarm_id, res.reason, res.detail, now)
-        log.info("ACK %s by %s", alarm_id, msg["operator"])
+            log.warning("ACK rejected via %s (%s): %s", via, res.reason, res.detail)
+            return res
+        log.info("ACK %s by %s via %s", alarm_id, operator, via)
         if self.last_window is not None:
             self._publish_state(self.rules.decision(), time.perf_counter())
-        return None
+        return res
 
     def _reject(self, alarm_id, reason, detail, now) -> dict:
         log.warning("ACK rejected (%s): %s", reason, detail)

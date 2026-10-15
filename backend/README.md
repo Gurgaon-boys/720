@@ -55,6 +55,44 @@ Pick a scenario with `S720_SCENARIO=<name>` before starting, or switch while run
 
 `reason` is `invalid_message` (not JSON, or fails `ack.schema.json`), `unknown_alarm_id` or `duplicate_ack` (already acknowledged, or acknowledged and cleared). A rejected ACK never changes alarm state.
 
+## OPC UA (`opcua_bridge.py`)
+
+An asyncua server starts with the backend at **`opc.tcp://127.0.0.1:4840/720/`** (no security, anonymous: local demo only). `S720_OPCUA=0` turns it off and `S720_OPCUA_ENDPOINT` moves it. If it can't start (port taken), the backend logs the error and the dashboard keeps working; `GET /health` reports `"opcua": null`.
+
+It mirrors the same `state`/`obd` broadcast the dashboard gets and decides nothing. An ACK through OPC UA goes through the same `Runtime.ack()` as a dashboard ACK, so both always show the same alarm state.
+
+`Objects/EngineAsset` (namespace `urn:720:hackhive`):
+
+| Node | Content |
+|---|---|
+| `RunId`, `Source`, `Mode`, `StreamTimeS`, `SchemaVersion` | From `state` |
+| `OperatingPoint/Rpm`, `LoadPct` | AnalogItems with EURange and EngineeringUnits; NaN when unknown (real clips) |
+| `Obd/<channel>` | One AnalogItem per OBD channel, with a `Source` property (`simulator` / `real_carobd`) |
+| `Diagnostics/` | `AnomalyScore`, `AnomalyThreshold`, `CylinderAnomaly[]`, `LatencyMs`, `DiagnosticsOnline` (false after 3 s with no state), `LastStateAt` |
+| `Decision/` | `State`, `Fault`, `Cylinder` (0 = not localised), `Severity` (NaN = none), `AlarmId`, `Latched`, `Acked`, `AckedBy`, `AckedAt` (1601-01-01 = none), `Witnesses[]`, `ConsecutiveWindows`, `RootCause` (fault, `unclassified` or empty) |
+| `AssetHealth` + `AssetHealthText` | NE 107, asset layer |
+| `SensorHealth/<sensor>` | NE 107 per sensor, kept separate |
+| `Acknowledge(AlarmId, Operator)` | → `(Accepted, Reason)`; same rules and reasons as the WebSocket ACK |
+| `Inject(Fault, Cylinder, Severity)` | → `(false, "not supported until L1")` |
+
+**NE 107 enum** `NE107DeviceHealth`: NORMAL 0, FAILURE 1, CHECK_FUNCTION 2, OFF_SPEC 3, MAINTENANCE_REQUIRED 4, the same values as the OPC UA DI `DeviceHealthEnumeration` (the DI nodeset itself isn't loaded).
+
+**Events** (`EngineFaultEventType`, fields `AlarmId`, `Fault`, `Cylinder`, `DecisionState`, `AssetHealth`, `Sensor`, `Acked`), fired on transitions only, from both `EngineAsset` and the `Server` object:
+
+| Severity | When |
+|---|---|
+| 800 | Misfire or knock alarm raised (OFF_SPEC) |
+| 700 | Abnormal, unclassified (with the physics hint) |
+| 600 | Injector clog alarm raised (MAINTENANCE_REQUIRED) |
+| 500 | Sensor FAILURE; diagnostics offline |
+| 300 | Advisory |
+| 200 | Alarm acknowledged |
+| 100 | Alarm cleared, back to normal, sensor recovered, back online, run changed |
+
+asyncua has no server-side Alarms & Conditions, so these are plain events with a severity; the latch lives in the rule layer.
+
+**UaExpert:** add server `opc.tcp://127.0.0.1:4840/720/` (security None, anonymous), browse `Objects/EngineAsset`, drag `Decision` and `AssetHealth` into the data access view, open an Event View on the `Server` object, and call `Acknowledge` from the context menu.
+
 ## Rule layer (`rule_layer.py`)
 
 Each window is assessed on its own (match / conflict / unclassified / advisory / healthy, in that order), then fed through the latch:
@@ -78,4 +116,5 @@ Each window is assessed on its own (match / conflict / unclassified / advisory /
 | `scenarios.py` | L0 fake scenarios (input stage only) |
 | `watchdog.py` | Backend sensor watchdog (3 s) |
 | `probe.py` | Command-line WebSocket probe |
+| `opcua_bridge.py` | OPC UA server mirroring the broadcast; Acknowledge / Inject methods; events |
 | `tests/` | Rule layer, messages and frames, scenarios on a fake clock, end-to-end sockets |
