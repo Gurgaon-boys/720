@@ -58,7 +58,7 @@ The code still uses the old **v1 shape** (`prediction`, `telemetry`, `waveform`,
 - **ISA-101:** grey by default; colour **only** where attention is needed. No glows/pulses on healthy states. Fault colours (in `lib/faults.js`) are semantic only.
 - Keep fonts (Chakra Petch display, IBM Plex Sans body, JetBrains Mono numbers) and the dark theme, desaturated.
 - **Rename the product to "720"** everywhere.
-- **Intro:** keep it to about 10 s of scrolling, add a visible credit "Intro footage AI-generated (Gemini)" (the watermark was removed from the frames), keep "Skip to diagnostics". Whether it appears in the judged demo is Livana's call.
+- **Intro:** keep it to about 10 s of scrolling, no on-screen credit (Livana removed it; the footage is AI-generated with Gemini and the watermark was removed from the frames, noted in README), keep "Skip to diagnostics". Whether it appears in the judged demo is Livana's call.
 - Evidence panel: never show a number without n, source column (A/B/C) and split. **Lead with false positives at every level on carOBD** (anomaly flags, advisories, classifier false faults, alarms per hour, each with a 95% upper bound); show the audio bound as secondary; mark alarms on audio-only data as "structurally limited"; include the operator-scaling line ("an operator watching 50 engines would see N per hour"). Never invent numbers; placeholder evidence must be visibly marked "PLACEHOLDER".
 - Terminology follows ISA-18.2: "alarm" only for `decision.state === "ALARM"`; ADVISORY is a yellow "watch", not an alarm.
 - Accessibility: real buttons, visible focus, `prefers-reduced-motion` respected.
