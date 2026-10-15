@@ -205,3 +205,10 @@ details summary { cursor: pointer; }
 .dash.offline .dash-grid, .dash.offline .strip { opacity: 0.45; filter: grayscale(1); }
 .dash.offline *, .dash.offline *::before, .dash.offline *::after { animation-play-state: paused !important; }
 .ack-error { flex-basis: 100%; margin: 0; font-size: 12px; color: #ffd43b; }
+
+/* error boundaries: a crashed panel keeps its slot and says why (NE 107 FAILURE red edge) */
+.panel-crash { border: 2px solid #ff5a6e; border-left-width: 8px; display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+.panel-crash p { margin: 0; font-size: 14px; color: var(--text-2); }
+.banner-crash { border: 2px solid #ff5a6e; border-left-width: 10px; font-size: 14px; color: var(--text); }
+.banner-crash .banner-kind { color: var(--ink); background: #ff5a6e; padding: 3px 8px; border-radius: 4px; }
+.inline-crash { font-size: 11px; color: #ff5a6e; border: 1px solid #ff5a6e; border-radius: 6px; padding: 6px 10px; }

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import SourceBadge from './SourceBadge.jsx';
 
 // Instrument-style plots for the `signal` channel: mic + accelerometer traces and the mic STFT.
@@ -236,6 +236,10 @@ export default function SignalStrip({ signal, source }) {
   const micRef = useRef(null);
   const accelRef = useRef(null);
   const specRef = useRef(null);
+  // errors inside requestAnimationFrame are invisible to error boundaries: catch them, stop the
+  // loop, and re-throw on the next render so the panel's boundary shows them
+  const [loopError, setLoopError] = useState(null);
+  if (loopError) throw loopError;
   const streams = useRef({
     mic: { buf: [], fs: 1, chunk: 0, period: 200, lastAt: 0 },
     accel: { buf: [], fs: 1, chunk: 0, period: 200, lastAt: 0 },
@@ -251,14 +255,19 @@ export default function SignalStrip({ signal, source }) {
     const still = reducedMotion();
     let raf = 0;
     const frame = () => {
-      const s = streams.current;
-      [[micRef, s.mic, drawWave], [accelRef, s.accel, drawWave], [specRef, s.stft, drawSpec]].forEach(([ref, st, draw]) => {
-        const ready = st.hist || st.buf?.length;
-        if (!ref.current || !ready) return;
-        if (still && !st.dirty) return;
-        draw(ref.current, st, still);
-        st.dirty = false;
-      });
+      try {
+        const s = streams.current;
+        [[micRef, s.mic, drawWave], [accelRef, s.accel, drawWave], [specRef, s.stft, drawSpec]].forEach(([ref, st, draw]) => {
+          const ready = st.hist || st.buf?.length;
+          if (!ref.current || !ready) return;
+          if (still && !st.dirty) return;
+          draw(ref.current, st, still);
+          st.dirty = false;
+        });
+      } catch (e) {
+        setLoopError(e);
+        return; // stop the loop
+      }
       raf = requestAnimationFrame(frame);
     };
     raf = requestAnimationFrame(frame);
