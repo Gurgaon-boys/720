@@ -23,6 +23,33 @@ export const DECISION_STATES = {
   UNCLASSIFIED: { name: 'Abnormal, unclassified: inspect', color: '#ff40e6' },
 };
 
+// One wording for every decision, shared by the banner, the decision panel and the intro so they
+// can't drift apart. ADVISORY can arrive with `fault: null` when the classifier and the physics rule
+// name different faults (rule layer: no alarm on a conflict).
+//   kind   banner tag          title  headline            panelTitle  decision-panel headline
+//   tag    short label (intro card)                       sub         one-line explanation
+export function decisionText(d) {
+  const f = fault(d.fault);
+  if (d.state === 'ALARM') {
+    return { kind: 'ALARM', title: f.title(d.location), panelTitle: f.title(d.location), tag: f.short, sub: f.sub };
+  }
+  if (d.state === 'ADVISORY') {
+    if (!d.fault) {
+      const disagree = d.witnesses.length === 2;
+      const title = disagree ? 'Witnesses disagree' : 'Watch';
+      return {
+        kind: 'WATCH', title, panelTitle: title, tag: disagree ? 'WATCH · DISAGREE' : 'WATCH',
+        sub: disagree ? 'Classifier and physics rule name different faults. Not an alarm.' : 'One witness only. Not an alarm.',
+      };
+    }
+    return { kind: 'WATCH', title: f.title(d.location), panelTitle: `Watch · ${f.title(d.location)}`, tag: `WATCH · ${f.short}`, sub: 'One witness only. Not an alarm.' };
+  }
+  if (d.state === 'UNCLASSIFIED') {
+    return { kind: 'INSPECT', title: DECISION_STATES.UNCLASSIFIED.name, panelTitle: DECISION_STATES.UNCLASSIFIED.name, tag: 'UNCLASSIFIED', sub: 'The classifiers cannot name this pattern.' };
+  }
+  return { kind: 'NORMAL', title: DECISION_STATES.NORMAL.name, panelTitle: DECISION_STATES.NORMAL.name, tag: 'OK', sub: 'No rule or classifier witness.' };
+}
+
 // Colour for the current decision: the fault colour on ALARM, the state colour otherwise.
 export function decisionColor(decision) {
   if (!decision) return DECISION_STATES.NORMAL.color;

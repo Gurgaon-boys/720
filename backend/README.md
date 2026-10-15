@@ -8,7 +8,25 @@
 - **Backend watchdog:** a stream stalled for 3 s sets that sensor to `FAILURE` under `health.sensors`
 - **OPC UA** (`asyncua`): EngineAsset object, asset and sensor health, fault events with severity, inject/ACK methods; tested in UaExpert
 
-## Status: L0 (fake scenarios)
+## Status: L1 (live simulator), L0 scenarios kept
+
+**L1:** source `sim` runs the physics-informed simulator live: `EngineSim` → 4-cycle windows → crank-angle features → the misfire physics rule → this rule layer → the same messages and sockets as L0 (`sources/sim_source.py`).
+
+```bash
+S720_SCENARIO=sim python -m uvicorn backend.main:app --port 8000
+curl -X POST 127.0.0.1:8000/inject -H "Content-Type: application/json" -d '{"fault":"misfire","cylinder":3,"severity":1.0}'
+curl -X POST 127.0.0.1:8000/clear_faults
+```
+
+- **One witness only.** There is no classifier yet, so `models` is `[]` and a misfire is **ADVISORY, never ALARM**. Nothing fakes a second witness.
+- **No healthy model yet:** `anomaly.score` is a placeholder `0.0`. `anomaly.per_location` is the calibrated crank roughness (0–1, limit 0.5 = `anomaly.threshold`) for the per-cylinder bars. (With your precedence, a real anomaly score over threshold and no classifier label would make this UNCLASSIFIED, not ADVISORY; worth agreeing before Diljit's healthy model lands.)
+- **Windows vs ticks:** a 4-cycle window with 50% overlap finishes every ~300 ms at idle, while `state` goes out at 10 Hz. The rule layer is stepped **once per finished window** (`Window.fresh`); ticks in between resend the last decision. Windows finishing in the same tick are stepped in order (`Window.backlog`).
+- `obd` carries the simulator's own rpm, MAP and MAP-based load (no ECU/OBD loops in sim v1). `signal` carries `mic` (4 kHz, display gain ×8) and `mic_stft`; there is no accelerometer in sim v1.
+- Source switches (`POST /scenario/{name}`) build the new source in a worker thread and swap it in on the event loop, so a tick never steps the new simulator with the old stream's tick index.
+- `S720_SIM_SEED` (run seed) and `S720_SIM_ENGINE` (randomised engine seed) pick the simulated engine.
+- Test with Windows clients on `127.0.0.1`: `localhost` tries IPv6 first and costs ~2 s per request.
+
+## L0 (fake scenarios)
 
 Everything after the input stage is real: the rule layer, the contract messages, the binary frames, the WebSockets and the watchdog. The input is `scenarios.py`, scripted fake evidence that the simulator, DSP and models replace later. **No number it produces is a result.**
 
@@ -44,7 +62,8 @@ Pick a scenario with `S720_SCENARIO=<name>` before starting, or switch while run
 | | UI → server | `ack` JSON. A rejected ACK gets an `ack_error` reply on this socket only (see below) |
 | `ws://…/ws/obd` | server → UI, ~1 Hz | `obd` JSON, one sample per channel, `source: simulator` |
 | `ws://…/ws/signal` | server → UI, ~20 Hz per channel | binary frames per `contract/signal_frame.md`: `mic`, `accel` (4 kHz waveforms, 200 samples) and `mic_stft` (one 101-bin column to 2 kHz) |
-| `GET /health`, `GET /scenarios`, `POST /scenario/{name}` | HTTP | helpers for L0 |
+| `GET /health`, `GET /scenarios`, `POST /scenario/{name}` | HTTP | pick the source: a fake scenario or `sim` |
+| `POST /inject` `{fault, cylinder, severity}`, `POST /clear_faults` | HTTP | simulator only (409 otherwise); 501 for faults not in sim v1, 422 for bad values |
 
 **`ack_error`** is not a contract 1.3 message. The UI tells it apart from `state` because it has a `type` field:
 
@@ -121,6 +140,7 @@ Each window is assessed on its own (match / conflict / unclassified / advisory /
 | `messages.py` | Contract 1.3 message builders; validation against `contract/schemas` |
 | `signal_frame.py` | Binary frame encode/decode |
 | `scenarios.py` | L0 fake scenarios (input stage only) |
+| `sources/` | Source registry (`make_source`) and the live simulator source (L1) |
 | `watchdog.py` | Backend sensor watchdog (3 s) |
 | `probe.py` | Command-line WebSocket probe |
 | `opcua_bridge.py` | OPC UA server mirroring the broadcast; Acknowledge / Inject methods; events |

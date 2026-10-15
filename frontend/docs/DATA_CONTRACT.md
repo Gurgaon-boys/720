@@ -79,6 +79,27 @@ Notes:
 
 The rule layer clears the latch and broadcasts the new `state`. **The dashboard never clears an alarm locally**; it updates only from that broadcast (mock mode simulates the round trip).
 
+## Proposed schema 1.4: injection console (PROPOSED, not yet agreed with Nishant)
+
+1.4 = 1.3 plus one `state` field. Every message's `schema_version` becomes `"1.4"`; nothing else changes. Draft JSON Schema for `state`: `docs/state-1.4.proposed.schema.json`. The dashboard accepts both 1.3 and 1.4; the mock speaks 1.4.
+
+The console uses the backend's existing simulator routes (L1, `backend/README.md`), unchanged:
+
+- `POST /inject` body `{ "fault": "...", "cylinder": 1-4, "severity": 0-1 }` → 200; 409 when the source has no simulator; 501 for a fault not in the simulator yet; 422 for bad values. The `detail` is shown in the console.
+- `POST /clear_faults` → 200.
+
+`state.injection` is the one addition (required in 1.4, `null` when nothing is being injected). It echoes the accepted request, so the dashboard can confirm it from the broadcast like an ACK:
+
+```json
+"injection": { "active": true, "fault": "misfire", "cylinder": 3, "severity": 1.0, "started_at": 1760551250.0 }
+```
+
+- `fault`: `misfire | knock | injector_clog | valve_tick`; `cylinder`: 1–4; `severity`: the **requested** severity (0–1) as sent to the simulator, not a measurement. The rule layer's own estimate stays in `decision.severity`.
+- Only on `mode: "live"` with `source: "simulated"`. While a fault is injected, `health.asset_ne107 = CHECK_FUNCTION` (D14). The injected fault goes through the normal rule layer; no shortcut to ALARM. Clearing does not clear a latched alarm: the usual ACK + healthy windows apply.
+- One injection at a time is enough for the console; if the simulator holds several, send the latest.
+
+The UI never assumes a request worked: it shows an injection only once `state.injection` says so. A live backend that sends no `injection` field (schema 1.3) gets a disabled console with "backend injection unavailable".
+
 ## Evidence file (`eval.json`, from Diljit)
 
 Loaded once, not streamed. Shape to be agreed with Diljit. Must carry, for every number: value, n, data source (A simulated / B injected / C real), split type, and interval or bound where applicable. Expected sections: **false positives per hour at every level** (anomaly flags, advisories, classifier false faults, alarms — alarms noted as structurally limited on audio-only data), each with a 95% upper bound, **carOBD held-out files as the headline** and vetted P3 audio as secondary; the operator-scaling line ("an operator watching 50 engines at our rate would see N per hour"); random-vs-grouped split gap; model comparison (Baseline/SVM/ANN/CNN, identical grouped splits, variance across seeds), per-fault sensor ablation, held-out-class AUROC + pAUC (valve, knock), injector-clog detectability (smallest clog at the fixed false-alarm rate + score-vs-severity curve, simulated), column B results for knock and valve tick only, OBD-branch results on held-out carOBD, latency.

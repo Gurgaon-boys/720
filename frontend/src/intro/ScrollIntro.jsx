@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { STAGES, VIDEO } from './stages.js';
 import { SignatureFrame } from './SignatureFrame.jsx';
-import { decisionColor, fault, traceColor } from '../lib/faults.js';
+import { decisionColor, decisionText, traceColor } from '../lib/faults.js';
 import { FIRING_ORDER, hasSignature, polarPoint } from '../lib/geometry.js';
 import './intro.css';
 
@@ -27,7 +27,6 @@ export default function ScrollIntro({ state, onSkip }) {
   const d = state?.decision;
   const geometry = hasSignature(state?.signature);
   const raised = d && (d.state === 'ALARM' || d.state === 'ADVISORY');
-  const f = fault(raised ? d.fault : 'healthy');
   const color = decisionColor(d);
   const hints = (state?.physics_rules ?? [])
     .filter((r) => r.fired)
@@ -186,7 +185,7 @@ export default function ScrollIntro({ state, onSkip }) {
         {state && d.state !== 'NORMAL' && (
           <div ref={ov(3.0, 4.5)} className="ov-card ov-corner" style={{ borderColor: color }}>
             <strong style={{ color }}>
-              {d.state === 'UNCLASSIFIED' ? 'UNCLASSIFIED' : `${d.state === 'ADVISORY' ? 'WATCH · ' : ''}${f.short}`}
+              {decisionText(d).tag}
               {summary.cylinder ? ` · CYL ${summary.cylinder}` : ''}
             </strong>
             <span className="mono">{state.operating_point.rpm == null ? 'rpm unknown' : `${state.operating_point.rpm.toLocaleString()} rpm`} · load {state.operating_point.load_pct == null ? '—' : `${state.operating_point.load_pct}%`} · {state.source.toUpperCase()}</span>
@@ -194,13 +193,12 @@ export default function ScrollIntro({ state, onSkip }) {
         )}
         {state && hints.length > 0 && (
           <div ref={ov(6.4, 9.9)} className="ov-text ov-corner">
-            <strong style={{ color }}>{d.state === 'UNCLASSIFIED' ? 'Abnormal, unclassified' : f.name}</strong>
+            <strong style={{ color }}>{decisionText(d).title}</strong>
             {hints.slice(0, 2).map((h) => <span key={h}>{h}</span>)}
           </div>
         )}
 
         <div className="intro-brand">720</div>
-        <div className="intro-credit">Intro footage AI-generated (Gemini)</div>
         <button type="button" className="intro-skip" onClick={onSkip}>Skip to diagnostics</button>
 
         <nav className="intro-rail" aria-hidden="true">

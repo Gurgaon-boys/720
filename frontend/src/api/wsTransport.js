@@ -7,7 +7,8 @@
 
 import { decodeFrame, toUiFrame } from './signalFrame.js';
 
-const SCHEMA_VERSION = '1.3';
+// 1.3 = the agreed contract; 1.4 = 1.3 + state.injection (PROPOSED, docs/DATA_CONTRACT.md)
+const SUPPORTED_VERSIONS = ['1.3', '1.4'];
 const CHANNELS = ['state', 'obd', 'signal', 'ack_error', 'status'];
 const BACKOFF_MS = [500, 1000, 2000, 4000];
 
@@ -20,6 +21,7 @@ export function createWsTransport(apiUrl) {
   const warned = new Set();
   let closed = false;
   let scenarioId = null;
+  let backendVersion = '1.3'; // what the backend's state messages say; ACKs are sent in the same version
 
   const emit = (channel, msg) => subs[channel].forEach((cb) => cb(msg));
   const warnOnce = (key, ...args) => {
@@ -32,12 +34,31 @@ export function createWsTransport(apiUrl) {
     status[name] = s;
     emit('status', { ...status });
   };
-  // schema 1.3 only; anything else is dropped rather than half-rendered
+  // supported versions only; anything else is dropped rather than half-rendered
   const checkVersion = (name, msg) => {
-    if (msg.schema_version === SCHEMA_VERSION) return true;
-    warnOnce(`ver-${name}`, `${name} message has schema_version ${msg.schema_version}, expected ${SCHEMA_VERSION}; dropped`);
+    if (SUPPORTED_VERSIONS.includes(msg.schema_version)) return true;
+    warnOnce(`ver-${name}`, `${name} message has schema_version ${msg.schema_version}, expected one of ${SUPPORTED_VERSIONS.join(', ')}; dropped`);
     return false;
   };
+
+  // POST helper for the HTTP routes; a refusal becomes an Error with the backend's `detail`
+  async function post(path, body) {
+    const res = await fetch(`${http}${path}`, {
+      method: 'POST',
+      headers: body ? { 'Content-Type': 'application/json' } : undefined,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    if (!res.ok) {
+      let detail = res.statusText;
+      try {
+        const j = await res.json();
+        if (j.detail) detail = typeof j.detail === 'string' ? j.detail : JSON.stringify(j.detail);
+      } catch {
+        // body wasn't JSON; keep the status text
+      }
+      throw new Error(`POST ${path}: ${res.status} ${detail}`);
+    }
+  }
 
   const handlers = {
     state(ev) {
@@ -46,7 +67,10 @@ export function createWsTransport(apiUrl) {
         emit('ack_error', msg);
         return;
       }
-      if (checkVersion('state', msg)) emit('state', msg);
+      if (checkVersion('state', msg)) {
+        backendVersion = msg.schema_version;
+        emit('state', msg);
+      }
     },
     obd(ev) {
       const msg = JSON.parse(ev.data);
@@ -98,7 +122,7 @@ export function createWsTransport(apiUrl) {
     // Sends the contract's `ack`. The banner waits for the rule layer's next `state` broadcast;
     // a rejection comes back as `ack_error`.
     sendAck(alarm_id, operator) {
-      const msg = { schema_version: SCHEMA_VERSION, type: 'ack', alarm_id, operator, sent_at: Date.now() / 1000 };
+      const msg = { schema_version: backendVersion, type: 'ack', alarm_id, operator, sent_at: Date.now() / 1000 };
       const sock = sockets.state;
       if (sock?.readyState === WebSocket.OPEN) {
         sock.send(JSON.stringify(msg));
@@ -121,6 +145,15 @@ export function createWsTransport(apiUrl) {
       const res = await fetch(`${http}/scenario/${encodeURIComponent(id)}`, { method: 'POST' });
       if (!res.ok) throw new Error(`POST /scenario/${id}: ${res.status}`);
       scenarioId = id;
+    },
+
+    // Injection console: the backend's simulator routes. Resolves when the backend accepts the
+    // request; the UI still waits for state.injection (proposed schema 1.4) before showing anything.
+    startInjection({ fault, cylinder, severity }) {
+      return post('/inject', { fault, cylinder, severity });
+    },
+    stopInjection() {
+      return post('/clear_faults');
     },
 
     get scenarioId() {

@@ -1,31 +1,140 @@
-// Latest OBD value per channel with its unit and source badge.
-// Small-multiples charts at true rate come in task 6.
+import { useState } from 'react';
+import { fmtNum } from '../lib/format.js';
+
+// OBD small multiples (task 6): one small line chart per channel, each on its own y-scale
+// (never a shared axis across units). Every sample is drawn at its own timestamp, at the rate it
+// arrived; the line breaks where samples are missing instead of joining across the gap.
+// Grey by ISA-101: OBD values carry no alarm meaning here. Hover shows a sample in place.
 
 const SOURCE = { real_carobd: 'REAL · carOBD', simulator: 'SIMULATOR' };
+const WINDOW_S = 60;
+const W = 200;
+const H = 56;
+const PAD = { t: 6, b: 6, l: 2, r: 6 };
+const GAP_FACTOR = 1.5; // a step longer than 1.5 × the usual spacing is a gap
+const MIN_SPAN_FRAC = 0.1; // y-axis spans at least 10 % of the channel's typical value
 
-export default function ObdPanel({ obd, source }) {
+function median(xs) {
+  if (!xs.length) return null;
+  const s = [...xs].sort((a, b) => a - b);
+  return s[Math.floor(s.length / 2)];
+}
+
+// samples inside the window, the usual spacing, and summary numbers for one channel
+function analyse(ch) {
+  const tEnd = ch.t[ch.t.length - 1];
+  const idx = ch.t.map((t, i) => i).filter((i) => ch.t[i] >= tEnd - WINDOW_S);
+  const t = idx.map((i) => ch.t[i]);
+  const v = idx.map((i) => ch.v[i]);
+  const dt = median(t.slice(1).map((x, i) => x - t[i]));
+  return { t, v, tEnd, dt, min: Math.min(...v), max: Math.max(...v), last: v[v.length - 1] };
+}
+
+function Spark({ a, unit, hover, setHover }) {
+  const { t, v, tEnd, dt } = a;
+  // y-range: the data's min–max, but never narrower than 10 % of the typical value, so ±1 %
+  // sensor noise on a steady channel (rpm, coolant) draws as a near-flat line, not as big swings
+  const mid = (a.min + a.max) / 2;
+  const span = Math.max(a.max - a.min, Math.abs(mid) * MIN_SPAN_FRAC, 1e-6);
+  let lo = mid - span / 2;
+  let hi = mid + span / 2;
+  const pad = span * 0.1;
+  lo -= pad;
+  hi += pad;
+  const x = (ti) => PAD.l + ((ti - (tEnd - WINDOW_S)) / WINDOW_S) * (W - PAD.l - PAD.r);
+  const y = (vi) => PAD.t + (1 - (vi - lo) / (hi - lo)) * (H - PAD.t - PAD.b);
+
+  let d = '';
+  t.forEach((ti, i) => {
+    const gap = i === 0 || (dt && ti - t[i - 1] > GAP_FACTOR * dt);
+    d += `${gap ? 'M' : 'L'}${x(ti).toFixed(1)},${y(v[i]).toFixed(1)} `;
+  });
+
+  const onMove = (e) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const tAt = tEnd - WINDOW_S + ((e.clientX - r.left) / r.width) * WINDOW_S;
+    let best = 0;
+    t.forEach((ti, i) => { if (Math.abs(ti - tAt) < Math.abs(t[best] - tAt)) best = i; });
+    setHover(best);
+  };
+  const at = hover ?? t.length - 1;
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="spark" role="img"
+      aria-label={`Last ${WINDOW_S} s: min ${fmtNum(a.min)}, max ${fmtNum(a.max)}, latest ${fmtNum(a.last)} ${unit}`}
+      onPointerMove={onMove} onPointerLeave={() => setHover(null)}>
+      <line x1={PAD.l} x2={W - PAD.r} y1={y(a.max)} y2={y(a.max)} className="spark-ref" />
+      <line x1={PAD.l} x2={W - PAD.r} y1={y(a.min)} y2={y(a.min)} className="spark-ref" />
+      <path d={d} className="spark-line" />
+      {hover != null && <line x1={x(t[at])} x2={x(t[at])} y1={0} y2={H} className="spark-cross" />}
+      <circle cx={x(t[at])} cy={y(v[at])} r="3.5" className="spark-dot" />
+    </svg>
+  );
+}
+
+function Cell({ name, ch }) {
+  const [hover, setHover] = useState(null);
+  const a = analyse(ch);
+  const shown = hover != null ? a.v[hover] : a.last;
+  const when = hover != null ? `${fmtNum(a.t[hover] - a.tEnd)} s` : 'latest';
+  return (
+    <div className="obd-cell">
+      <div className="obd-cell-head">
+        <span className="eyebrow">{name}</span>
+        <span className={`obd-src ${ch.source}`}>{SOURCE[ch.source] ?? ch.source}</span>
+      </div>
+      <div className="tile-val mono">{fmtNum(shown)}<span> {ch.unit}</span></div>
+      <Spark a={a} unit={ch.unit} hover={hover} setHover={setHover} />
+      <div className="obd-meta mono">
+        <span>{when}</span>
+        <span>{fmtNum(a.min)}–{fmtNum(a.max)}</span>
+        <span>{a.dt ? `${fmtNum(1 / a.dt)} Hz` : '—'}</span>
+      </div>
+    </div>
+  );
+}
+
+// hasObd: the state's health.sensors lists an OBD sensor; if not, this recording has no OBD at all
+// silentFor: seconds since the last obd message, once it passes the stale limit (else null)
+export default function ObdPanel({ obd, source, hasObd, silentFor }) {
   const channels = Object.entries(obd);
   const separateRecording = source === 'real' && channels.some(([, ch]) => ch.source === 'real_carobd');
 
   return (
-    <section className="panel obd">
-      <h2 className="panel-label">OBD · ~1 Hz</h2>
+    <section className={`panel obd${silentFor != null ? ' stale' : ''}`}>
+      <h2 className="panel-label">OBD · TRUE RATE</h2>
+      {silentFor != null && <p className="stale-note mono" role="status">No OBD data for {silentFor} s · showing last values</p>}
       {separateRecording && (
         <p className="panel-note">Separate carOBD recording, not the same vehicle as the audio clip.</p>
       )}
       {channels.length === 0 ? (
-        <p className="panel-note">Waiting for OBD…</p>
+        <p className="panel-note">{hasObd ? 'Waiting for OBD…' : 'No OBD on this recording.'}</p>
       ) : (
-        <div className="obd-grid">
-          {channels.map(([name, ch]) => (
-            <div key={name} className="obd-cell">
-              <div className="eyebrow">{name}</div>
-              <div className="tile-val mono">{ch.v[ch.v.length - 1]}<span> {ch.unit}</span></div>
-              <span className={`obd-src ${ch.source}`}>{SOURCE[ch.source] ?? ch.source}</span>
-              <span className="mono obd-n">{ch.v.length} samples</span>
-            </div>
-          ))}
-        </div>
+        <>
+          <div className="obd-grid">
+            {channels.map(([name, ch]) => <Cell key={name} name={name} ch={ch} />)}
+          </div>
+          <p className="bank-note mono">Last {WINDOW_S} s per channel, own scale each · line breaks where samples are missing · hover for a sample</p>
+          <details className="obd-table">
+            <summary className="eyebrow">Table</summary>
+            <table className="mono">
+              <thead>
+                <tr><th scope="col">channel</th><th scope="col">latest</th><th scope="col">min</th><th scope="col">max</th><th scope="col">unit</th><th scope="col">rate</th><th scope="col">n</th><th scope="col">source</th></tr>
+              </thead>
+              <tbody>
+                {channels.map(([name, ch]) => {
+                  const a = analyse(ch);
+                  return (
+                    <tr key={name}>
+                      <th scope="row">{name}</th><td>{fmtNum(a.last)}</td><td>{fmtNum(a.min)}</td><td>{fmtNum(a.max)}</td>
+                      <td>{ch.unit}</td><td>{a.dt ? `${fmtNum(1 / a.dt)} Hz` : '—'}</td><td>{a.t.length}</td><td>{SOURCE[ch.source] ?? ch.source}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </details>
+        </>
       )}
     </section>
   );

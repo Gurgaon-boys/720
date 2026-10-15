@@ -48,3 +48,26 @@ Newest entries go at the bottom. Each entry has a date, the decision, the reason
 | D30 | **OPC UA `Diagnostics/DiagnosticsOnline` goes false after 3 s with no `state`**, with one severity-500 event, and back to true (severity 100) when state resumes | Mirrors the UI watchdog (D15), so an OPC UA client is never shown stale "healthy" either | §11.1 |
 | D31 | **CHECK_FUNCTION only in an explicit maintenance/test mode** (`POST /maintenance/on`, `/maintenance/off`), and only while nothing is wrong: a latched alarm or an unclassified anomaly keeps OFF_SPEC / MAINTENANCE_REQUIRED. The mapping is computed once (`rule_layer.asset_ne107`) for the dashboard and OPC UA alike, and the mode never touches the rule layer. Supersedes the "injection console active → CHECK_FUNCTION" part of D14 and the last sentence of D29 | An active simulation console must not hide a real fault's health state; only a deliberate maintenance/test mode should show CHECK_FUNCTION | §11.2 |
 | D32 | **OPC UA freshness and provenance:** a sensor the current recording doesn't have reads `Bad_NotConnected` instead of NORMAL; `SensorHealth/DiagnosticStream` (NE 107 NORMAL / FAILURE after 3 s with no state) and `LastStateAgeS` give stream freshness; `EngineAsset/DiagnosticTimestamp` is the latest decision's `sent_at`; events carry `DataSource` (REAL / SIMULATED / INJECTED) and `Time` = the decision's `sent_at` | An absent accelerometer on a real clip must not look healthy, and a plant client needs to see how fresh and where from each decision is | §11.1, §11.2 |
+## 2026-10-16 · Simulator v1 (`sim_version` 1.0.0)
+
+| # | Decision | Why |
+|---|---|---|
+| D24 | Crank angle 0° = cylinder 1 firing TDC; firing TDCs at 0 / 180 / 360 / 540° for cylinders 1 / 3 / 4 / 2 | One angle reference for sim, DSP, contract `signature.crank_deg` and the dashboard |
+| D25 | Faults are decided per engine cycle; an `inject` applies from the next cycle whose first compression hasn't begun. Random draws are made whether or not a fault is active | Clean labels per cycle; misfire p = 0 is bit-identical to healthy |
+| D26 | Fixed per-cylinder heat-release imbalance (1.5%) added on top of cycle-to-cycle variation (3%) | Without it the healthy half-order is unrealistically near zero and misfire detection is too easy (plan §6.2) |
+| D27 | Held-out parameter region for randomised engines = structural-mode frequency scale (train 0.90–1.05, test 1.05–1.15) | Tests that classifiers generalise to an engine that sounds different |
+| D28 | Idle defaults tuned to MAP ≈ 35 kPa, peak cylinder pressure ≈ 10 bar at 800 rpm; continuous single-cylinder misfire raises MAP to ≈ 45 kPa and holds 800 rpm | Plausible idle operating point; the controller keeps a misfiring engine from stalling |
+| D29 | `sim/analysis.py` holds minimal order-spectrum / 720° TSA / tooth-speed helpers for the demo and tests only | Production versions belong in `dsp/` |
+
+## 2026-10-16 · L1 integration (sim drives backend and dashboard)
+
+| # | Decision | Why |
+|---|---|---|
+| D30 | Misfire physics rule (crank-angle) fires on **half-order ratio** = 0.5-order / 2nd-order amplitude of tooth-time crank speed per 4-cycle window; threshold 1.25 × healthy 99.9th percentile, calibrated on healthy sim runs only, held-out engines checked | Dimensionless, so it doesn't scale with load; whole-cycle windows put both orders on FFT bins |
+| D31 | **Location** = cylinder with the largest roughness: speed drop from segment [TDC−60°, TDC+120°) to the next, minus its neighbours' mean | TDC-aligned segments blamed the next cylinder in firing order; plain drops lit the previous cylinder too. This located the right cylinder in 88–94% of windows holding a p = 0.5 misfire |
+| D32 | L1 sends **no classifier output** (`models: []`) and a placeholder `anomaly.score = 0.0`; `per_location` = roughness scaled to 0–1 with its limit at 0.5 | No second witness is faked, so the rule layer gives ADVISORY, never ALARM. **Open:** with a real healthy model, misfire without a classifier label becomes UNCLASSIFIED under the rule layer's precedence; agree before the healthy model lands |
+| D33 | The rule layer steps **once per finished window**; state ticks between windows resend the last decision | Otherwise "2 consecutive windows" would count the same window twice at 10 Hz |
+| D34 | Sources share one interface (`backend/sources`); the simulator is selected as source `sim` and takes faults via `POST /inject` / `POST /clear_faults` | Same code path after the input stage for fake scenarios, simulator and (later) replay |
+| D35 | The fingerprint is mic **RMS** per 2° bin (square root of the mean energy), normalised to the healthy reference's peak | Same ordering as energy, but readable on the polar plot |
+| D36 | Demo injections use p = 1.0 | At p = 0.5 the controller raises MAP and half the cycles still fire, so the average lobe barely shrinks; the rule and bars still work at p = 0.5 |
+

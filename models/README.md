@@ -14,3 +14,5 @@ Plan sections 9, 10 and 10.1:
 Trained classes: `healthy`, `misfire`, `knock`, `injector_clog`. **`valve_tick` is held out.**
 All models use identical grouped splits (by run, by source clip) across several seeds. Thresholds are fixed on validation data, never on test data.
 Checkpoints (`*.pt`, `*.pkl`, `*.onnx`) are not committed.
+
+`thresholds/`: calibrated rule thresholds with their calibration metadata (committed; JSON, small). `misfire_half_order.json` comes from `python -m dsp.calibrate_misfire`.

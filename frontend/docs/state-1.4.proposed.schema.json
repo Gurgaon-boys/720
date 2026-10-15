@@ -1,0 +1,469 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://720.hackhive/contract/state-1.4.proposed.schema.json",
+  "title": "720 state message (~10 Hz, server -> UI) - PROPOSED 1.4: adds `injection`",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "sent_at",
+    "units",
+    "run_id",
+    "source",
+    "audioset_pool",
+    "engine_tag",
+    "mode",
+    "t",
+    "operating_point",
+    "localisation",
+    "features_summary",
+    "anomaly",
+    "models",
+    "physics_rules",
+    "decision",
+    "health",
+    "latency_ms",
+    "signature",
+    "injection"
+  ],
+  "$defs": {
+    "ne107": {
+      "enum": [
+        "NORMAL",
+        "FAILURE",
+        "CHECK_FUNCTION",
+        "OFF_SPEC",
+        "MAINTENANCE_REQUIRED"
+      ]
+    },
+    "fault": {
+      "enum": [
+        "misfire",
+        "knock",
+        "injector_clog",
+        "valve_tick"
+      ]
+    },
+    "trained_label": {
+      "enum": [
+        "healthy",
+        "misfire",
+        "knock",
+        "injector_clog"
+      ]
+    },
+    "cylinder": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 1,
+      "maximum": 4
+    },
+    "unit_interval": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "number_array": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      }
+    }
+  },
+  "properties": {
+    "schema_version": {
+      "const": "1.4"
+    },
+    "sent_at": {
+      "type": "number",
+      "description": "unix seconds"
+    },
+    "units": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source": {
+      "enum": [
+        "simulated",
+        "injected",
+        "real"
+      ]
+    },
+    "audioset_pool": {
+      "enum": [
+        "P1",
+        "P2",
+        "P3",
+        null
+      ]
+    },
+    "engine_tag": {
+      "enum": [
+        "vetted_car",
+        null
+      ]
+    },
+    "mode": {
+      "enum": [
+        "live",
+        "replay"
+      ]
+    },
+    "t": {
+      "type": "number",
+      "description": "stream time, s"
+    },
+    "operating_point": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rpm",
+        "load_pct",
+        "regime"
+      ],
+      "properties": {
+        "rpm": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "null when unknown (real AudioSet clips)"
+        },
+        "load_pct": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 100
+        },
+        "regime": {
+          "type": "string"
+        }
+      }
+    },
+    "localisation": {
+      "enum": [
+        "cylinder",
+        "none"
+      ]
+    },
+    "features_summary": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "number"
+      }
+    },
+    "anomaly": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "score",
+        "threshold",
+        "per_location"
+      ],
+      "properties": {
+        "score": {
+          "type": "number"
+        },
+        "threshold": {
+          "type": "number"
+        },
+        "per_location": {
+          "$ref": "#/$defs/number_array"
+        }
+      }
+    },
+    "models": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "model",
+          "label",
+          "p"
+        ],
+        "properties": {
+          "model": {
+            "type": "string",
+            "description": "Baseline | SVM | ANN | CNN (| FusionCNN stretch)"
+          },
+          "label": {
+            "$ref": "#/$defs/trained_label"
+          },
+          "p": {
+            "$ref": "#/$defs/unit_interval"
+          }
+        }
+      }
+    },
+    "physics_rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "rule",
+          "fired",
+          "location",
+          "rule_basis"
+        ],
+        "properties": {
+          "rule": {
+            "$ref": "#/$defs/fault"
+          },
+          "fired": {
+            "type": "boolean"
+          },
+          "location": {
+            "$ref": "#/$defs/cylinder"
+          },
+          "rule_basis": {
+            "enum": [
+              "crank_angle",
+              "firing_event"
+            ]
+          }
+        }
+      }
+    },
+    "decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state",
+        "alarm_id",
+        "fault",
+        "location",
+        "severity",
+        "witnesses",
+        "consecutive_windows",
+        "latched",
+        "acked",
+        "acked_by",
+        "acked_at"
+      ],
+      "properties": {
+        "state": {
+          "enum": [
+            "ALARM",
+            "ADVISORY",
+            "UNCLASSIFIED",
+            "NORMAL"
+          ]
+        },
+        "alarm_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "fault": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/fault"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "location": {
+          "$ref": "#/$defs/cylinder"
+        },
+        "severity": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/unit_interval"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "witnesses": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "physics",
+              "classifier"
+            ]
+          }
+        },
+        "consecutive_windows": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "latched": {
+          "type": "boolean"
+        },
+        "acked": {
+          "type": "boolean"
+        },
+        "acked_by": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "acked_at": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "unix seconds"
+        }
+      },
+      "allOf": [
+        {
+          "description": "An alarm needs both witnesses for 2 consecutive windows.",
+          "if": {
+            "properties": {
+              "state": {
+                "const": "ALARM"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "alarm_id": {
+                "type": "string"
+              },
+              "witnesses": {
+                "minItems": 2
+              },
+              "consecutive_windows": {
+                "minimum": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    "health": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "asset_ne107",
+        "sensors"
+      ],
+      "properties": {
+        "asset_ne107": {
+          "$ref": "#/$defs/ne107"
+        },
+        "sensors": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/ne107"
+          }
+        }
+      }
+    },
+    "latency_ms": {
+      "type": "number",
+      "minimum": 0
+    },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "crank_deg",
+        "amplitude",
+        "baseline_amplitude"
+      ],
+      "properties": {
+        "crank_deg": {
+          "$ref": "#/$defs/number_array"
+        },
+        "amplitude": {
+          "$ref": "#/$defs/number_array"
+        },
+        "baseline_amplitude": {
+          "$ref": "#/$defs/number_array"
+        }
+      }
+    },
+    "injection": {
+      "description": "Injection console (live + simulated only). null when nothing is injected. severity is the REQUESTED value, not a measurement. Echoes the accepted POST /inject body.",
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "active",
+            "fault",
+            "cylinder",
+            "severity",
+            "started_at"
+          ],
+          "properties": {
+            "active": {
+              "const": true
+            },
+            "fault": {
+              "$ref": "#/$defs/fault"
+            },
+            "cylinder": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 4
+            },
+            "severity": {
+              "$ref": "#/$defs/unit_interval"
+            },
+            "started_at": {
+              "type": "number",
+              "description": "unix seconds"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "description": "Real clips: no localisation and no 720-degree fingerprint.",
+      "if": {
+        "properties": {
+          "source": {
+            "const": "real"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "localisation": {
+            "const": "none"
+          },
+          "signature": {
+            "properties": {
+              "crank_deg": {
+                "maxItems": 0
+              },
+              "amplitude": {
+                "maxItems": 0
+              },
+              "baseline_amplitude": {
+                "maxItems": 0
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}
