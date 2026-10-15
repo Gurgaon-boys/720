@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createTransport, usingMock } from './api/transport.js';
 import ScrollIntro from './intro/ScrollIntro.jsx';
 import Dashboard from './dashboard/Dashboard.jsx';
+import PanelBoundary from './dashboard/PanelBoundary.jsx';
 import { audioContext, createAlarmTone, createEnginePlayer } from './lib/audio.js';
 
 const OPERATOR = 'operator';
@@ -154,25 +155,31 @@ export default function App() {
 
   return (
     <>
-      <ScrollIntro state={state} onSkip={goToDashboard} />
+      {/* an intro crash must never block the dashboard below it */}
+      <PanelBoundary name="Intro">
+        <ScrollIntro state={state} onSkip={goToDashboard} />
+      </PanelBoundary>
       <div ref={dashRef}>
-        <Dashboard
-          state={state}
-          obd={obd}
-          signal={signal}
-          error={error}
-          scenarios={scenarios}
-          scenarioId={scenarioId}
-          onSelectScenario={selectScenario}
-          onAck={sendAck}
-          ackError={ackError}
-          offline={offline}
-          lastStateAt={lastStateAt}
-          sound={sound}
-          onToggleSound={toggleSound}
-          audioAvailable={audioAvailable}
-          mock={usingMock}
-        />
+        {/* last resort: anything outside the per-panel boundaries (e.g. the header text) */}
+        <PanelBoundary name="Dashboard" resetKey={state?.run_id}>
+          <Dashboard
+            state={state}
+            obd={obd}
+            signal={signal}
+            error={error}
+            scenarios={scenarios}
+            scenarioId={scenarioId}
+            onSelectScenario={selectScenario}
+            onAck={sendAck}
+            ackError={ackError}
+            offline={offline}
+            lastStateAt={lastStateAt}
+            sound={sound}
+            onToggleSound={toggleSound}
+            audioAvailable={audioAvailable}
+            mock={usingMock}
+          />
+        </PanelBoundary>
       </div>
     </>
   );

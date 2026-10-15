@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { fault } from '../lib/faults.js';
 import { FIRING_ORDER, SLOW_FACTOR, fireDeg, realCycleMs } from '../lib/geometry.js';
 import SourceBadge from './SourceBadge.jsx';
@@ -21,6 +21,10 @@ export default function CylinderBank({ state, offline }) {
   const active = decision.state === 'ALARM' || decision.state === 'ADVISORY';
   const f = fault(decision.fault);
 
+  // errors inside requestAnimationFrame are invisible to error boundaries: catch them, stop the
+  // loop, and re-throw on the next render so the panel's boundary shows them
+  const [loopError, setLoopError] = useState(null);
+  if (loopError) throw loopError;
   const pistons = useRef([]);
   const flashes = useRef([]);
   const live = useRef({});
@@ -34,21 +38,26 @@ export default function CylinderBank({ state, offline }) {
     let last = performance.now();
     let raf = 0;
     const frame = (now) => {
-      const { rpm, decision: d, offline: frozen } = live.current;
-      if (!still && !frozen && rpm) crank = (crank + ((now - last) / 1000) * ((rpm / 60) * 360) / SLOW_FACTOR) % 720;
-      last = now;
-      for (let cyl = 1; cyl <= N; cyl++) {
-        const rel = (crank - fireDeg(cyl) + 720) % 720; // crank degrees since this cylinder fired
-        const p = pistons.current[cyl];
-        if (p) p.style.transform = `translateY(${((1 - Math.cos((rel * Math.PI) / 180)) / 2) * STROKE_PX}px)`;
-        const fl = flashes.current[cyl];
-        if (fl) {
-          const alarmHere = d.state === 'ALARM' && d.location === cyl;
-          const span = alarmHere && d.fault === 'knock' ? KNOCK_DEG : FLASH_DEG;
-          // misfire: no combustion, no flash
-          const o = alarmHere && d.fault === 'misfire' ? 0 : Math.max(0, 1 - rel / span);
-          fl.style.opacity = still ? 0 : o.toFixed(3);
+      try {
+        const { rpm, decision: d, offline: frozen } = live.current;
+        if (!still && !frozen && rpm) crank = (crank + ((now - last) / 1000) * ((rpm / 60) * 360) / SLOW_FACTOR) % 720;
+        last = now;
+        for (let cyl = 1; cyl <= N; cyl++) {
+          const rel = (crank - fireDeg(cyl) + 720) % 720; // crank degrees since this cylinder fired
+          const p = pistons.current[cyl];
+          if (p) p.style.transform = `translateY(${((1 - Math.cos((rel * Math.PI) / 180)) / 2) * STROKE_PX}px)`;
+          const fl = flashes.current[cyl];
+          if (fl) {
+            const alarmHere = d.state === 'ALARM' && d.location === cyl;
+            const span = alarmHere && d.fault === 'knock' ? KNOCK_DEG : FLASH_DEG;
+            // misfire: no combustion, no flash
+            const o = alarmHere && d.fault === 'misfire' ? 0 : Math.max(0, 1 - rel / span);
+            fl.style.opacity = still ? 0 : o.toFixed(3);
+          }
         }
+      } catch (e) {
+        setLoopError(e);
+        return; // stop the loop
       }
       raf = requestAnimationFrame(frame);
     };
