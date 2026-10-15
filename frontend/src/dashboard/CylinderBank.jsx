@@ -33,7 +33,7 @@ export default function CylinderBank({ state }) {
     let raf = 0;
     const frame = (now) => {
       const { rpm, decision: d } = live.current;
-      if (!still) crank = (crank + ((now - last) / 1000) * ((rpm / 60) * 360) / SLOW_FACTOR) % 720;
+      if (!still && rpm) crank = (crank + ((now - last) / 1000) * ((rpm / 60) * 360) / SLOW_FACTOR) % 720;
       last = now;
       for (let cyl = 1; cyl <= N; cyl++) {
         const rel = (crank - fireDeg(cyl) + 720) % 720; // crank degrees since this cylinder fired
@@ -55,13 +55,14 @@ export default function CylinderBank({ state }) {
   }, [geometry]);
 
   const tiles = [
-    { label: 'Engine speed', value: op.rpm.toLocaleString(), unit: 'rpm' },
-    { label: 'Load', value: op.load_pct, unit: '%' },
+    // schema 1.3: rpm and load_pct are null when unknown (real AudioSet clips skip order tracking)
+    { label: 'Engine speed', value: op.rpm == null ? '—' : op.rpm.toLocaleString(), unit: op.rpm == null ? '' : 'rpm' },
+    { label: 'Load', value: op.load_pct ?? '—', unit: op.load_pct == null ? '' : '%' },
     { label: 'Regime', value: op.regime, unit: '' },
     { label: 'Run time', value: state.t.toFixed(1), unit: 's' },
   ];
   // round rpm to 50 so the label doesn't flicker with ±1 % jitter
-  const cycleMs = Math.round(realCycleMs(Math.round(op.rpm / 50) * 50));
+  const cycleMs = op.rpm ? Math.round(realCycleMs(Math.round(op.rpm / 50) * 50)) : null;
 
   return (
     <section className="panel bank">

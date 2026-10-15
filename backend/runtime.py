@@ -66,7 +66,9 @@ class Runtime:
         if name not in SCENARIOS:
             raise KeyError(name)
         self.scenario = SCENARIOS[name]
-        self.rules = RuleLayer()
+        # alarm ids keep counting across switches, so an id is never reused while the server runs
+        old = getattr(self, "rules", None)
+        self.rules = RuleLayer(first_alarm_id=old.next_alarm_id if old else 1)
         self.watchdog = Watchdog(self.scenario.sensors, self.clock())
         self.last_window = None
         self.last_state = None

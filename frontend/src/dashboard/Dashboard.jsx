@@ -10,13 +10,14 @@ import SourceBadge from './SourceBadge.jsx';
 import HealthChips from './HealthChips.jsx';
 import AlarmBanner from './AlarmBanner.jsx';
 import SoundControls from './SoundControls.jsx';
+import OfflineBanner from './OfflineBanner.jsx';
 import './dashboard.css';
 
-export default function Dashboard({ state, obd, signal, error, scenarios, scenarioId, onSelectScenario, onAck, sound, onToggleSound, audioAvailable, mock }) {
+export default function Dashboard({ state, obd, signal, error, scenarios, scenarioId, onSelectScenario, onAck, ackError, offline, lastStateAt, sound, onToggleSound, audioAvailable, mock }) {
   const color = decisionColor(state?.decision);
 
   return (
-    <section className="dash" style={{ '--accent': color }} aria-label="Diagnostics">
+    <section className={`dash${offline ? ' offline' : ''}`} style={{ '--accent': color }} aria-label="Diagnostics">
       <header className="dash-head">
         <div className="dash-title">
           <div className="dash-dot"><i /></div>
@@ -34,9 +35,9 @@ export default function Dashboard({ state, obd, signal, error, scenarios, scenar
           {state && <HealthChips health={state.health} />}
           {state && <SoundControls sound={sound} onToggle={onToggleSound} audioAvailable={audioAvailable} source={state.source} />}
         </div>
-        {mock && (
+        {scenarios.length > 0 && (
           <div className="dash-runs">
-            <span className="dash-runs-label">Demo scenario</span>
+            <span className="dash-runs-label">{mock ? 'Demo scenario' : 'Backend scenario (L0, fake)'}</span>
             {scenarios.map((s) => {
               const on = s.id === scenarioId;
               return (
@@ -45,6 +46,7 @@ export default function Dashboard({ state, obd, signal, error, scenarios, scenar
                   type="button"
                   className={`run-pill${on ? ' on' : ''}`}
                   aria-pressed={on}
+                  title={s.description}
                   onClick={() => onSelectScenario(s.id)}
                 >
                   {s.name}
@@ -55,10 +57,11 @@ export default function Dashboard({ state, obd, signal, error, scenarios, scenar
         )}
       </header>
 
-      {state && <AlarmBanner key={state.run_id} state={state} onAck={onAck} />}
+      {offline && <OfflineBanner lastStateAt={lastStateAt} />}
+      {state && <AlarmBanner key={state.run_id} state={state} onAck={onAck} ackError={ackError} offline={offline} />}
 
       {error && <div className="dash-error" role="alert">{error}</div>}
-      {!state && !error && <div className="dash-loading">Waiting for the first state message…</div>}
+      {!state && !error && !offline && <div className="dash-loading">Waiting for the first state message…</div>}
 
       {state && (
         <>

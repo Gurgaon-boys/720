@@ -164,3 +164,14 @@ def test_backend_watchdog_flags_stalled_mic():
     r.advance(2)  # mic is back at 11 s
     assert r.states[-1]["health"]["sensors"]["mic"] == "NORMAL"
     assert not any(decode_frame(b)[0]["channel"] == "mic" and 3.0 <= decode_frame(b)[0]["t0"] < 11.0 for b in r.out["signal"])
+
+
+def test_alarm_ids_never_repeat_across_scenario_switches():
+    r = Run("misfire").advance(3)
+    assert r.states[-1]["decision"]["alarm_id"] == "a_0001"
+    r.rt.select("knock")
+    r.t = 0.0
+    r.advance(3)
+    assert r.states[-1]["decision"]["alarm_id"] == "a_0002"
+    assert r.rt.handle_ack(json.dumps({"schema_version": "1.3", "type": "ack", "alarm_id": "a_0001",
+                                       "operator": "judge", "sent_at": 1.0}))["reason"] == "unknown_alarm_id"

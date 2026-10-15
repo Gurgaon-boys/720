@@ -189,7 +189,7 @@ export default function ScrollIntro({ state, onSkip }) {
               {d.state === 'UNCLASSIFIED' ? 'UNCLASSIFIED' : `${d.state === 'ADVISORY' ? 'WATCH · ' : ''}${f.short}`}
               {summary.cylinder ? ` · CYL ${summary.cylinder}` : ''}
             </strong>
-            <span className="mono">{state.operating_point.rpm.toLocaleString()} rpm · load {state.operating_point.load_pct}% · {state.source.toUpperCase()}</span>
+            <span className="mono">{state.operating_point.rpm == null ? 'rpm unknown' : `${state.operating_point.rpm.toLocaleString()} rpm`} · load {state.operating_point.load_pct == null ? '—' : `${state.operating_point.load_pct}%`} · {state.source.toUpperCase()}</span>
           </div>
         )}
         {state && hints.length > 0 && (

@@ -1,12 +1,12 @@
 // One place for fault names and colours so every screen agrees.
-// Fault labels follow schema 1.3: healthy | misfire | knock | injector | valve.
+// Fault labels follow schema 1.3: healthy | misfire | knock | injector_clog | valve_tick.
 export const FAULTS = {
   // ISA-101: normal is grey, never green
   healthy: { name: 'Healthy', short: 'OK', color: '#8e9aab', title: () => 'Running clean', sub: 'All cylinders firing evenly' },
   misfire: { name: 'Misfire', short: 'NO FIRE', color: '#ffa94d', title: (c) => (c ? `Misfire · Cyl ${c}` : 'Misfire'), sub: 'Combustion missing on one cylinder' },
   knock: { name: 'Knock', short: 'KNOCK', color: '#ff5a6e', title: (c) => (c ? `Knock · Cyl ${c}` : 'Knock'), sub: 'Pressure ringing just after top dead centre' },
-  injector: { name: 'Injector clog', short: 'CLOG', color: '#f783ac', title: (c) => (c ? `Injector clog · Cyl ${c}` : 'Injector clog'), sub: 'Less fuel delivered; the ECU trims to compensate' },
-  valve: { name: 'Valve tick', short: 'TICK', color: '#b197fc', title: (c) => (c ? `Valve-train · Cyl ${c}` : 'Valve-train wear'), sub: 'Extra impacts at valve-closing angles' },
+  injector_clog: { name: 'Injector clog', short: 'CLOG', color: '#f783ac', title: (c) => (c ? `Injector clog · Cyl ${c}` : 'Injector clog'), sub: 'Less fuel delivered; the ECU trims to compensate' },
+  valve_tick: { name: 'Valve tick', short: 'TICK', color: '#b197fc', title: (c) => (c ? `Valve-train · Cyl ${c}` : 'Valve-train wear'), sub: 'Extra impacts at valve-closing angles' },
 };
 
 export function fault(label) {

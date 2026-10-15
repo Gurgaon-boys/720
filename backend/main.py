@@ -38,7 +38,8 @@ def create_app(scenario: str | None = None, validate: bool | None = None) -> Fas
 
     app = FastAPI(title="720 backend", version="L0", lifespan=lifespan)
     app.state.runtime = runtime
-    app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    # the Vite dev server on any local port (5173 by default) may call the HTTP helpers
+    app.add_middleware(CORSMiddleware, allow_origin_regex=r"http://(localhost|127\.0\.0\.1)(:\d+)?",
                        allow_methods=["*"], allow_headers=["*"])
 
     @app.get("/health")

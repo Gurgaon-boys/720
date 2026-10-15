@@ -114,12 +114,12 @@ def assess(ev: Evidence) -> Assessment:
 
 
 class RuleLayer:
-    def __init__(self) -> None:
+    def __init__(self, first_alarm_id: int = 1) -> None:
         self.alarm: ActiveAlarm | None = None
         self._streak_fault: str | None = None
         self._streak_n = 0
         self._healthy_n = 0
-        self._next_id = 1
+        self._next_id = first_alarm_id
         self._cleared_ids: set[str] = set()
         self._last = Assessment("healthy")
         self._last_severity: float | None = None
@@ -147,6 +147,10 @@ class RuleLayer:
             self.alarm = None
 
         return self.decision()
+
+    @property
+    def next_alarm_id(self) -> int:
+        return self._next_id
 
     def ack(self, alarm_id: str, operator: str, now: float) -> AckResult:
         """Mark the active alarm acknowledged. Never clears it and never touches anything else."""

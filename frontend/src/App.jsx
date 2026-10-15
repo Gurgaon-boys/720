@@ -6,6 +6,8 @@ import { audioContext, createAlarmTone, createEnginePlayer } from './lib/audio.j
 
 const OPERATOR = 'operator';
 const OBD_KEEP = 60; // samples per channel (~60 s at 1 Hz)
+const OFFLINE_MS = 3000; // UI watchdog: no `state` for 3 s → diagnostics offline (contract rule 4)
+const WATCHDOG_TICK_MS = 250;
 
 // obd messages carry new samples; keep a short history per channel
 function appendObd(prev, msg) {
@@ -35,6 +37,11 @@ export default function App() {
   const [obd, setObd] = useState({});
   const [signal, setSignal] = useState({});
   const [error, setError] = useState(null);
+  const [ackError, setAckError] = useState(null);
+  const [offline, setOffline] = useState(false);
+  const [lastStateAt, setLastStateAt] = useState(null);
+  const lastStateRef = useRef(performance.now()); // counts from mount, so a dead backend also trips it
+  const runIdRef = useRef(null);
   const [sound, setSound] = useState({ engine: false, alarm: false });
   const [audioAvailable, setAudioAvailable] = useState(false);
   const playerRef = useRef(null);
@@ -55,9 +62,29 @@ export default function App() {
     if (transport.mock) {
       setScenarios(transport.listScenarios());
       setScenarioId(transport.scenarioId);
+    } else {
+      // backend L0 fake scenarios; harmless if the backend doesn't offer them
+      transport.listScenarios()
+        .then((list) => { setScenarios(list); setScenarioId(transport.scenarioId); })
+        .catch(() => {});
     }
     const offs = [
-      transport.subscribe('state', setState),
+      transport.subscribe('state', (msg) => {
+        lastStateRef.current = performance.now();
+        // a new run: drop OBD/signal buffers, including frames from the old run that arrived late
+        if (msg.run_id !== runIdRef.current) {
+          if (runIdRef.current != null) {
+            setObd({});
+            setSignal({});
+          }
+          runIdRef.current = msg.run_id;
+        }
+        setState(msg);
+      }),
+      transport.subscribe('ack_error', (msg) => {
+        console.warn('[720] ACK rejected', msg);
+        setAckError({ ...msg, receivedAt: Date.now() });
+      }),
       transport.subscribe('obd', (m) => setObd((p) => appendObd(p, m))),
       transport.subscribe('signal', (f) => {
         // audio goes straight to the player, not through React state
@@ -76,13 +103,24 @@ export default function App() {
     };
   }, []);
 
+  // UI watchdog. Sensor-health layer: it never touches the decision, it only says the decision is stale.
+  useEffect(() => {
+    const id = setInterval(() => {
+      const stale = performance.now() - lastStateRef.current > OFFLINE_MS;
+      setOffline(stale);
+      setLastStateAt(lastStateRef.current);
+    }, WATCHDOG_TICK_MS);
+    return () => clearInterval(id);
+  }, []);
+
   const selectScenario = useCallback((id) => {
     // clear buffers so the new run doesn't mix with the old one
     setObd({});
     setSignal({});
     setAudioAvailable(false);
+    setAckError(null);
     setScenarioId(id);
-    transportRef.current?.setScenario(id);
+    Promise.resolve(transportRef.current?.setScenario(id)).catch((e) => setError(e.message));
   }, []);
 
   const sendAck = useCallback((alarmId) => {
@@ -127,6 +165,9 @@ export default function App() {
           scenarioId={scenarioId}
           onSelectScenario={selectScenario}
           onAck={sendAck}
+          ackError={ackError}
+          offline={offline}
+          lastStateAt={lastStateAt}
           sound={sound}
           onToggleSound={toggleSound}
           audioAvailable={audioAvailable}
