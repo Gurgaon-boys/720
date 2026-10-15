@@ -313,6 +313,11 @@ class OpcuaBridge:
     async def _apply_state(self, m: dict) -> None:
         self._last_state_mono = time.monotonic()
         d, h, op = m["decision"], m["health"], m["operating_point"]
+        if self._prev is not None and self._prev["run_id"] != m["run_id"]:
+            # a new run: OBD values from the old one stay visible but not as current data, until
+            # this run sends its own (a real AudioSet clip has no OBD at all)
+            for key in [k for k in self._vars if k.startswith("obd.") and not k.endswith(".source")]:
+                await self._not_connected(key)
         num = lambda x: math.nan if x is None else float(x)  # noqa: E731
 
         await self._set("run_id", m["run_id"])

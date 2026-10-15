@@ -329,8 +329,15 @@ def test_real_clip_sensors_and_nulls():
                 assert dv.StatusCode.value == ua.StatusCodes.BadNotConnected
             r.runtime.select("healthy")  # back on a recording that has them
             await wait_for(lambda: _ok(r.read("EngineAsset.Source"), lambda v: v == "SIMULATED"), timeout=3)
-            await asyncio.sleep(0.3)
+            await asyncio.sleep(1.3)  # OBD is 1 Hz
             assert (await r.node("EngineAsset.SensorHealth.accel").read_data_value()).StatusCode.is_good()
+            assert (await r.node("EngineAsset.Obd.rpm").read_data_value()).StatusCode.is_good()
+
+            r.runtime.select("real_p3")  # simulated -> real: the old run's OBD values must not stay current
+            await wait_for(lambda: _ok(r.read("EngineAsset.Source"), lambda v: v == "REAL"), timeout=3)
+            await asyncio.sleep(1.3)
+            dv = await r.node("EngineAsset.Obd.rpm").read_data_value(raise_on_bad_status=False)
+            assert dv.StatusCode.value == ua.StatusCodes.BadNotConnected
     run(go())
 
 
