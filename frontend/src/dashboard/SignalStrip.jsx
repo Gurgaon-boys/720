@@ -231,8 +231,16 @@ function drawSpec(cv, st, still) {
   });
 }
 
-export default function SignalStrip({ signal, source }) {
+// a plot whose stream has gone quiet: dimmed, with how long since its last frame
+const staleCaption = (s) => (s != null ? <span className="stale-note-inline"> · no data for {s} s, showing last frames</span> : null);
+const plotClass = (s) => `plot${s != null ? ' stale' : ''}`;
+
+// sensors: state.health.sensors (which sensors this recording has)
+// silentFor: { mic, accel, stft } seconds since that stream's last frame, past the stale limit (else null)
+export default function SignalStrip({ signal, source, sensors, silentFor }) {
   const { mic, accel, stft } = signal;
+  const hasMic = 'mic' in sensors;
+  const hasAccel = 'accel' in sensors;
   const micRef = useRef(null);
   const accelRef = useRef(null);
   const specRef = useRef(null);
@@ -283,26 +291,30 @@ export default function SignalStrip({ signal, source }) {
         </div>
         {mic && <span className="mono strip-note">display rate {mic.sample_rate_hz / 1000} kHz (server-downsampled)</span>}
       </div>
-      {!mic && !stft && <p className="panel-note">Waiting for signal…</p>}
+      {!mic && !stft && (
+        <p className="panel-note">{hasMic || hasAccel ? 'Waiting for signal…' : 'No signal sensors on this recording.'}</p>
+      )}
       {mic && (
-        <figure className="plot">
-          <figcaption className="eyebrow">Mic · amplitude (a.u.)</figcaption>
+        <figure className={plotClass(silentFor.mic)}>
+          <figcaption className="eyebrow">Mic · amplitude (a.u.){staleCaption(silentFor.mic)}</figcaption>
           <canvas ref={micRef} className="plot-wave" role="img" aria-label="Microphone waveform, last second" />
         </figure>
       )}
       {mic && (accel ? (
-        <figure className="plot">
-          <figcaption className="eyebrow">Accelerometer · amplitude (a.u.)</figcaption>
+        <figure className={plotClass(silentFor.accel)}>
+          <figcaption className="eyebrow">Accelerometer · amplitude (a.u.){staleCaption(silentFor.accel)}</figcaption>
           <canvas ref={accelRef} className="plot-wave" role="img" aria-label="Accelerometer waveform, last second" />
         </figure>
       ) : (
-        <p className="panel-note">No accelerometer on this recording (audio only).</p>
+        <p className="panel-note">{hasAccel ? 'Waiting for accelerometer…' : 'No accelerometer on this recording (audio only).'}</p>
       ))}
-      {stft && (
-        <figure className="plot">
-          <figcaption className="eyebrow">Mic STFT · frequency (kHz) · level (dB) · hop {stft.dt_s * 1000} ms</figcaption>
+      {stft ? (
+        <figure className={plotClass(silentFor.stft)}>
+          <figcaption className="eyebrow">Mic STFT · frequency (kHz) · level (dB) · hop {stft.dt_s * 1000} ms{staleCaption(silentFor.stft)}</figcaption>
           <canvas ref={specRef} className="plot-spec" role="img" aria-label="Mic spectrogram, last 2.4 seconds" />
         </figure>
+      ) : (
+        mic && <p className="panel-note">Waiting for spectrogram…</p>
       )}
     </section>
   );

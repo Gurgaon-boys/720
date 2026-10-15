@@ -95,13 +95,15 @@ function Cell({ name, ch }) {
 }
 
 // hasObd: the state's health.sensors lists an OBD sensor; if not, this recording has no OBD at all
-export default function ObdPanel({ obd, source, hasObd }) {
+// silentFor: seconds since the last obd message, once it passes the stale limit (else null)
+export default function ObdPanel({ obd, source, hasObd, silentFor }) {
   const channels = Object.entries(obd);
   const separateRecording = source === 'real' && channels.some(([, ch]) => ch.source === 'real_carobd');
 
   return (
-    <section className="panel obd">
+    <section className={`panel obd${silentFor != null ? ' stale' : ''}`}>
       <h2 className="panel-label">OBD · TRUE RATE</h2>
+      {silentFor != null && <p className="stale-note mono" role="status">No OBD data for {silentFor} s · showing last values</p>}
       {separateRecording && (
         <p className="panel-note">Separate carOBD recording, not the same vehicle as the audio clip.</p>
       )}

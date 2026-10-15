@@ -216,6 +216,31 @@ details summary { cursor: pointer; }
 .dash.offline .dash-grid, .dash.offline .strip { opacity: 0.45; filter: grayscale(1); }
 .dash.offline *, .dash.offline *::before, .dash.offline *::after { animation-play-state: paused !important; }
 .ack-error { flex-basis: 100%; margin: 0; font-size: 12px; color: #ffd43b; }
+.banner-offline .banner-meta { flex-basis: 100%; }
+
+/* panel data notices: one stream went quiet while the rest still flows. Grey, not an alarm or
+   sensor-health colour: it says "old data", nothing about the engine or the sensor */
+.stale-note { margin: 0; font-size: 12px; color: var(--text); border: 1px dashed var(--muted); border-radius: 6px; padding: 6px 10px; }
+.stale-note-inline { color: var(--text); text-transform: none; letter-spacing: normal; }
+.obd.stale > :not(.panel-label):not(.stale-note), .plot.stale canvas { opacity: 0.4; filter: grayscale(1); }
+
+/* injection console (task 7): grey like the rest; the SIMULATED tag says what it is */
+.inject { display: flex; flex-direction: column; gap: 12px; }
+.inject-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; }
+.inject-sub { font-size: 12px; color: var(--muted); }
+.inject-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 14px 22px; }
+.inject-form.disabled { opacity: 0.5; }
+.inject-group { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0; padding: 0; border: 0; min-width: 0; }
+.inject-group legend { padding: 0; margin-bottom: 6px; }
+.inject-group input[type="range"] { width: 160px; accent-color: var(--text-2); }
+.inject-sev { font-size: 13px; color: var(--text); min-width: 3ch; }
+.inject .ack-btn:disabled { cursor: not-allowed; }
+.inject-status { margin: 0; font-size: 13px; color: var(--text); border: 1px dashed var(--muted); border-radius: 6px; padding: 8px 12px; }
+.inject-status strong { letter-spacing: 0.12em; margin-right: 6px; }
+.inject-error { margin: 0; font-size: 13px; color: var(--text); border-left: 3px solid #ff5a6e; padding-left: 10px; }
+
+/* scenario list / switch failures: shown where the scenario pills are, until a switch succeeds */
+.scenario-error { flex-basis: 100%; margin: 0; font-size: 12px; color: var(--text); border-left: 3px solid #ff5a6e; padding-left: 10px; }
 
 /* error boundaries: a crashed panel keeps its slot and says why (NE 107 FAILURE red edge) */
 .panel-crash { border: 2px solid #ff5a6e; border-left-width: 8px; display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }

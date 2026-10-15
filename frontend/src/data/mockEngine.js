@@ -4,7 +4,9 @@
 
 import { FIRING_ORDER } from '../lib/geometry.js';
 
-export const SCHEMA_VERSION = '1.3';
+// The mock speaks the PROPOSED 1.4 (1.3 + state.injection, docs/DATA_CONTRACT.md), so the
+// injection console can be demonstrated; the dashboard accepts both 1.3 and 1.4.
+export const SCHEMA_VERSION = '1.4';
 
 const UNITS = { t: 's', sent_at: 'unix s', rpm: 'rev/min', load_pct: '%', latency_ms: 'ms', severity: '0-1', crank_deg: 'deg' };
 const FIRE_DEG = [0, 180, 360, 540]; // crank angle where each cylinder in firing order fires
@@ -21,18 +23,25 @@ const round = (v, d = 2) => +v.toFixed(d);
 const now = () => Date.now() / 1000;
 
 // ---------- signal shapes (one 720° cycle), reused from the v1 mock ----------
-// `shape` is the physical picture: healthy | misfire | knock | valve | injector | advisory.
+// `sig` is the physical picture: { shape, loc }, shape = healthy | misfire | knock | valve |
+// injector | advisory, loc = the affected cylinder (ignored for healthy).
+
+// index of a cylinder in the firing order (its firing slot)
+const slot = (cyl) => FIRING_ORDER.indexOf(cyl);
 
 // relative combustion strength per cylinder for each shape
-function combustion(shape, cyl) {
-  if (shape === 'misfire' && cyl === 3) return 0.03;
-  if (shape === 'valve' && cyl === 2) return 0.6;
-  if (shape === 'injector' && cyl === 2) return 0.55;
-  if (shape === 'advisory' && cyl === 2) return 0.45;
+function combustion({ shape, loc }, cyl) {
+  if (cyl !== loc) return 0.7;
+  if (shape === 'misfire') return 0.03;
+  if (shape === 'valve') return 0.6;
+  if (shape === 'injector') return 0.55;
+  if (shape === 'advisory') return 0.45;
   return 0.7;
 }
 
-function signatureFor(shape) {
+function signatureFor(sig) {
+  const { shape, loc } = sig;
+  const fireAt = FIRE_DEG[slot(loc)] ?? 0; // where the affected cylinder fires
   const crank = [];
   const amp = [];
   const base = [];
@@ -43,16 +52,18 @@ function signatureFor(shape) {
       const cyl = FIRING_ORDER[i];
       const g = Math.exp(-((wrapDist(th, deg) / 32) ** 2));
       healthy += 0.7 * g;
-      cur += combustion(shape, cyl) * g;
+      cur += combustion(sig, cyl) * g;
       if (shape === 'valve') {
         const gv = Math.exp(-((wrapDist(th, (deg + 120) % 720) / 8) ** 2));
-        cur += (cyl === 2 ? 0.34 : 0.1) * gv;
+        cur += (cyl === loc ? 0.34 : 0.1) * gv;
       }
     });
-    if (shape === 'knock' && th > 182 && th < 330) {
-      cur += 0.17 * Math.sin((th - 182) * 0.6) * Math.exp(-(th - 182) / 50);
+    // knock: ringing just after the affected cylinder fires
+    const sinceFire = (th - fireAt - 2 + 720) % 720;
+    if (shape === 'knock' && sinceFire > 0 && sinceFire < 148) {
+      cur += 0.17 * Math.sin(sinceFire * 0.6) * Math.exp(-sinceFire / 50);
     }
-    if (shape === 'misfire') cur -= 0.13 * Math.exp(-(((th - 180) / 22) ** 2));
+    if (shape === 'misfire') cur -= 0.13 * Math.exp(-((wrapDist(th, fireAt) / 22) ** 2));
     crank.push(th);
     amp.push(+cur.toFixed(4));
     base.push(+healthy.toFixed(4));
@@ -73,26 +84,27 @@ function hash01(a, b) {
 const cycleGain = (cycle, cyl) => 1 + 0.16 * (hash01(cycle, cyl) - 0.5);
 
 // one sample at absolute crank angle `deg` (0 → ∞); `u` below is in the old 600-steps-per-cycle units
-function waveSample(shape, deg, gain) {
+function waveSample(sig, deg, gain) {
+  const { shape, loc } = sig;
   const cycle = Math.floor(deg / 720);
   const u = (deg % 720) / 1.2;
   let y = 0;
   for (let j = 0; j < 4; j++) {
     const d = u - (j * 150 + 20);
     if (d >= 0 && d < 100) {
-      const a = (combustion(shape, FIRING_ORDER[j]) / 0.7) * 0.55 * cycleGain(cycle, j);
+      const a = (combustion(sig, FIRING_ORDER[j]) / 0.7) * 0.55 * cycleGain(cycle, j);
       y += a * Math.exp(-d / 22) * Math.sin(d * 0.35);
     }
   }
   if (shape === 'knock') {
-    const d = u - 172;
+    const d = u - (slot(loc) * 150 + 22);
     // knock is intermittent: not every cycle
     if (d >= 0 && d < 70 && hash01(cycle, 99) < 0.75) y += 0.42 * cycleGain(cycle, 7) * Math.exp(-d / 18) * Math.sin(d * 2.2);
   }
   if (shape === 'valve') {
     for (let q = 0; q < 4; q++) {
       const d = u - (q * 150 + 95);
-      if (d >= 0 && d < 14) y += (q === 3 ? 0.4 : 0.16) * Math.exp(-d / 4) * Math.sin(d * 1.8);
+      if (d >= 0 && d < 14) y += (q === slot(loc) ? 0.4 : 0.16) * Math.exp(-d / 4) * Math.sin(d * 1.8);
     }
   }
   y += (Math.random() - 0.5) * 0.1;
@@ -107,16 +119,17 @@ const STFT_FREQS = Array.from({ length: STFT_BINS }, (_, i) => Math.round((i / (
 
 const degAt = (rpm, t) => t * (rpm / 60) * 360; // absolute crank angle at time t
 
-function waveFrame(shape, rpm, t0, gain) {
+function waveFrame(sig, rpm, t0, gain) {
   const n = Math.round(FRAME_S * SIGNAL_FS);
-  return Array.from({ length: n }, (_, i) => waveSample(shape, degAt(rpm, t0 + i / SIGNAL_FS), gain));
+  return Array.from({ length: n }, (_, i) => waveSample(sig, degAt(rpm, t0 + i / SIGNAL_FS), gain));
 }
 
 // STFT analysis window: longer than the hop and tapered (Hann), like a real STFT, so energy
 // is smooth between firings and only a real change (e.g. a missing firing) shows as ripple.
 const STFT_WIN = 0.064;
 
-function stftColumn(shape, rpm, t) {
+function stftColumn(sig, rpm, t) {
+  const { shape, loc } = sig;
   const degPerS = (rpm / 60) * 360;
   const firingsPerS = (degPerS / 720) * 4;
   const tc = t + STFT_DT / 2;
@@ -130,9 +143,9 @@ function stftColumn(shape, rpm, t) {
     for (let k = Math.ceil((degAt(rpm, tA) - deg) / 720); (deg + 720 * k) / degPerS < tB; k++) {
       const te = (deg + 720 * k) / degPerS;
       const w = 0.5 - 0.5 * Math.cos((2 * Math.PI * (te - tA)) / STFT_WIN); // Hann weight
-      burn += w * (combustion(shape, cyl) / 0.7) * cycleGain(k, j);
-      if (shape === 'knock' && cyl === 3 && hash01(k, 99) < 0.75) knock += w;
-      if (shape === 'valve') click += w * (cyl === 2 ? 0.35 : 0.12);
+      burn += w * (combustion(sig, cyl) / 0.7) * cycleGain(k, j);
+      if (shape === 'knock' && cyl === loc && hash01(k, 99) < 0.75) knock += w;
+      if (shape === 'valve') click += w * (cyl === loc ? 0.35 : 0.12);
     }
   });
   // normalise: a healthy engine averages ~1 regardless of rpm
@@ -153,11 +166,12 @@ function stftColumn(shape, rpm, t) {
 
 // ---------- audio (PROVISIONAL `mic_audio` channel, see buildSignal) ----------
 // A simple sound model consistent with the spectrogram: a low thump per firing (missing on a
-// misfire), 6.6 kHz ringing after cyl 3 on knock (~5.8–7.6 kHz band), sharp clicks for valve tick,
-// over a hum at the firing frequency. Mock only: it is not a recording of anything.
+// misfire), 6.6 kHz ringing after the knocking cylinder (~5.8–7.6 kHz band), sharp clicks for
+// valve tick, over a hum at the firing frequency. Mock only: it is not a recording of anything.
 const AUDIO_FS = 16000; // ≥ 2 × the 7.6 kHz knock band, so knock is audible
 
-function audioSample(shape, rpm, t) {
+function audioSample(sig, rpm, t) {
+  const { shape, loc } = sig;
   const degPerS = (rpm / 60) * 360;
   const D = t * degPerS;
   const fFire = (degPerS / 720) * 4;
@@ -166,29 +180,29 @@ function audioSample(shape, rpm, t) {
     const cyl = FIRING_ORDER[j];
     const k = Math.floor((D - deg) / 720); // cycle of this cylinder's latest firing
     const tau = (D - (deg + 720 * k)) / degPerS; // seconds since that firing
-    const a = (combustion(shape, cyl) / 0.7) * cycleGain(k, j);
+    const a = (combustion(sig, cyl) / 0.7) * cycleGain(k, j);
     if (tau < 0.06) {
       const env = Math.exp(-tau / 0.01);
       y += 0.32 * a * env * (0.7 * Math.sin(2 * Math.PI * 95 * tau) + 0.3 * (Math.random() - 0.5));
     }
-    if (shape === 'knock' && cyl === 3 && hash01(k, 99) < 0.75) {
+    if (shape === 'knock' && cyl === loc && hash01(k, 99) < 0.75) {
       const tk = tau - 0.0015;
       if (tk > 0 && tk < 0.03) y += 0.22 * Math.exp(-tk / 0.004) * Math.sin(2 * Math.PI * 6600 * tk);
     }
     if (shape === 'valve') {
       const kv = Math.floor((D - deg - 120) / 720);
       const tv = (D - (deg + 120 + 720 * kv)) / degPerS;
-      if (tv < 0.004) y += (cyl === 2 ? 0.45 : 0.15) * Math.exp(-tv / 0.0006) * (Math.random() - 0.5) * 2;
+      if (tv < 0.004) y += (cyl === loc ? 0.45 : 0.15) * Math.exp(-tv / 0.0006) * (Math.random() - 0.5) * 2;
     }
   });
   y += 0.012 * (Math.random() - 0.5);
   return Math.max(-1, Math.min(1, y));
 }
 
-function audioFrame(shape, rpm, t0) {
+function audioFrame(sig, rpm, t0) {
   const n = Math.round(FRAME_S * AUDIO_FS);
   const out = new Float32Array(n);
-  for (let i = 0; i < n; i++) out[i] = audioSample(shape, rpm, t0 + i / AUDIO_FS);
+  for (let i = 0; i < n; i++) out[i] = audioSample(sig, rpm, t0 + i / AUDIO_FS);
   return out;
 }
 
@@ -239,7 +253,7 @@ const SCENARIO_DEFS = [
     obd: { source: 'simulator', rpm: 2200, load_pct: 34, coolant_c: 91, stft_pct: 1.1 },
   },
   {
-    id: 'misfire', name: 'Misfire', shape: 'misfire',
+    id: 'misfire', name: 'Misfire', shape: 'misfire', loc: 3,
     source: 'simulated', mode: 'live', localisation: 'cylinder',
     op: { rpm: 1620, load_pct: 28, regime: 'cruise' },
     features: { half_order_ratio: 3.1, knock_band_ratio: 1.0, cam_env_peak: 0.2 },
@@ -251,7 +265,7 @@ const SCENARIO_DEFS = [
     obd: { source: 'simulator', rpm: 1620, load_pct: 28, coolant_c: 89, stft_pct: 1.4 },
   },
   {
-    id: 'knock', name: 'Knock', shape: 'knock',
+    id: 'knock', name: 'Knock', shape: 'knock', loc: 3,
     source: 'simulated', mode: 'live', localisation: 'cylinder',
     op: { rpm: 3240, load_pct: 72, regime: 'high_load' },
     features: { half_order_ratio: 1.2, knock_band_ratio: 4.1, cam_env_peak: 0.18 },
@@ -263,7 +277,7 @@ const SCENARIO_DEFS = [
     obd: { source: 'simulator', rpm: 3240, load_pct: 72, coolant_c: 96, stft_pct: 1.6 },
   },
   {
-    id: 'injector', name: 'Injector clog', shape: 'injector',
+    id: 'injector', name: 'Injector clog', shape: 'injector', loc: 2,
     source: 'simulated', mode: 'live', localisation: 'cylinder',
     op: { rpm: 2000, load_pct: 30, regime: 'cruise' },
     features: { half_order_ratio: 1.6, knock_band_ratio: 1.0, cam_env_peak: 0.15 },
@@ -276,7 +290,7 @@ const SCENARIO_DEFS = [
     obd: { source: 'simulator', rpm: 2000, load_pct: 30, coolant_c: 90, stft_pct: 1.0, stft_drift: 5.0 },
   },
   {
-    id: 'valve', name: 'Valve tick', shape: 'valve',
+    id: 'valve', name: 'Valve tick', shape: 'valve', loc: 2,
     source: 'simulated', mode: 'live', localisation: 'cylinder',
     op: { rpm: 2400, load_pct: 41, regime: 'cruise' },
     features: { half_order_ratio: 1.3, knock_band_ratio: 1.4, cam_env_peak: 0.61 },
@@ -289,7 +303,7 @@ const SCENARIO_DEFS = [
     obd: { source: 'simulator', rpm: 2400, load_pct: 41, coolant_c: 92, stft_pct: 0.8 },
   },
   {
-    id: 'advisory', name: 'Advisory (watch)', shape: 'advisory',
+    id: 'advisory', name: 'Advisory (watch)', shape: 'advisory', loc: 2,
     source: 'simulated', mode: 'live', localisation: 'cylinder',
     op: { rpm: 1800, load_pct: 26, regime: 'cruise' },
     features: { half_order_ratio: 1.9, knock_band_ratio: 1.0, cam_env_peak: 0.15 },
@@ -317,23 +331,67 @@ export function scenarioRaisesAlarm(id) {
   return scenario(id).decision.alarm;
 }
 
-// cached per scenario so the UI gets the same array object every tick
+// ---------- injection (mock rule layer; PROPOSED schema 1.4) ----------
+// An injected fault borrows the matching fault scenario's picture, moved to the chosen cylinder.
+// `inj` (from the mock transport) = { record, fault, location, live, decided }:
+//   live     the fault is being injected now (signals, anomaly, OBD show it)
+//   decided  the rule layer has seen enough windows: the decision shows it (also after a stop,
+//            while the alarm is still latched)
+//   record   what goes into state.injection (null after a stop)
+// The requested severity only drives the injector-clog fuel-trim drift (≈ severity / 4); the mock
+// waveforms do not scale with it, and decision.severity stays null (the mock has no estimator).
+const INJECT_TEMPLATE = { misfire: 'misfire', knock: 'knock', injector_clog: 'injector', valve_tick: 'valve' };
+export const INJECTABLE_FAULTS = Object.keys(INJECT_TEMPLATE);
+export const INJECTION_BASE_SCENARIO = 'sim_healthy'; // mock limitation: injects onto a healthy engine only
+
+export function injectionRaisesAlarm(fault) {
+  return scenario(INJECT_TEMPLATE[fault]).decision.alarm;
+}
+
+function effective(id, inj) {
+  const base = scenario(id);
+  if (!inj) return base;
+  const tpl = scenario(INJECT_TEMPLATE[inj.fault]);
+  const loc = inj.location;
+  const s = { ...base };
+  if (inj.live) {
+    s.shape = tpl.shape;
+    s.loc = loc;
+    s.features = tpl.features;
+    s.models = tpl.models;
+    s.physics_rules = rules({ [inj.fault]: loc });
+    const peak = Math.max(...tpl.anomaly.per_location);
+    s.anomaly = { score: tpl.anomaly.score, per_location: base.anomaly.per_location.map((v, i) => (i === loc - 1 ? peak : v)) };
+    if (inj.fault === 'injector_clog') s.obd = { ...base.obd, stft_drift: round((inj.severity / 4) * 100, 1) };
+  }
+  if (inj.decided) {
+    s.decision = { ...tpl.decision, location: tpl.decision.location == null ? null : loc, severity: null };
+  }
+  // while the console is active the asset is in test (NE 107 CHECK_FUNCTION); after a stop, a
+  // still-latched alarm shows the fault's own asset health until it clears
+  s.health = { ...base.health, asset_ne107: inj.live ? 'CHECK_FUNCTION' : inj.decided ? tpl.health.asset_ne107 : base.health.asset_ne107 };
+  return s;
+}
+
+// cached per picture so the UI gets the same array object every tick
 const cache = {};
 function signatureOf(s) {
-  if (!cache[s.id]) {
+  const key = `${s.id}:${s.shape}:${s.loc ?? ''}`;
+  if (!cache[key]) {
     // real clips: signature arrives empty (no engine geometry)
-    cache[s.id] = s.localisation === 'cylinder'
-      ? signatureFor(s.shape)
+    cache[key] = s.localisation === 'cylinder'
+      ? signatureFor({ shape: s.shape, loc: s.loc })
       : { crank_deg: [], amplitude: [], baseline_amplitude: [] };
   }
-  return cache[s.id];
+  return cache[key];
 }
 
 // ---------- message builders ----------
 
 // `alarm` is the transport's alarm record { alarm_id, latched, acked, acked_by, acked_at } or null.
-export function buildState(id, t, alarm) {
-  const s = scenario(id);
+// `inj` is the transport's injection view (see above) or null.
+export function buildState(id, t, alarm, inj = null) {
+  const s = effective(id, inj);
   const { alarm: _raises, ...decision } = s.decision;
   return {
     schema_version: SCHEMA_VERSION,
@@ -366,12 +424,13 @@ export function buildState(id, t, alarm) {
     health: s.health,
     latency_ms: Math.round(jit(41, 6)),
     signature: signatureOf(s),
+    injection: inj?.record ?? null,
   };
 }
 
 // One new sample per channel, sent ~1 Hz.
-export function buildObd(id, t) {
-  const s = scenario(id);
+export function buildObd(id, t, inj = null) {
+  const s = effective(id, inj);
   const o = s.obd;
   // carOBD replay includes real RPM/load transitions; mock them as a slow swing
   const swing = o.transitions ? 0.5 - 0.5 * Math.cos((t * 2 * Math.PI) / 20) : 0;
@@ -392,22 +451,23 @@ export function buildObd(id, t) {
 //   { channel: 'mic' | 'accel', t0, sample_rate_hz, samples }
 //   { channel: 'stft', t0, freqs_hz, dt_s, columns }
 //   { channel: 'mic_audio', t0, sample_rate_hz, samples }   16 kHz mic for listening (Float32Array)
-export function buildSignal(id, tick) {
-  const s = scenario(id);
+export function buildSignal(id, tick, inj = null) {
+  const s = effective(id, inj);
+  const sig = { shape: s.shape, loc: s.loc };
   const t0 = tick * FRAME_S;
   const head = { schema_version: SCHEMA_VERSION, sent_at: now(), t0: round(t0) };
-  const frames = [{ ...head, channel: 'mic', sample_rate_hz: SIGNAL_FS, samples: waveFrame(s.shape, s.op.rpm, t0, 1) }];
+  const frames = [{ ...head, channel: 'mic', sample_rate_hz: SIGNAL_FS, samples: waveFrame(sig, s.op.rpm, t0, 1) }];
   // AudioSet clips are audio only: no accelerometer frames on real data
   if (s.source !== 'real') {
-    frames.push({ ...head, channel: 'accel', sample_rate_hz: SIGNAL_FS, samples: waveFrame(s.shape, s.op.rpm, t0, 0.8) });
+    frames.push({ ...head, channel: 'accel', sample_rate_hz: SIGNAL_FS, samples: waveFrame(sig, s.op.rpm, t0, 0.8) });
   }
   const cols = Math.round(FRAME_S / STFT_DT);
-  const columns = Array.from({ length: cols }, (_, i) => stftColumn(s.shape, s.op.rpm, t0 + i * STFT_DT));
+  const columns = Array.from({ length: cols }, (_, i) => stftColumn(sig, s.op.rpm, t0 + i * STFT_DT));
   frames.push({ ...head, channel: 'stft', freqs_hz: STFT_FREQS, dt_s: STFT_DT, columns });
   // no audio for REAL clips in mock: we don't have the recording, and synthetic sound under a
   // REAL badge would misrepresent it
   if (s.source !== 'real') {
-    frames.push({ ...head, channel: 'mic_audio', sample_rate_hz: AUDIO_FS, samples: audioFrame(s.shape, s.op.rpm, t0) });
+    frames.push({ ...head, channel: 'mic_audio', sample_rate_hz: AUDIO_FS, samples: audioFrame(sig, s.op.rpm, t0) });
   }
   return frames;
 }
