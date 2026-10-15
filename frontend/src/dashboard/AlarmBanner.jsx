@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { DECISION_STATES, decisionColor, fault } from '../lib/faults.js';
 
 // Full-width decision banner (ISA-18.2 wording: only ALARM is an alarm; ADVISORY is a watch).
 // Always present so the layout never jumps. ACK lives here and only here: the button sends the
-// `ack` message and shows "Waiting…" until the rule layer's broadcast says acked.
+// `ack` message and shows "Waiting…" until the rule layer's broadcast says acked. A rejected ACK
+// (`ack_error` from the rule layer) re-enables the button and says why; it never changes the alarm.
 
 const BASIS = { crank_angle: 'crank angle', firing_event: 'firing event' };
 const clock = (unixS) => new Date(unixS * 1000).toLocaleTimeString();
@@ -19,16 +20,42 @@ function Witnesses({ list }) {
   );
 }
 
-export default function AlarmBanner({ state, onAck }) {
+const ACK_ERROR_SHOW_MS = 8000;
+
+function AckError({ err }) {
+  return (
+    <p className="ack-error mono" role="alert">
+      ACK rejected · {err.reason}{err.alarm_id ? ` · ${err.alarm_id}` : ''} · {err.detail}
+    </p>
+  );
+}
+
+export default function AlarmBanner({ state, onAck, ackError, offline }) {
   const d = state.decision;
   const [sentFor, setSentFor] = useState(null);
   const waiting = d.alarm_id != null && sentFor === d.alarm_id && !d.acked;
+  const [shownError, setShownError] = useState(null);
+
+  // once no alarm is latched, forget the ACK we sent, so a later alarm starts with a live button
+  useEffect(() => {
+    if (d.alarm_id == null) setSentFor(null);
+  }, [d.alarm_id]);
+
+  // a rejection for the ACK we're waiting on ends the wait; show it for a few seconds
+  useEffect(() => {
+    if (!ackError) return undefined;
+    if (ackError.alarm_id === sentFor) setSentFor(null);
+    setShownError(ackError);
+    const id = setTimeout(() => setShownError(null), ACK_ERROR_SHOW_MS);
+    return () => clearTimeout(id);
+  }, [ackError]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (d.state === 'NORMAL') {
     return (
       <div className="banner banner-normal" role="status">
         <span className="banner-kind">NORMAL</span>
         <span>No active alarms</span>
+        {shownError && <AckError err={shownError} />}
       </div>
     );
   }
@@ -47,8 +74,10 @@ export default function AlarmBanner({ state, onAck }) {
     note = d.acked ? `Acknowledged by ${d.acked_by} at ${clock(d.acked_at)} · condition still active` : 'Unacknowledged';
   } else if (d.state === 'ADVISORY') {
     kind = 'WATCH';
-    title = f.title(d.location);
-    note = 'One witness only · not an alarm';
+    // fault is null when the witnesses name different faults (rule layer: no alarm on conflict)
+    const disagree = !d.fault && d.witnesses.length === 2;
+    title = d.fault ? f.title(d.location) : disagree ? 'Witnesses disagree' : 'Watch';
+    note = disagree ? 'Classifier and physics rule name different faults · not an alarm' : 'One witness only · not an alarm';
   } else {
     kind = 'INSPECT';
     title = DECISION_STATES.UNCLASSIFIED.name;
@@ -75,8 +104,9 @@ export default function AlarmBanner({ state, onAck }) {
         {d.alarm_id && <span>{d.alarm_id}{d.latched ? ' · latched' : ''}</span>}
         <span>latency {state.latency_ms} ms</span>
       </div>
+      {shownError && <AckError err={shownError} />}
       {d.alarm_id && !d.acked && (
-        <button type="button" className="ack-btn" onClick={ack} disabled={waiting}>
+        <button type="button" className="ack-btn" onClick={ack} disabled={waiting || offline} title={offline ? 'Diagnostics offline: ACK cannot reach the rule layer' : undefined}>
           {waiting ? 'Waiting…' : 'Acknowledge'}
         </button>
       )}

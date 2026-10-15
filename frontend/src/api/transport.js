@@ -1,10 +1,11 @@
 // The one thing the UI talks to. Same interface for the mock and (task 5) the real WebSocket:
-//   subscribe(channel, cb) → unsubscribe     channel: 'state' | 'obd' | 'signal'
+//   subscribe(channel, cb) → unsubscribe     channel: 'state' | 'obd' | 'signal' | 'ack_error' | 'status'
 //   sendAck(alarm_id, operator)               sends the `ack` message; the UI waits for the broadcast
-//   listScenarios() / setScenario(id)         mock only: which demo scenario is streaming
+//   listScenarios() / setScenario(id)         which demo scenario is streaming (mock: sync; backend L0: async)
 //   close()
 // The UI never clears an alarm itself: acked/latched only change when a new `state` arrives.
 
+import { createWsTransport } from './wsTransport.js';
 import { buildAck, buildObd, buildSignal, buildState, DEFAULT_SCENARIO, scenario, scenarioRaisesAlarm, SCENARIOS } from '../data/mockEngine.js';
 
 const API = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
@@ -12,13 +13,10 @@ const API = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
 export const usingMock = !API;
 
 export function createTransport() {
-  if (!usingMock) {
-    throw new Error(`WebSocket transport not implemented yet (task 5). VITE_API_URL is set to ${API}; unset it to use mock data.`);
-  }
-  return createMockTransport();
+  return usingMock ? createMockTransport() : createWsTransport(API);
 }
 
-const CHANNELS = ['state', 'obd', 'signal'];
+const CHANNELS = ['state', 'obd', 'signal', 'ack_error', 'status'];
 const STATE_MS = 100; // ~10 Hz
 const OBD_MS = 1000; // ~1 Hz
 const SIGNAL_MS = 200;
@@ -61,16 +59,18 @@ function createMockTransport() {
       return () => subs[channel].delete(cb);
     },
 
-    // Mock rule layer: an ack for the active, un-acked alarm clears the latch and is broadcast.
-    // The fault condition is still present, so decision.state stays ALARM.
+    // Mock rule layer: an ack for the active, un-acked alarm is marked acknowledged and broadcast.
+    // ACK never clears the latch, and the fault is still present, so decision.state stays ALARM.
+    // Anything else is rejected with an `ack_error`, like the backend does.
     sendAck(alarm_id, operator) {
       const msg = buildAck(alarm_id, operator);
       setTimeout(() => {
         if (!alarm || alarm.alarm_id !== msg.alarm_id || alarm.acked) {
-          console.warn('[mock rule layer] ack ignored: no matching un-acked alarm', msg);
+          const reason = alarm?.alarm_id === msg.alarm_id ? 'duplicate_ack' : 'unknown_alarm_id';
+          emit('ack_error', { type: 'ack_error', schema_version: msg.schema_version, sent_at: msg.sent_at, alarm_id: msg.alarm_id, reason, detail: 'mock rule layer: no matching un-acked alarm' });
           return;
         }
-        alarm = { ...alarm, latched: false, acked: true, acked_by: msg.operator, acked_at: msg.sent_at };
+        alarm = { ...alarm, latched: true, acked: true, acked_by: msg.operator, acked_at: msg.sent_at };
         sendState();
       }, ACK_ROUND_TRIP_MS);
       return msg;

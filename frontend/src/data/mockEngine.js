@@ -194,7 +194,7 @@ function audioFrame(shape, rpm, t0) {
 
 // ---------- scenarios ----------
 
-const RULE_BASIS = { misfire: 'firing_event', knock: 'crank_angle', injector: 'firing_event', valve_tick: 'crank_angle' };
+const RULE_BASIS = { misfire: 'firing_event', knock: 'crank_angle', injector_clog: 'firing_event', valve_tick: 'crank_angle' };
 const rules = (fired = {}) =>
   Object.keys(RULE_BASIS).map((rule) => ({
     rule,
@@ -220,7 +220,8 @@ const SCENARIO_DEFS = [
     physics_rules: [],
     decision: NORMAL_DECISION,
     // AudioSet clips are audio only: no accelerometer on real data
-    health: { asset_ne107: 'NORMAL', sensors: { mic: 'NORMAL', accel: null, obd: 'NORMAL' } },
+    // schema 1.3: sensors absent on this recording are left out (no accelerometer on AudioSet clips)
+    health: { asset_ne107: 'NORMAL', sensors: { mic: 'NORMAL', obd: 'NORMAL' } },
     obd: { source: 'real_carobd', rpm: 780, load_pct: 18, coolant_c: 88, stft_pct: 0.8, transitions: true },
   },
   {
@@ -265,9 +266,9 @@ const SCENARIO_DEFS = [
     op: { rpm: 2000, load_pct: 30, regime: 'cruise' },
     features: { half_order_ratio: 1.6, knock_band_ratio: 1.0, cam_env_peak: 0.15 },
     anomaly: { score: 0.68, per_location: [0.13, 0.71, 0.12, 0.16] },
-    models: models([['Baseline', 'injector', 0.55], ['SVM', 'injector', 0.72], ['ANN', 'injector', 0.76], ['CNN', 'injector', 0.79]]),
-    physics_rules: rules({ injector: 2 }),
-    decision: { state: 'ALARM', fault: 'injector', location: 2, severity: 0.2, witnesses: ['physics', 'classifier'], consecutive_windows: 4, alarm: true },
+    models: models([['Baseline', 'injector_clog', 0.55], ['SVM', 'injector_clog', 0.72], ['ANN', 'injector_clog', 0.76], ['CNN', 'injector_clog', 0.79]]),
+    physics_rules: rules({ injector_clog: 2 }),
+    decision: { state: 'ALARM', fault: 'injector_clog', location: 2, severity: 0.2, witnesses: ['physics', 'classifier'], consecutive_windows: 4, alarm: true },
     health: { asset_ne107: 'MAINTENANCE_REQUIRED', sensors: SENSORS_OK },
     // clog severity 0.20 → fuel trim drift ≈ 0.20 / 4 = +5 %
     obd: { source: 'simulator', rpm: 2000, load_pct: 30, coolant_c: 90, stft_pct: 1.0, stft_drift: 5.0 },
