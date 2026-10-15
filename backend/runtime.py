@@ -17,7 +17,8 @@ import time
 
 from backend import messages
 from backend.rule_layer import RuleLayer, asset_ne107
-from backend.scenarios import OBD_S, SCENARIOS, SIGNAL_S, WINDOW_S, obd_sample, signal_frames, window
+from backend.scenarios import OBD_S, SIGNAL_S, WINDOW_S
+from backend.sources import make_source
 from backend.signal_frame import encode_frame
 from backend.watchdog import Watchdog
 
@@ -61,11 +62,14 @@ class Runtime:
 
     # ------------------------------------------------------------ control
 
-    def select(self, name: str) -> None:
-        """Switch scenario. Restarts stream time and the rule layer, so no alarm leaks across."""
-        if name not in SCENARIOS:
-            raise KeyError(name)
-        self.scenario = SCENARIOS[name]
+    def select(self, name: str, source=None) -> None:
+        """Switch source (a fake scenario, or "sim"). Restarts stream time and the rule layer, so no
+        alarm leaks across. Raises KeyError for an unknown name.
+
+        Call it on the event loop (or before start): the swap and the clock reset must not interleave
+        with a tick, or a stateful source (the simulator) could be stepped with the old stream's tick
+        index. `source` lets the caller build a slow source elsewhere first (make_source(name))."""
+        self.scenario = source if source is not None else make_source(name)
         # alarm ids keep counting across switches, so an id is never reused while the server runs
         old = getattr(self, "rules", None)
         self.rules = RuleLayer(first_alarm_id=old.next_alarm_id if old else 1)
@@ -108,11 +112,16 @@ class Runtime:
         return self.scenario.phase_at(t).offline
 
     def _tick_state(self, k: int) -> None:
-        w = window(self.scenario, k)
-        if w.phase.offline:
-            return  # nothing goes out, so the UI's 3 s watchdog trips
         start = time.perf_counter()
-        decision = self.rules.step(w.evidence)
+        w = self.scenario.window(k)
+        if w is None or w.phase.offline:
+            return  # no window yet, or offline: nothing goes out (offline trips the UI's 3 s watchdog)
+        if w.fresh:
+            for ev in w.backlog:
+                self.rules.step(ev)
+            decision = self.rules.step(w.evidence)
+        else:
+            decision = self.rules.decision()  # same window as last tick: one rule-layer step per window
         self.last_window = w
         self._publish_state(decision, start)
 
@@ -132,7 +141,7 @@ class Runtime:
         now = self.clock()
         self.watchdog.feed("obd", now)
         channels = {name: {"t": [t], "v": [v], "unit": unit, "source": "simulator"}
-                    for name, (v, unit) in obd_sample(self.scenario, i).items()}
+                    for name, (v, unit) in self.scenario.obd_sample(i).items()}
         self._send(self.obd_hub, "obd", messages.obd_message(sent_at=now, channels=channels))
 
     def _tick_signal(self, j: int) -> None:
@@ -140,7 +149,7 @@ class Runtime:
         if self._offline(t0):
             return
         now = self.clock()
-        for fields, payload in signal_frames(self.scenario, j, self.scenario.live_sensors(t0)):
+        for fields, payload in self.scenario.signal_frames(j, self.scenario.live_sensors(t0)):
             if self.watchdog.watches(fields["channel"]):
                 self.watchdog.feed(fields["channel"], now)
             header = messages.signal_header(sent_at=now, **fields)

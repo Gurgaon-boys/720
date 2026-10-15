@@ -65,6 +65,16 @@ class Scenario:
     def live_sensors(self, t: float) -> set[str]:
         return set(self.sensors) - set(self.phase_at(t).dead)
 
+    # the source interface the runtime calls (backend/sources): one window, signal frames, OBD sample
+    def window(self, k: int) -> "Window":
+        return window(self, k)
+
+    def signal_frames(self, j: int, live: set[str]) -> list:
+        return signal_frames(self, j, live)
+
+    def obd_sample(self, i: int) -> dict:
+        return obd_sample(self, i)
+
 
 H = Phase()
 SCENARIOS = {
@@ -110,6 +120,8 @@ class Window:
     phase: Phase
     evidence: Evidence
     fields: dict = field(default_factory=dict)  # state message fields except sent_at, decision, health, latency
+    fresh: bool = True  # False: no new window since the last tick; resend the last decision, don't step the rules
+    backlog: list = field(default_factory=list)  # earlier windows' Evidence finished in the same tick, oldest first
 
 
 def window(sc: Scenario, k: int) -> Window:
