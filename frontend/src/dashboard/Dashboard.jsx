@@ -13,6 +13,7 @@ import SoundControls from './SoundControls.jsx';
 import OfflineBanner from './OfflineBanner.jsx';
 import PanelBoundary from './PanelBoundary.jsx';
 import InjectionConsole from './InjectionConsole.jsx';
+import EvidencePanel from './EvidencePanel.jsx';
 import './dashboard.css';
 
 const STALE_S = 3; // a data stream silent this long gets a panel notice (same limit as the UI watchdog)
@@ -126,6 +127,11 @@ export default function Dashboard({ state, obd, signal, error, scenarioError, li
           </PanelBoundary>
         </>
       )}
+
+      {/* evidence is read once from eval.json; it doesn't depend on the live stream */}
+      <PanelBoundary name="Evidence" className="evidence">
+        <EvidencePanel />
+      </PanelBoundary>
 
       {mock && <p className="dash-foot">Mock data · values are made up · set VITE_API_URL to connect the backend</p>}
     </section>
