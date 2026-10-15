@@ -82,11 +82,6 @@
 }
 .ov-cyl small { font-size: 0.6em; font-weight: 400; color: var(--text-2); }
 
-/* AI footage credit (frames had the watermark removed) */
-.intro-credit {
-  position: absolute; z-index: 5; top: 40px; left: 16px;
-  font-family: var(--mono); font-size: 11px; color: var(--text-2); letter-spacing: 0.04em;
-}
 /* real clips: no fingerprint, say why */
 .ov-nogeo {
   position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);

@@ -69,7 +69,7 @@ ffmpeg -i your-clip.mp4 -an -vf "fps=12,unsharp=5:5:0.7:5:5:0.0" -c:v libwebp -q
 ```
 
 Then set `frameCount` and `duration` in `src/intro/stages.js` and adjust each stage's `from`/`to` seconds.
-The current clip is AI-generated (Gemini). Its watermark was removed during extraction, so the intro shows a visible credit.
+The current clip is AI-generated (Gemini). Its watermark was removed during extraction. The intro shows no on-screen credit (Livana's decision).
 
 ## Working with Claude Code
 

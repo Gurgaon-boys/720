@@ -12,11 +12,26 @@ import AlarmBanner from './AlarmBanner.jsx';
 import SoundControls from './SoundControls.jsx';
 import OfflineBanner from './OfflineBanner.jsx';
 import PanelBoundary from './PanelBoundary.jsx';
+import InjectionConsole from './InjectionConsole.jsx';
 import './dashboard.css';
 
-export default function Dashboard({ state, obd, signal, error, scenarios, scenarioId, onSelectScenario, onAck, ackError, offline, lastStateAt, sound, onToggleSound, audioAvailable, mock }) {
+const STALE_S = 3; // a data stream silent this long gets a panel notice (same limit as the UI watchdog)
+
+export default function Dashboard({ state, obd, signal, error, scenarioError, links, apiUrl, ages, scenarios, scenarioId, onSelectScenario, onAck, onStartInjection, onStopInjection, ackError, offline, lastStateAt, sound, onToggleSound, audioAvailable, mock }) {
   const color = decisionColor(state?.decision);
   const run = state?.run_id; // a new run clears any panel error
+
+  // Panel data notices: a stream that delivered at least once this run and has now been silent
+  // for STALE_S. Only for sensors this recording has, and not while the whole dashboard is
+  // already marked offline. This is a UI arrival check, separate from the backend's sensor health.
+  const sensors = state?.health.sensors ?? {};
+  const silentFor = (stream, present) => (!offline && present && ages[stream] >= STALE_S ? ages[stream] : null);
+  const obdSilent = silentFor('obd', 'obd' in sensors);
+  const signalSilent = {
+    mic: silentFor('mic', 'mic' in sensors),
+    stft: silentFor('stft', 'mic' in sensors),
+    accel: silentFor('accel', 'accel' in sensors),
+  };
 
   return (
     <section className={`dash${offline ? ' offline' : ''}`} style={{ '--accent': color }} aria-label="Diagnostics">
@@ -69,9 +84,10 @@ export default function Dashboard({ state, obd, signal, error, scenarios, scenar
             })}
           </div>
         )}
+        {scenarioError && <p className="scenario-error" role="alert">{scenarioError}</p>}
       </header>
 
-      {offline && <OfflineBanner lastStateAt={lastStateAt} />}
+      {offline && <OfflineBanner lastStateAt={lastStateAt} everConnected={state != null} apiUrl={apiUrl} links={links} />}
       {state && (
         <PanelBoundary name="Alarm banner" variant="banner" resetKey={run}>
           <AlarmBanner key={state.run_id} state={state} onAck={onAck} ackError={ackError} offline={offline} />
@@ -99,11 +115,14 @@ export default function Dashboard({ state, obd, signal, error, scenarios, scenar
               <StatePanel state={state} />
             </PanelBoundary>
             <PanelBoundary name="OBD" className="obd" resetKey={run}>
-              <ObdPanel obd={obd} source={state.source} hasObd={'obd' in state.health.sensors} />
+              <ObdPanel obd={obd} source={state.source} hasObd={'obd' in sensors} silentFor={obdSilent} />
             </PanelBoundary>
           </div>
+          <PanelBoundary name="Injection console" className="inject" resetKey={run}>
+            <InjectionConsole key={state.run_id} state={state} offline={offline} mock={mock} onStart={onStartInjection} onStop={onStopInjection} />
+          </PanelBoundary>
           <PanelBoundary name="Signal" className="strip" resetKey={run}>
-            <SignalStrip key={state.run_id} signal={signal} source={state.source} />
+            <SignalStrip key={state.run_id} signal={signal} source={state.source} sensors={sensors} silentFor={signalSilent} />
           </PanelBoundary>
         </>
       )}

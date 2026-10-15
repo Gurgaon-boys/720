@@ -199,7 +199,6 @@ export default function ScrollIntro({ state, onSkip }) {
         )}
 
         <div className="intro-brand">720</div>
-        <div className="intro-credit">Intro footage AI-generated (Gemini)</div>
         <button type="button" className="intro-skip" onClick={onSkip}>Skip to diagnostics</button>
 
         <nav className="intro-rail" aria-hidden="true">
