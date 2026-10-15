@@ -147,13 +147,13 @@ export function createWsTransport(apiUrl) {
       scenarioId = id;
     },
 
-    // Injection console (proposed schema 1.4). Resolves when the backend accepts the request;
-    // the UI still waits for state.injection before showing anything.
-    startInjection({ fault, location, severity }) {
-      return post('/inject', { fault, location, severity });
+    // Injection console: the backend's simulator routes. Resolves when the backend accepts the
+    // request; the UI still waits for state.injection (proposed schema 1.4) before showing anything.
+    startInjection({ fault, cylinder, severity }) {
+      return post('/inject', { fault, cylinder, severity });
     },
     stopInjection() {
-      return post('/inject/stop');
+      return post('/clear_faults');
     },
 
     get scenarioId() {
