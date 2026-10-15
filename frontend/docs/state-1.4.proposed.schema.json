@@ -395,7 +395,7 @@
       }
     },
     "injection": {
-      "description": "Injection console (live + simulated only). null when nothing is injected. severity is the REQUESTED value, not a measurement.",
+      "description": "Injection console (live + simulated only). null when nothing is injected. severity is the REQUESTED value, not a measurement. Echoes the accepted POST /inject body.",
       "anyOf": [
         {
           "type": "null"
@@ -406,7 +406,7 @@
           "required": [
             "active",
             "fault",
-            "location",
+            "cylinder",
             "severity",
             "started_at"
           ],
@@ -417,7 +417,7 @@
             "fault": {
               "$ref": "#/$defs/fault"
             },
-            "location": {
+            "cylinder": {
               "type": "integer",
               "minimum": 1,
               "maximum": 4

@@ -15,7 +15,7 @@ const CONFIRM_MS = 3000; // accepted request but no matching state.injection by 
 function unavailableReason(state, offline, mock) {
   if (offline) return 'Diagnostics offline: the console needs a live connection to the rule layer.';
   if (!mock && !('injection' in state)) {
-    return `Backend injection unavailable: this backend sends schema ${state.schema_version} without state.injection. It needs the proposed 1.4 contract and POST /inject.`;
+    return `Backend injection unavailable: this backend sends schema ${state.schema_version} without state.injection. The console needs the proposed 1.4 field so it can confirm what the simulator is injecting.`;
   }
   if (state.mode !== 'live' || state.source !== 'simulated') {
     return `Injection runs only on the live simulator. This stream is ${state.source.toUpperCase()} · ${state.mode}.`;
@@ -27,7 +27,7 @@ export default function InjectionConsole({ state, offline, mock, onStart, onStop
   const [fault, setFault] = useState('misfire');
   const [cyl, setCyl] = useState(1);
   const [severity, setSeverity] = useState(0.3);
-  // pending: { kind: 'start' | 'stop', fault?, location?, acceptedAt? } until the state confirms
+  // pending: { kind: 'start' | 'stop', fault?, cylinder?, acceptedAt? } until the state confirms
   const [pending, setPending] = useState(null);
   const [error, setError] = useState(null);
 
@@ -38,7 +38,7 @@ export default function InjectionConsole({ state, offline, mock, onStart, onStop
   useEffect(() => {
     if (!pending) return;
     const confirmed = pending.kind === 'start'
-      ? inj && inj.fault === pending.fault && inj.location === pending.location
+      ? inj && inj.fault === pending.fault && inj.cylinder === pending.cylinder
       : inj == null;
     if (confirmed) setPending(null);
   }, [inj, pending]);
@@ -70,7 +70,7 @@ export default function InjectionConsole({ state, offline, mock, onStart, onStop
         setError(e.message);
       });
   };
-  const start = () => send({ kind: 'start', fault, location: cyl }, () => onStart({ fault, location: cyl, severity }));
+  const start = () => send({ kind: 'start', fault, cylinder: cyl }, () => onStart({ fault, cylinder: cyl, severity }));
   const stop = () => send({ kind: 'stop' }, () => onStop());
 
   const locked = reason != null || pending != null || inj != null; // inputs: only before a new start
@@ -133,7 +133,7 @@ export default function InjectionConsole({ state, offline, mock, onStart, onStop
 
       {inj && (
         <p className="inject-status mono" role="status">
-          <strong>INJECTING</strong> {FAULTS[inj.fault]?.name ?? inj.fault} · cyl {inj.location} · requested severity {inj.severity.toFixed(2)} · for {runningFor.toFixed(0)} s
+          <strong>INJECTING</strong> {FAULTS[inj.fault]?.name ?? inj.fault} · cyl {inj.cylinder} · requested severity {inj.severity.toFixed(2)} · for {runningFor.toFixed(0)} s
         </p>
       )}
       {error && <p className="inject-error" role="alert">{error}</p>}
