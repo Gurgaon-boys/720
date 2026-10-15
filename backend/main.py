@@ -3,7 +3,9 @@
     python -m uvicorn backend.main:app --port 8000
 
 Environment:
-    S720_SCENARIO   fake scenario to start with (default: misfire); see GET /scenarios
+    S720_SCENARIO   source to start with (default: misfire): a fake scenario, or "sim" for the live
+                    simulator (L1); see GET /scenarios
+    S720_SIM_SEED, S720_SIM_ENGINE   simulator run seed / randomised engine seed (sim only)
     S720_VALIDATE   1 = check every outgoing message against contract/schemas and log violations
 """
 
@@ -15,11 +17,13 @@ import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, WebSocket
+from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
 from backend.messages import SCHEMA_VERSION
 from backend.runtime import Hub, Runtime, put_latest
-from backend.scenarios import SCENARIOS
+from backend.sources import describe, make_source, source_names
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 
@@ -48,17 +52,43 @@ def create_app(scenario: str | None = None, validate: bool | None = None) -> Fas
 
     @app.get("/scenarios")
     def scenarios():
-        return {"current": runtime.scenario.name,
-                "scenarios": [{"name": s.name, "description": s.description, "source": s.source,
-                               "loop_s": s.period} for s in SCENARIOS.values()]}
+        return {"current": runtime.scenario.name, "scenarios": describe()}
 
     @app.post("/scenario/{name}")
-    def select(name: str):
-        """Switch fake scenario (L0 only). Resets stream time and the rule layer."""
-        if name not in SCENARIOS:
+    async def select(name: str):
+        """Switch source: a fake scenario or "sim". Resets stream time and the rule layer.
+
+        The source is built in a worker thread (the simulator takes a moment), then swapped in on the
+        event loop so no tick runs halfway through the switch."""
+        if name not in source_names():
             raise HTTPException(404, f"unknown scenario {name!r}; see GET /scenarios")
-        runtime.select(name)
+        source = await run_in_threadpool(make_source, name)
+        runtime.select(name, source)
         return {"current": name}
+
+    @app.post("/inject")
+    async def inject(body: Injection):
+        """Inject a fault into the live simulator (source "sim" only). Applies from the next engine cycle."""
+        src = runtime.scenario
+        if not hasattr(src, "inject"):
+            raise HTTPException(409, f"source {src.name!r} has no simulator; POST /scenario/sim first")
+        try:
+            src.inject(body.fault, body.cylinder, body.severity)
+        except NotImplementedError as e:
+            raise HTTPException(501, str(e)) from e
+        except ValueError as e:
+            raise HTTPException(422, str(e)) from e
+        logging.getLogger("backend").info("INJECT %s cyl %d p=%.2f at t=%.2f s", body.fault, body.cylinder,
+                                          body.severity, src.stream_t)
+        return {"injected": body.model_dump(), "t": round(src.stream_t, 3)}
+
+    @app.post("/clear_faults")
+    async def clear_faults():
+        src = runtime.scenario
+        if not hasattr(src, "clear_faults"):
+            raise HTTPException(409, f"source {src.name!r} has no simulator")
+        src.clear_faults()
+        return {"cleared": True, "t": round(src.stream_t, 3)}
 
     @app.websocket("/ws/state")
     async def ws_state(ws: WebSocket):
@@ -84,6 +114,12 @@ def create_app(scenario: str | None = None, validate: bool | None = None) -> Fas
         await _serve(ws, runtime.signal_hub, runtime.signal_hub.subscribe())
 
     return app
+
+
+class Injection(BaseModel):
+    fault: str
+    cylinder: int
+    severity: float
 
 
 async def _serve(ws: WebSocket, hub: Hub, q: asyncio.Queue, receiver=None) -> None:
