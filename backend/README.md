@@ -68,7 +68,7 @@ Pick a scenario with `S720_SCENARIO=<name>` before starting, or switch while run
 **`ack_error`** is not a contract 1.3 message. The UI tells it apart from `state` because it has a `type` field:
 
 ```json
-{ "type": "ack_error", "schema_version": "1.3", "sent_at": 1760551240.2,
+{ "type": "ack_error", "schema_version": "1.4", "sent_at": 1760551240.2,
   "alarm_id": "a_9999", "reason": "unknown_alarm_id", "detail": "a_9999 is not an alarm; active alarm: a_0001" }
 ```
 

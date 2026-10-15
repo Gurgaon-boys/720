@@ -12,7 +12,7 @@ Full plan, the source of truth: [`docs/720_Final_Plan.md`](docs/720_Final_Plan.m
 
 | Folder | Owner | Purpose |
 |---|---|---|
-| [`contract/`](contract/) | Nishant | Message schemas + examples, v1.3 (locked; bump `schema_version` on change) |
+| [`contract/`](contract/) | Nishant | Message schemas + examples, v1.4 (locked; bump `schema_version` on change) |
 | [`sim/`](sim/) | Dipen | Physics-informed engine simulator |
 | [`dsp/`](dsp/) | Dipen | Order tracking, 720° averaging, features, physics rules (2 versions each) |
 | [`models/`](models/) | Dipen (design) / Diljit (runs) | Baseline, SVM, ANN, CNN, OBD branch |

@@ -1,7 +1,7 @@
 """Frontend ↔ contract checks, run through Node so they use the frontend's own code.
 
 1. Binary frames encoded by the backend decode correctly with frontend/src/api/signalFrame.js.
-2. Every message the frontend's mock transport emits (state, obd, ack) validates against schema 1.3,
+2. Every message the frontend's mock transport emits (state, obd, ack) validates against schema 1.4,
    so mock mode and the real backend feed the dashboard the same shapes.
 
 Skipped when Node isn't installed.
@@ -63,7 +63,7 @@ def test_frontend_decodes_backend_signal_frames():
             np.testing.assert_allclose(ui["columns"][0], payload, atol=1e-4)
 
 
-def test_frontend_mock_messages_follow_schema_1_3():
+def test_frontend_mock_messages_follow_schema_1_4():
     out = json.loads(node("""
         import { SCENARIOS, buildState, buildObd, buildAck, scenarioRaisesAlarm } from './src/data/mockEngine.js';
         const res = [];

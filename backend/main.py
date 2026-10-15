@@ -102,7 +102,7 @@ def create_app(scenario: str | None = None, validate: bool | None = None, opcua:
         if not hasattr(src, "inject"):
             raise HTTPException(409, f"source {src.name!r} has no simulator; POST /scenario/sim first")
         try:
-            src.inject(body.fault, body.cylinder, body.severity)
+            runtime.inject(body.fault, body.cylinder, body.severity)  # echoed in state.injection
         except NotImplementedError as e:
             raise HTTPException(501, str(e)) from e
         except ValueError as e:
@@ -116,7 +116,7 @@ def create_app(scenario: str | None = None, validate: bool | None = None, opcua:
         src = runtime.scenario
         if not hasattr(src, "clear_faults"):
             raise HTTPException(409, f"source {src.name!r} has no simulator")
-        src.clear_faults()
+        runtime.clear_faults()  # state.injection -> null
         return {"cleared": True, "t": round(src.stream_t, 3)}
 
     @app.websocket("/ws/state")

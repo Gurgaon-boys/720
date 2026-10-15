@@ -1,4 +1,4 @@
-# Data contract (schema 1.3, from 720 Final Plan v1.4, section 12)
+# Data contract (schema 1.4, from 720 Final Plan v1.4, section 12)
 
 **Owner: Nishant.** This file mirrors the locked plan. If the backend changes a field, bump `schema_version`, update this file, the mock data and the components together.
 
@@ -79,9 +79,9 @@ Notes:
 
 The rule layer clears the latch and broadcasts the new `state`. **The dashboard never clears an alarm locally**; it updates only from that broadcast (mock mode simulates the round trip).
 
-## Proposed schema 1.4: injection console (PROPOSED, not yet agreed with Nishant)
+## Schema 1.4: injection console (agreed, DECISIONS.md D46; `contract/` is authoritative)
 
-1.4 = 1.3 plus one `state` field. Every message's `schema_version` becomes `"1.4"`; nothing else changes. Draft JSON Schema for `state`: `docs/state-1.4.proposed.schema.json`. The dashboard accepts both 1.3 and 1.4; the mock speaks 1.4.
+1.4 = 1.3 plus one `state` field. Every message's `schema_version` becomes `"1.4"`; nothing else changes. The agreed schema is `contract/schemas/state.schema.json` (same `injection` definition as the draft `docs/state-1.4.proposed.schema.json`). The dashboard accepts both 1.3 and 1.4; the mock speaks 1.4.
 
 The console uses the backend's existing simulator routes (L1, `backend/README.md`), unchanged:
 
@@ -95,7 +95,7 @@ The console uses the backend's existing simulator routes (L1, `backend/README.md
 ```
 
 - `fault`: `misfire | knock | injector_clog | valve_tick`; `cylinder`: 1–4; `severity`: the **requested** severity (0–1) as sent to the simulator, not a measurement. The rule layer's own estimate stays in `decision.severity`.
-- Only on `mode: "live"` with `source: "simulated"`. While a fault is injected, `health.asset_ne107 = CHECK_FUNCTION` (D14). The injected fault goes through the normal rule layer; no shortcut to ALARM. Clearing does not clear a latched alarm: the usual ACK + healthy windows apply.
+- Only on `mode: "live"` with `source: "simulated"`. Injection alone does not set CHECK_FUNCTION: that is only for the backend's explicit maintenance/test mode, and never over a fault (D44, superseding that part of D14). The injected fault goes through the normal rule layer; no shortcut to ALARM. Clearing does not clear a latched alarm: the usual ACK + healthy windows apply.
 - One injection at a time is enough for the console; if the simulator holds several, send the latest.
 
 The UI never assumes a request worked: it shows an injection only once `state.injection` says so. A live backend that sends no `injection` field (schema 1.3) gets a disabled console with "backend injection unavailable".

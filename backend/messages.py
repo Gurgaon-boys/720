@@ -1,4 +1,4 @@
-"""Builders for the contract's messages (schema_version 1.3) and validation against contract/schemas.
+"""Builders for the contract's messages (schema_version 1.4) and validation against contract/schemas.
 
 The schemas are read from contract/ at runtime, never copied, so the backend can't drift from them.
 """
@@ -11,7 +11,7 @@ from pathlib import Path
 
 from jsonschema import Draft202012Validator
 
-SCHEMA_VERSION = "1.3"
+SCHEMA_VERSION = "1.4"
 SCHEMAS = Path(__file__).resolve().parent.parent / "contract" / "schemas"
 
 UNITS = {"t": "s", "sent_at": "unix s", "rpm": "rev/min", "load_pct": "%", "latency_ms": "ms", "severity": "0-1", "crank_deg": "deg"}
@@ -29,7 +29,8 @@ def errors(name: str, message: dict) -> list[str]:
 
 
 def state_message(*, sent_at, run_id, source, audioset_pool, engine_tag, mode, t, operating_point, localisation,
-                  features_summary, anomaly, models, physics_rules, decision, health, latency_ms, signature) -> dict:
+                  features_summary, anomaly, models, physics_rules, decision, health, latency_ms, signature,
+                  injection=None) -> dict:
     return {
         "schema_version": SCHEMA_VERSION,
         "sent_at": sent_at,
@@ -50,6 +51,7 @@ def state_message(*, sent_at, run_id, source, audioset_pool, engine_tag, mode, t
         "health": health,
         "latency_ms": latency_ms,
         "signature": signature,
+        "injection": injection,  # 1.4: the accepted POST /inject body, or None
     }
 
 

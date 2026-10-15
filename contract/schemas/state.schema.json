@@ -7,7 +7,7 @@
   "required": [
     "schema_version", "sent_at", "units", "run_id", "source", "audioset_pool", "engine_tag",
     "mode", "t", "operating_point", "localisation", "features_summary", "anomaly", "models",
-    "physics_rules", "decision", "health", "latency_ms", "signature"
+    "physics_rules", "decision", "health", "latency_ms", "signature", "injection"
   ],
   "$defs": {
     "ne107": { "enum": ["NORMAL", "FAILURE", "CHECK_FUNCTION", "OFF_SPEC", "MAINTENANCE_REQUIRED"] },
@@ -18,7 +18,7 @@
     "number_array": { "type": "array", "items": { "type": "number" } }
   },
   "properties": {
-    "schema_version": { "const": "1.3" },
+    "schema_version": { "const": "1.4" },
     "sent_at": { "type": "number", "description": "unix seconds" },
     "units": { "type": "object", "additionalProperties": { "type": "string" } },
     "run_id": { "type": "string", "minLength": 1 },
@@ -120,6 +120,24 @@
       }
     },
     "latency_ms": { "type": "number", "minimum": 0 },
+    "injection": {
+      "description": "Injection console (simulator only). null when nothing is injected. Echoes the accepted POST /inject body; severity is the REQUESTED value, not a measurement.",
+      "anyOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["active", "fault", "cylinder", "severity", "started_at"],
+          "properties": {
+            "active": { "const": true },
+            "fault": { "$ref": "#/$defs/fault" },
+            "cylinder": { "type": "integer", "minimum": 1, "maximum": 4 },
+            "severity": { "$ref": "#/$defs/unit_interval" },
+            "started_at": { "type": "number", "description": "unix seconds" }
+          }
+        }
+      ]
+    },
     "signature": {
       "type": "object",
       "additionalProperties": false,
