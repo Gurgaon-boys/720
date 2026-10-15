@@ -155,7 +155,11 @@ class RemoteFile:
     def read(self, start: int, end: int, retries: int = 5) -> bytes:
         """Bytes [start, end). Negative start reads the last -start bytes."""
         if start >= 0 and end - start > self.CHUNK:  # large reads in chunks, each retried
-            return b"".join(self.read(s, min(s + self.CHUNK, end), retries) for s in range(start, end, self.CHUNK))
+            out = bytearray(end - start)
+            for s in range(start, end, self.CHUNK):
+                part = self.read(s, min(s + self.CHUNK, end), retries)
+                out[s - start: s - start + len(part)] = part
+            return out
         rng = f"bytes={start}" if start < 0 else f"bytes={start}-{end - 1}"
         for attempt in range(retries):
             try:
@@ -264,7 +268,7 @@ def decode_pages(buf: bytes, codec: int, max_def: int, dictionary: list[bytes] |
         hdr = t.struct()
         body_start = t.p
         ptype, usize, csize = hdr[1], hdr[2], hdr[3]
-        body = buf[body_start:body_start + csize]
+        body = memoryview(buf)[body_start:body_start + csize]  # no copy of large pages
         if len(body) < csize:
             raise ParquetFormatError("truncated page")
         pos = body_start + csize

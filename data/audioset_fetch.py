@@ -165,6 +165,7 @@ class Mirror:
         self._oidx: dict[tuple, list] = {}
         self._rg_rows: dict[tuple, dict[int, bytes]] = {}
         self._rg_locks: dict[tuple, threading.Lock] = {}
+        self._big = threading.Semaphore(2)  # whole-row-group downloads peak at ~0.5 GB RAM each
         self._lock = threading.Lock()
         self.wanted: set[str] = set()  # video ids we may fetch (kept from whole-row-group downloads)
 
@@ -205,7 +206,7 @@ class Mirror:
             # ~140 MB dictionary page. Download it once and keep only the rows we want.
             with self._lock:
                 rg_lock = self._rg_locks.setdefault(key, threading.Lock())
-            with rg_lock:
+            with rg_lock, self._big:
                 if key not in self._rg_rows:
                     rows = read_column_chunk(f, col, AUDIO_MAX_DEF)
                     self._rg_rows[key] = {i: rows[i] for i, v in enumerate(self._vids[key]) if v in self.wanted}
