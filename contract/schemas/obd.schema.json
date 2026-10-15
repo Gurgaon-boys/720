@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://720.hackhive/contract/obd.schema.json",
+  "title": "720 obd message (~1 Hz, server -> UI)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "sent_at", "channels"],
+  "properties": {
+    "schema_version": { "const": "1.3" },
+    "sent_at": { "type": "number", "description": "unix seconds" },
+    "channels": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["t", "v", "unit", "source"],
+        "properties": {
+          "t": { "type": "array", "items": { "type": "number" }, "description": "stream time, s" },
+          "v": { "type": "array", "items": { "type": "number" } },
+          "unit": { "type": "string" },
+          "source": { "enum": ["real_carobd", "simulator"] }
+        }
+      }
+    }
+  }
+}

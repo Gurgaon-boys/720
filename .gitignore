@@ -1,0 +1,45 @@
+# Python
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+
+# Node
+node_modules/
+dist/
+build/
+.vite/
+npm-debug.log*
+yarn-error.log*
+
+# Data (never committed; split lists in data/splits/ stay tracked)
+data/raw/
+data/audio/
+*.wav
+*.flac
+*.mp3
+*.npz
+*.mf4
+
+# Model checkpoints
+*.pt
+*.pth
+*.pkl
+*.onnx
+
+# Secrets
+.env
+.env.*
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+*.swp

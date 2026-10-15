@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.3",
+  "sent_at": 1760551234.512,
+  "units": { "t": "s", "sent_at": "unix s", "rpm": "rev/min", "load_pct": "%", "latency_ms": "ms", "severity": "0-1", "crank_deg": "deg" },
+  "run_id": "sim_0412",
+  "source": "simulated",
+  "audioset_pool": null,
+  "engine_tag": null,
+  "mode": "replay",
+  "t": 12.5,
+  "operating_point": { "rpm": 2400, "load_pct": 38, "regime": "cruise" },
+  "localisation": "cylinder",
+  "features_summary": { "half_order_ratio": 3.1, "knock_band_ratio": 1.0, "cam_env_peak": 0.2 },
+  "anomaly": { "score": 0.82, "threshold": 0.60, "per_location": [0.12, 0.10, 0.91, 0.15] },
+  "models": [
+    { "model": "Baseline", "label": "misfire", "p": 0.70 },
+    { "model": "SVM", "label": "misfire", "p": 0.86 },
+    { "model": "ANN", "label": "misfire", "p": 0.88 },
+    { "model": "CNN", "label": "misfire", "p": 0.91 }
+  ],
+  "physics_rules": [ { "rule": "misfire", "fired": true, "location": 3, "rule_basis": "crank_angle" } ],
+  "decision": {
+    "state": "ALARM",
+    "alarm_id": "a_0007",
+    "fault": "misfire", "location": 3, "severity": 0.12,
+    "witnesses": ["physics", "classifier"], "consecutive_windows": 2,
+    "latched": true, "acked": false, "acked_by": null, "acked_at": null
+  },
+  "health": { "asset_ne107": "OFF_SPEC", "sensors": { "mic": "NORMAL", "accel": "NORMAL", "obd": "NORMAL" } },
+  "latency_ms": 41,
+  "signature": { "crank_deg": [], "amplitude": [], "baseline_amplitude": [] }
+}
