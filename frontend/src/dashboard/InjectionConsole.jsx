@@ -5,11 +5,17 @@ import SourceBadge from './SourceBadge.jsx';
 // Injection console (task 7, PROPOSED schema 1.4). Asks the backend to inject a simulated fault;
 // it never shows an injection itself. "Injecting…" appears only once `state.injection` says so,
 // like ACK. Enabled only for a live simulated stream whose backend sends `injection`.
-// Severity is the REQUESTED value sent to the simulator, not a measurement.
+// Severity is the REQUESTED value sent to the simulator, not a measurement or a confidence.
+// For misfire the simulator reads it as the probability that the cylinder misfires on a cycle.
 
 const FAULT_IDS = ['misfire', 'knock', 'injector_clog', 'valve_tick'];
 const CYLINDERS = [1, 2, 3, 4];
 const CONFIRM_MS = 3000; // accepted request but no matching state.injection by then → error
+const DEFAULT_REQUEST = 1.0; // demo default: a misfire on every cycle (lower values stay selectable)
+
+// what the requested value means for this fault, in words
+const requestLabel = (f) => (f === 'misfire' ? 'Requested misfire probability' : 'Requested severity');
+const requestValue = (f, v) => (f === 'misfire' ? `${v.toFixed(2)} (${Math.round(v * 100)}% of cycles)` : v.toFixed(2));
 
 // why the console can't be used right now, or null
 function unavailableReason(state, offline, mock) {
@@ -26,7 +32,7 @@ function unavailableReason(state, offline, mock) {
 export default function InjectionConsole({ state, offline, mock, onStart, onStop }) {
   const [fault, setFault] = useState('misfire');
   const [cyl, setCyl] = useState(1);
-  const [severity, setSeverity] = useState(0.3);
+  const [severity, setSeverity] = useState(DEFAULT_REQUEST);
   // pending: { kind: 'start' | 'stop', fault?, cylinder?, acceptedAt? } until the state confirms
   const [pending, setPending] = useState(null);
   const [error, setError] = useState(null);
@@ -106,13 +112,14 @@ export default function InjectionConsole({ state, offline, mock, onStart, onStop
           ))}
         </fieldset>
         <fieldset className="inject-group" disabled={locked}>
-          <legend className="eyebrow">Requested severity</legend>
+          <legend className="eyebrow">{requestLabel(fault)}</legend>
           <input
             type="range" min="0.05" max="1" step="0.05" value={severity}
             onChange={(e) => setSeverity(Number(e.target.value))}
-            aria-label="Requested severity, 0 to 1"
+            aria-label={`${requestLabel(fault)}, 0 to 1`}
+            aria-valuetext={requestValue(fault, severity)}
           />
-          <span className="mono inject-sev">{severity.toFixed(2)}</span>
+          <span className="mono inject-sev">{requestValue(fault, severity)}</span>
         </fieldset>
         <div className="inject-actions">
           {inj ? (
@@ -127,20 +134,27 @@ export default function InjectionConsole({ state, offline, mock, onStart, onStop
         </div>
       </div>
 
+      {!inj && (
+        <p className="panel-note">
+          {fault === 'misfire'
+            ? 'The value is what we ask the simulator for: the chance that the cylinder misfires on each cycle. It is not a measured fault severity or a confidence; the rule layer decides what it sees.'
+            : 'The value is what we ask the simulator for, not a measured fault severity or a confidence.'}
+        </p>
+      )}
       {fault === 'valve_tick' && !inj && !reason && (
         <p className="panel-note">Valve tick is held out of ML training: expect the rule layer to report it as unclassified, not by name.</p>
       )}
 
       {inj && (
         <p className="inject-status mono" role="status">
-          <strong>INJECTING</strong> {FAULTS[inj.fault]?.name ?? inj.fault} · cyl {inj.cylinder} · requested severity {inj.severity.toFixed(2)} · for {runningFor.toFixed(0)} s
+          <strong>INJECTING</strong> {FAULTS[inj.fault]?.name ?? inj.fault} · cyl {inj.cylinder} · {requestLabel(inj.fault).toLowerCase()} {requestValue(inj.fault, inj.severity)} · for {runningFor.toFixed(0)} s
         </p>
       )}
       {error && <p className="inject-error" role="alert">{error}</p>}
 
       {mock && (
         <p className="bank-note mono">
-          Mock: the waveforms are illustrative and do not scale with the requested severity (it only sets the injector-clog fuel-trim drift). Injects onto Simulated · healthy only.
+          Mock: the waveforms are illustrative and do not scale with the requested value (it only sets the injector-clog fuel-trim drift, ≈ value ÷ 4). Injects onto Simulated · healthy only.
         </p>
       )}
     </section>
