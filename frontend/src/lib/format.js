@@ -6,3 +6,9 @@ export function fmtNum(v) {
   const digits = a >= 100 ? 0 : a >= 10 ? 1 : 2;
   return v.toLocaleString(undefined, { maximumFractionDigits: digits });
 }
+
+// Evidence numbers: 3 significant digits, so a small rate (0.0723 per hour) keeps its precision.
+export function fmtSig(v) {
+  if (v == null || Number.isNaN(v)) return '—';
+  return Number(v.toPrecision(3)).toLocaleString(undefined, { maximumSignificantDigits: 3 });
+}

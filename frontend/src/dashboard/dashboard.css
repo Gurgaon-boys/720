@@ -239,6 +239,23 @@ details summary { cursor: pointer; }
 .inject-status strong { letter-spacing: 0.12em; margin-right: 6px; }
 .inject-error { margin: 0; font-size: 13px; color: var(--text); border-left: 3px solid #ff5a6e; padding-left: 10px; }
 
+/* evidence panel (task 8): plain tables, grey; context (column, split) always beside the number */
+.evidence { display: flex; flex-direction: column; gap: 14px; }
+.ev-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.ev-placeholder { font-family: var(--mono); font-weight: 700; font-size: 12px; letter-spacing: 0.14em; color: var(--ink); background: var(--text-2); padding: 3px 8px; border-radius: 4px; }
+.ev-src { font-size: 12px; color: var(--muted); }
+.ev-h { margin: 6px 0 0; font-family: var(--display); font-weight: 500; font-size: 15px; color: var(--text); }
+.ev-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.ev-table caption { text-align: left; padding-bottom: 6px; }
+.ev-table th, .ev-table td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.ev-table thead th { color: var(--muted); font-weight: 400; font-size: 12px; }
+.ev-table tbody th { font-weight: 500; color: var(--text); }
+.ev-incomplete td { color: var(--muted); font-style: italic; }
+.ev-ctx { color: var(--text-2); white-space: nowrap; }
+.ev-flag { display: block; font-size: 11px; font-weight: 400; color: var(--muted); }
+.ev-projection { margin: 0; font-size: 13px; color: var(--text); border: 1px dashed var(--muted); border-radius: 6px; padding: 8px 12px; }
+@media (max-width: 720px) { .ev-table { display: block; overflow-x: auto; } }
+
 /* scenario list / switch failures: shown where the scenario pills are, until a switch succeeds */
 .scenario-error { flex-basis: 100%; margin: 0; font-size: 12px; color: var(--text); border-left: 3px solid #ff5a6e; padding-left: 10px; }
 
