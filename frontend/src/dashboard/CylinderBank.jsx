@@ -14,7 +14,8 @@ const KNOCK_DEG = 25; // knock: shorter, sharper flash
 
 const reducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
 
-export default function CylinderBank({ state }) {
+// offline: the UI watchdog has tripped; the crank freezes (nothing moves on stale data)
+export default function CylinderBank({ state, offline }) {
   const { decision, operating_point: op, localisation, anomaly } = state;
   const geometry = localisation === 'cylinder';
   const active = decision.state === 'ALARM' || decision.state === 'ADVISORY';
@@ -24,7 +25,7 @@ export default function CylinderBank({ state }) {
   const flashes = useRef([]);
   const live = useRef({});
   // latest data for the animation loop (read every frame, no re-render needed)
-  live.current = { rpm: op.rpm, decision };
+  live.current = { rpm: op.rpm, decision, offline };
 
   useEffect(() => {
     if (!geometry) return undefined;
@@ -33,8 +34,8 @@ export default function CylinderBank({ state }) {
     let last = performance.now();
     let raf = 0;
     const frame = (now) => {
-      const { rpm, decision: d } = live.current;
-      if (!still && rpm) crank = (crank + ((now - last) / 1000) * ((rpm / 60) * 360) / SLOW_FACTOR) % 720;
+      const { rpm, decision: d, offline: frozen } = live.current;
+      if (!still && !frozen && rpm) crank = (crank + ((now - last) / 1000) * ((rpm / 60) * 360) / SLOW_FACTOR) % 720;
       last = now;
       for (let cyl = 1; cyl <= N; cyl++) {
         const rel = (crank - fireDeg(cyl) + 720) % 720; // crank degrees since this cylinder fired
@@ -91,7 +92,8 @@ export default function CylinderBank({ state }) {
                   </div>
                   <div className="cyl-num mono">CYL {cyl}</div>
                   <div className="cyl-tag mono" style={isFault ? { background: f.color, color: 'var(--ink)' } : undefined}>
-                    {isFault ? (decision.state === 'ADVISORY' ? 'WATCH' : f.short) : 'OK'}
+                    {/* HIGH: this cylinder's own score is over the threshold, even if the decision names no cylinder */}
+                    {isFault ? (decision.state === 'ADVISORY' ? 'WATCH' : f.short) : over ? 'HIGH' : 'OK'}
                   </div>
                   {score != null && (
                     <div className="loc" title={`Anomaly score ${score.toFixed(2)}, threshold ${anomaly.threshold.toFixed(2)}`}>

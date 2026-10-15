@@ -66,7 +66,7 @@ export default function Dashboard({ state, obd, signal, error, scenarios, scenar
       {state && (
         <>
           <div className="dash-grid">
-            <CylinderBank state={state} />
+            <CylinderBank state={state} offline={offline} />
             <CrankSignature state={state} />
             <Verdict state={state} />
           </div>

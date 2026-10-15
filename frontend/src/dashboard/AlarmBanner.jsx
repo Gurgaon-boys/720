@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { DECISION_STATES, decisionColor, fault } from '../lib/faults.js';
+import { decisionColor, decisionText } from '../lib/faults.js';
 
 // Full-width decision banner (ISA-18.2 wording: only ALARM is an alarm; ADVISORY is a watch).
 // Always present so the layout never jumps. ACK lives here and only here: the button sends the
@@ -61,26 +61,16 @@ export default function AlarmBanner({ state, onAck, ackError, offline }) {
   }
 
   const color = decisionColor(d);
-  const f = fault(d.fault);
+  const text = decisionText(d);
   const hints = state.physics_rules.filter((r) => r.fired);
   const unacked = d.state === 'ALARM' && d.alarm_id && !d.acked;
 
-  let kind;
-  let title;
-  let note;
+  // wording shared with the decision panel and the intro (lib/faults.js decisionText)
+  const { kind, title } = text;
+  let note = text.sub;
   if (d.state === 'ALARM') {
-    kind = 'ALARM';
-    title = f.title(d.location);
     note = d.acked ? `Acknowledged by ${d.acked_by} at ${clock(d.acked_at)} · condition still active` : 'Unacknowledged';
-  } else if (d.state === 'ADVISORY') {
-    kind = 'WATCH';
-    // fault is null when the witnesses name different faults (rule layer: no alarm on conflict)
-    const disagree = !d.fault && d.witnesses.length === 2;
-    title = d.fault ? f.title(d.location) : disagree ? 'Witnesses disagree' : 'Watch';
-    note = disagree ? 'Classifier and physics rule name different faults · not an alarm' : 'One witness only · not an alarm';
-  } else {
-    kind = 'INSPECT';
-    title = DECISION_STATES.UNCLASSIFIED.name;
+  } else if (d.state === 'UNCLASSIFIED') {
     note = hints.length
       ? `Physics hint: ${hints.map((r) => `${r.rule}${r.location ? ` · cyl ${r.location}` : ''} (${BASIS[r.rule_basis] ?? r.rule_basis})`).join(', ')}`
       : 'No physics hint';
