@@ -3,6 +3,10 @@
     python -m uvicorn backend.main:app --port 8000
 
 Environment:
+    S720_SCENARIO         fake scenario to start with (default: misfire); see GET /scenarios
+    S720_VALIDATE         1 = check every outgoing message against contract/schemas and log violations
+    S720_OPCUA            0 = don't start the OPC UA server (default: on)
+    S720_OPCUA_ENDPOINT   default opc.tcp://127.0.0.1:4840/720/
     S720_SCENARIO   source to start with (default: misfire): a fake scenario, or "sim" for the live
                     simulator (L1); see GET /scenarios
     S720_SIM_SEED, S720_SIM_ENGINE   simulator run seed / randomised engine seed (sim only)
@@ -22,33 +26,50 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from backend.messages import SCHEMA_VERSION
+from backend.opcua_bridge import DEFAULT_ENDPOINT, OpcuaBridge
 from backend.runtime import Hub, Runtime, put_latest
 from backend.sources import describe, make_source, source_names
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+log = logging.getLogger("backend")
 
 
-def create_app(scenario: str | None = None, validate: bool | None = None) -> FastAPI:
+def create_app(scenario: str | None = None, validate: bool | None = None, opcua: str | bool | None = None) -> FastAPI:
+    """opcua: None = from the environment, False = off, a string = the endpoint to serve on."""
     scenario = scenario or os.environ.get("S720_SCENARIO", "misfire")
     if validate is None:
         validate = os.environ.get("S720_VALIDATE", "0") == "1"
+    if opcua is None:
+        opcua = os.environ.get("S720_OPCUA_ENDPOINT", DEFAULT_ENDPOINT) if os.environ.get("S720_OPCUA", "1") != "0" else False
     runtime = Runtime(scenario, validate=validate)
+    bridge = OpcuaBridge(runtime, opcua) if opcua else None
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         await runtime.start()
+        if bridge is not None:
+            try:
+                await bridge.start()
+            except Exception:
+                # the dashboard keeps working without OPC UA (e.g. port 4840 already taken)
+                log.exception("OPC UA server failed to start on %s; continuing without it", bridge.endpoint)
         yield
+        if bridge is not None:
+            await bridge.stop()
         await runtime.stop()
 
     app = FastAPI(title="720 backend", version="L0", lifespan=lifespan)
     app.state.runtime = runtime
+    app.state.opcua = bridge
     # the Vite dev server on any local port (5173 by default) may call the HTTP helpers
     app.add_middleware(CORSMiddleware, allow_origin_regex=r"http://(localhost|127\.0\.0\.1)(:\d+)?",
                        allow_methods=["*"], allow_headers=["*"])
 
     @app.get("/health")
     def health():
-        return {"status": "ok", "schema_version": SCHEMA_VERSION, "scenario": runtime.scenario.name}
+        return {"status": "ok", "schema_version": SCHEMA_VERSION, "scenario": runtime.scenario.name,
+                "maintenance": runtime.maintenance_mode,
+                "opcua": bridge.endpoint if bridge is not None and bridge.running else None}
 
     @app.get("/scenarios")
     def scenarios():
@@ -66,6 +87,14 @@ def create_app(scenario: str | None = None, validate: bool | None = None) -> Fas
         runtime.select(name, source)
         return {"current": name}
 
+    @app.post("/maintenance/{mode}")
+    def maintenance(mode: str):
+        """Explicit maintenance/test mode: asset health shows CHECK_FUNCTION while nothing is wrong.
+        A latched alarm or an unclassified anomaly keeps its own health. Doesn't touch the rule layer."""
+        if mode not in ("on", "off"):
+            raise HTTPException(400, "use /maintenance/on or /maintenance/off")
+        runtime.set_maintenance(mode == "on")
+        return {"maintenance": runtime.maintenance_mode}
     @app.post("/inject")
     async def inject(body: Injection):
         """Inject a fault into the live simulator (source "sim" only). Applies from the next engine cycle."""

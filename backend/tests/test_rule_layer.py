@@ -170,3 +170,16 @@ def test_classifier_majority():
     assert classifier_label(VALVE.models) is None  # no majority
     assert classifier_label([{"model": "Baseline", "label": "knock", "p": 0.8}]) == "knock"
     assert assess(HEALTHY).kind == "healthy"
+
+
+def test_check_function_only_in_maintenance_and_never_over_a_fault():
+    layer = RuleLayer()
+    normal = layer.step(HEALTHY)
+    assert asset_ne107(normal) == "NORMAL" and asset_ne107(normal, maintenance=True) == "CHECK_FUNCTION"
+    advisory = RuleLayer().step(CLASSIFIER_ONLY)
+    assert asset_ne107(advisory, maintenance=True) == "CHECK_FUNCTION"
+    alarm = run(RuleLayer(), MISFIRE, MISFIRE)[-1]
+    assert asset_ne107(alarm, maintenance=True) == "OFF_SPEC"
+    clog = Evidence(models("injector_clog"), [rule("injector_clog", location=1)], 0.7, 0.6)
+    assert asset_ne107(run(RuleLayer(), clog, clog)[-1], maintenance=True) == "MAINTENANCE_REQUIRED"
+    assert asset_ne107(RuleLayer().step(VALVE), maintenance=True) == "OFF_SPEC"
