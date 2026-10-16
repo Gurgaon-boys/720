@@ -64,10 +64,11 @@ export function decisionText(d, localisation) {
     if (!d.fault) {
       const disagree = d.witnesses.length === 2;
       const title = disagree ? 'Witnesses disagree' : 'Watch';
-      return {
-        kind: 'WATCH', title, panelTitle: title, tag: disagree ? 'WATCH · DISAGREE' : 'WATCH',
-        sub: disagree ? 'Classifier and physics rule name different faults. Not an alarm.' : 'One witness only. Not an alarm.',
-      };
+      // no witness at all: a rule-layer watch such as the post-misfire recovery (its reason is in guidance)
+      const sub = disagree ? 'Classifier and physics rule name different faults. Not an alarm.'
+        : d.witnesses.length === 0 ? 'No fault witness: a rule-layer watch. Not an alarm.'
+        : 'One witness only. Not an alarm.';
+      return { kind: 'WATCH', title, panelTitle: title, tag: disagree ? 'WATCH · DISAGREE' : 'WATCH', sub };
     }
     return { kind: 'WATCH', title: f.title(cyl), panelTitle: `Watch · ${f.title(cyl)}`, tag: `WATCH · ${f.short}`, sub: 'One witness only. Not an alarm.' };
   }
