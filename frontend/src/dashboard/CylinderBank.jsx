@@ -112,7 +112,8 @@ export default function CylinderBank({ state, offline }) {
                         <div className={`loc-fill${over ? ' over' : ''}`} style={{ transform: `scaleX(${Math.max(0, Math.min(1, score))})` }} />
                         <div className="loc-thresh" style={{ left: `${anomaly.threshold * 100}%` }} />
                       </div>
-                      <SmoothNumber className={`mono loc-val${over ? ' over' : ''}`} value={score} format={(v) => v.toFixed(2)} tau={200} />
+                      {/* evidence for the decision: always the exact value, never eased */}
+                      <span className={`mono loc-val${over ? ' over' : ''}`}>{score.toFixed(2)}</span>
                     </div>
                   )}
                 </div>

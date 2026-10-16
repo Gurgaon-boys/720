@@ -13,6 +13,8 @@ const EPS = 1e-4;
 // animation frame while moving, writes the exact target when settled, and then stops the loop.
 // onFrame writes to the DOM directly (a ref), so a 10 Hz stream doesn't re-render React at 60 fps.
 // A change of shape (array length) or a reduced-motion preference snaps straight to the target.
+// So does a hidden page: browsers pause animation frames there, and an eased value must never be
+// left showing something that isn't the data (e.g. while the window is covered during a demo).
 export function useSmoothed(target, { tau = 150, onFrame }) {
   const s = useRef({ cur: null, target: null, raf: 0, last: 0 });
   const cb = useRef(onFrame);
@@ -23,7 +25,7 @@ export function useSmoothed(target, { tau = 150, onFrame }) {
     st.target = target;
     const isArr = Array.isArray(target);
     const sameShape = st.cur != null && Array.isArray(st.cur) === isArr && (!isArr || st.cur.length === target.length);
-    if (target == null || !sameShape || reducedMotion()) {
+    if (target == null || !sameShape || reducedMotion() || document.hidden) {
       cancelAnimationFrame(st.raf);
       st.raf = 0;
       st.cur = isArr ? target.slice() : target;
@@ -53,7 +55,22 @@ export function useSmoothed(target, { tau = 150, onFrame }) {
     st.raf = requestAnimationFrame(step);
   }, [target, tau]);
 
-  useEffect(() => () => cancelAnimationFrame(s.current.raf), []);
+  // the page going hidden mid-ease: drop the animation and show the exact target now
+  useEffect(() => {
+    const st = s.current;
+    const onVis = () => {
+      if (!document.hidden || st.target == null) return;
+      cancelAnimationFrame(st.raf);
+      st.raf = 0;
+      st.cur = Array.isArray(st.target) ? st.target.slice() : st.target;
+      cb.current(st.cur);
+    };
+    document.addEventListener('visibilitychange', onVis);
+    return () => {
+      document.removeEventListener('visibilitychange', onVis);
+      cancelAnimationFrame(st.raf);
+    };
+  }, []);
 }
 
 // A number that eases between readings instead of flickering at the stream rate. The text is set
