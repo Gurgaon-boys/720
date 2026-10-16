@@ -24,13 +24,14 @@ export const DECISION_STATES = {
 };
 
 // 3D engine view: one colour per decision.state, never per fault (ISA-101: grey normal, amber
-// ADVISORY, red ALARM, blue UNCLASSIFIED). Always shown together with `label`, never colour alone.
-// Deliberately separate from DECISION_STATES above, which the 2D panels use (fault colour on ALARM).
+// ADVISORY, red ALARM; UNCLASSIFIED uses the 2D dashboard's token so both views agree, D114).
+// Always shown together with `label`, never colour alone. Separate from DECISION_STATES above, which the
+// 2D panels use (fault colour on ALARM).
 export const STATE_3D = {
   NORMAL: { label: 'NORMAL', color: '#8e9aab' },
   ADVISORY: { label: 'ADVISORY', color: '#ffb020' },
   ALARM: { label: 'ALARM', color: '#ff4d4f' },
-  UNCLASSIFIED: { label: 'UNCLASSIFIED', color: '#4c9aff' },
+  UNCLASSIFIED: { label: 'UNCLASSIFIED', color: DECISION_STATES.UNCLASSIFIED.color },
 };
 export function state3d(state) {
   const s = STATE_3D[state];
