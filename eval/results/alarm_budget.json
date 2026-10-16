@@ -1,0 +1,377 @@
+{
+ "created_at": "2026-10-16T13:59:10+00:00",
+ "sim_version": "2.1.1",
+ "healthy": {
+  "sim": {
+   "label": "SIM 2.1",
+   "column": "A",
+   "split": "soak_fresh3 engines 1100-1139 (unseen)",
+   "hours": 2.0,
+   "source": "eval/results/soak_l3_fresh3.json (after)",
+   "levels": {
+    "physics_alone": {
+     "events": 12,
+     "exposure_hours": 2.0,
+     "per_hour": 6.0,
+     "upper_95_per_hour": 9.721284664957514,
+     "bound_method": "poisson_exact_one_sided_95"
+    },
+    "classifier_alone": {
+     "events": 2,
+     "exposure_hours": 2.0,
+     "per_hour": 1.0,
+     "upper_95_per_hour": 3.147896810935994,
+     "bound_method": "poisson_exact_one_sided_95"
+    },
+    "alarm": {
+     "events": 0,
+     "exposure_hours": 2.0,
+     "per_hour": 0.0,
+     "upper_95_per_hour": 1.4978661367769948,
+     "bound_method": "poisson_exact_one_sided_95"
+    },
+    "unclassified": {
+     "events": 0,
+     "exposure_hours": 2.0,
+     "per_hour": 0.0,
+     "upper_95_per_hour": 1.4978661367769948,
+     "bound_method": "poisson_exact_one_sided_95"
+    },
+    "advisory": {
+     "events": 14,
+     "exposure_hours": 2.0,
+     "per_hour": 7.0,
+     "upper_95_per_hour": 10.943242956435547,
+     "bound_method": "poisson_exact_one_sided_95"
+    }
+   }
+  },
+  "real": {
+   "label": "REAL carOBD",
+   "column": "C",
+   "split": "carOBD held-out files",
+   "hours": 12.545,
+   "files": 39,
+   "source": "eval/results/column_c_detail.json (OBD branch, 2-window UNCLASSIFIED; secondary analysis)",
+   "note": "no classifier on OBD: classifier alone is not measured and ALARM needs two witnesses",
+   "levels": {
+    "physics_alone": {
+     "kind": "rate",
+     "events": 0,
+     "exposure_hours": 12.5447,
+     "per_hour": 0.0,
+     "upper_95_per_hour": 0.2388041935474051,
+     "bound_method": "poisson_exact_one_sided_95",
+     "column": "C",
+     "split": "carOBD held-out files",
+     "unit": "episodes",
+     "windows": 0
+    },
+    "classifier_alone": null,
+    "alarm": {
+     "kind": "rate",
+     "events": 0,
+     "exposure_hours": 12.5447,
+     "per_hour": 0.0,
+     "upper_95_per_hour": 0.2388041935474051,
+     "bound_method": "poisson_exact_one_sided_95",
+     "column": "C",
+     "split": "carOBD held-out files",
+     "unit": "episodes",
+     "structurally_limited": true,
+     "note": "no classifier on carOBD: ALARM needs two witnesses, so it cannot occur"
+    },
+    "unclassified": {
+     "kind": "rate",
+     "events": 4,
+     "exposure_hours": 12.5447,
+     "per_hour": 0.3188591926662385,
+     "upper_95_per_hour": 0.7296709217221776,
+     "bound_method": "poisson_exact_one_sided_95",
+     "column": "C",
+     "split": "carOBD held-out files",
+     "unit": "episodes",
+     "windows": 4
+    },
+    "advisory": {
+     "kind": "rate",
+     "events": 0,
+     "exposure_hours": 12.5447,
+     "per_hour": 0.0,
+     "upper_95_per_hour": 0.2388041935474051,
+     "bound_method": "poisson_exact_one_sided_95",
+     "column": "C",
+     "split": "carOBD held-out files",
+     "unit": "episodes",
+     "windows": 0
+    }
+   }
+  }
+ },
+ "operator_projection": {
+  "engines": 50,
+  "per_engine_operator_notifications": {
+   "events": 0,
+   "exposure_hours": 2.0,
+   "per_hour": 0.0,
+   "upper_95_per_hour": 1.4978661367769948,
+   "bound_method": "poisson_exact_one_sided_95"
+  },
+  "fleet_per_hour": 0.0,
+  "fleet_upper_95_per_hour": 74.89330683884974,
+  "guidance_per_operator_hour": {
+   "very likely acceptable (1 per 10 min)": 6.0,
+   "maximum manageable (2 per 10 min)": 12.0
+  },
+  "assumptions": [
+   "50 engines like the SIM 2.1 healthy third-soak fleet, independent, steady operation",
+   "every ALARM and every UNCLASSIFIED episode is one operator notification; ADVISORY is logged, not annunciated",
+   "nuisance load on a healthy fleet only (true fault alarms come on top)",
+   "guidance: EEMUA 191 / ANSI/ISA-18.2 average alarm rate per operator (6/h acceptable, 12/h max manageable)"
+  ]
+ },
+ "fault_runs": {
+  "label": "SIM 2.1",
+  "column": "A",
+  "split": "robustness engines (unseen), 90 s of fault, 20 runs each",
+  "detection": {
+   "misfire 0.5": {
+    "physics_alone": {
+     "kind": "proportion",
+     "successes": 20,
+     "n": 20,
+     "value": 1.0,
+     "ci_95": [
+      0.8388698745050667,
+      1.0
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": 0.359718749999999
+    },
+    "classifier_alone": {
+     "kind": "proportion",
+     "successes": 20,
+     "n": 20,
+     "value": 1.0,
+     "ci_95": [
+      0.8388698745050667,
+      1.0
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": 0.4033125000000002
+    },
+    "alarm": {
+     "kind": "proportion",
+     "successes": 20,
+     "n": 20,
+     "value": 1.0,
+     "ci_95": [
+      0.8388698745050667,
+      1.0
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": 0.6148437499999986
+    },
+    "unclassified": {
+     "kind": "proportion",
+     "successes": 3,
+     "n": 20,
+     "value": 0.15,
+     "ci_95": [
+      0.05236779195949584,
+      0.36042329588695743
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": 0.2992708333333347
+    }
+   },
+   "knock 0.5": {
+    "physics_alone": {
+     "kind": "proportion",
+     "successes": 20,
+     "n": 20,
+     "value": 1.0,
+     "ci_95": [
+      0.8388698745050667,
+      1.0
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": 0.3424166666666668
+    },
+    "classifier_alone": {
+     "kind": "proportion",
+     "successes": 20,
+     "n": 20,
+     "value": 1.0,
+     "ci_95": [
+      0.8388698745050667,
+      1.0
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": 0.3424166666666668
+    },
+    "alarm": {
+     "kind": "proportion",
+     "successes": 20,
+     "n": 20,
+     "value": 1.0,
+     "ci_95": [
+      0.8388698745050667,
+      1.0
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": 0.4185416666666679
+    },
+    "unclassified": {
+     "kind": "proportion",
+     "successes": 17,
+     "n": 20,
+     "value": 0.85,
+     "ci_95": [
+      0.6395767041130426,
+      0.9476322080405041
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": 1.8057499999999997
+    }
+   },
+   "injector_clog 0.5": {
+    "physics_alone": {
+     "kind": "proportion",
+     "successes": 20,
+     "n": 20,
+     "value": 1.0,
+     "ci_95": [
+      0.8388698745050667,
+      1.0
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": 23.094145833333332
+    },
+    "classifier_alone": {
+     "kind": "proportion",
+     "successes": 19,
+     "n": 20,
+     "value": 0.95,
+     "ci_95": [
+      0.7638641064874331,
+      0.9911187805671268
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": 0.49668750000000017
+    },
+    "alarm": {
+     "kind": "proportion",
+     "successes": 14,
+     "n": 20,
+     "value": 0.7,
+     "ci_95": [
+      0.4810232237710206,
+      0.854524726031006
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": 22.68490625
+    },
+    "unclassified": {
+     "kind": "proportion",
+     "successes": 17,
+     "n": 20,
+     "value": 0.85,
+     "ci_95": [
+      0.6395767041130426,
+      0.9476322080405041
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": 0.48397916666666774
+    }
+   },
+   "valve_tick 0.3": {
+    "physics_alone": {
+     "applicable": false,
+     "reason": "valve tick is held out: no rule, no trained class",
+     "named_alarms": null
+    },
+    "classifier_alone": {
+     "applicable": false,
+     "reason": "valve tick is held out: no rule, no trained class",
+     "named_alarms": null
+    },
+    "alarm": {
+     "applicable": false,
+     "reason": "valve tick is held out: no rule, no trained class",
+     "named_alarms": 0
+    },
+    "unclassified": {
+     "kind": "proportion",
+     "successes": 1,
+     "n": 20,
+     "value": 0.05,
+     "ci_95": [
+      0.008881219432873136,
+      0.23613589351256675
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": 1.0168125000000003
+    }
+   },
+   "valve_tick 0.6": {
+    "physics_alone": {
+     "applicable": false,
+     "reason": "valve tick is held out: no rule, no trained class",
+     "named_alarms": null
+    },
+    "classifier_alone": {
+     "applicable": false,
+     "reason": "valve tick is held out: no rule, no trained class",
+     "named_alarms": null
+    },
+    "alarm": {
+     "applicable": false,
+     "reason": "valve tick is held out: no rule, no trained class",
+     "named_alarms": 0
+    },
+    "unclassified": {
+     "kind": "proportion",
+     "successes": 7,
+     "n": 20,
+     "value": 0.35,
+     "ci_95": [
+      0.18118954786794464,
+      0.5671494897805354
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": 0.48574999999999946
+    }
+   },
+   "valve_tick 1": {
+    "physics_alone": {
+     "applicable": false,
+     "reason": "valve tick is held out: no rule, no trained class",
+     "named_alarms": null
+    },
+    "classifier_alone": {
+     "applicable": false,
+     "reason": "valve tick is held out: no rule, no trained class",
+     "named_alarms": null
+    },
+    "alarm": {
+     "applicable": false,
+     "reason": "valve tick is held out: no rule, no trained class",
+     "named_alarms": 0
+    },
+    "unclassified": {
+     "kind": "proportion",
+     "successes": 20,
+     "n": 20,
+     "value": 1.0,
+     "ci_95": [
+      0.8388698745050667,
+      1.0
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": 0.4597083333333334
+    }
+   }
+  }
+ }
+}
