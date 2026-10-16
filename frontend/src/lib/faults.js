@@ -23,6 +23,22 @@ export const DECISION_STATES = {
   UNCLASSIFIED: { name: 'Abnormal, unclassified: inspect', color: '#ff40e6' },
 };
 
+// 3D engine view: one colour per decision.state, never per fault (ISA-101: grey normal, amber
+// ADVISORY, red ALARM; UNCLASSIFIED uses the 2D dashboard's token so both views agree, D114).
+// Always shown together with `label`, never colour alone. Separate from DECISION_STATES above, which the
+// 2D panels use (fault colour on ALARM).
+export const STATE_3D = {
+  NORMAL: { label: 'NORMAL', color: '#8e9aab' },
+  ADVISORY: { label: 'ADVISORY', color: '#ffb020' },
+  ALARM: { label: 'ALARM', color: '#ff4d4f' },
+  UNCLASSIFIED: { label: 'UNCLASSIFIED', color: DECISION_STATES.UNCLASSIFIED.color },
+};
+export function state3d(state) {
+  const s = STATE_3D[state];
+  if (!s) throw new Error(`Unknown decision state "${state}"`); // never shown as NORMAL
+  return s;
+}
+
 // One wording for every decision, shared by the banner, the decision panel and the intro so they
 // can't drift apart. ADVISORY can arrive with `fault: null` when the classifier and the physics rule
 // name different faults (rule layer: no alarm on a conflict).
