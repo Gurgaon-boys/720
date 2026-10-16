@@ -30,7 +30,7 @@ from scipy import signal as sps
 from backend.rule_layer import Evidence
 from backend.scenarios import SIGNAL_RATE_HZ, SIGNAL_S, WINDOW_S, Phase, Window
 from dsp.features import fingerprint
-from dsp.rules import PER_LOCATION_THRESHOLD, all_rules, load_all, per_location
+from dsp.rules import PER_LOCATION_THRESHOLD, all_rules, load_all, per_location, trim_recovery
 from dsp.windows import CycleWindower
 from models.features import StreamFeatures
 from models.witness import ClassifierWitness, WitnessOut
@@ -47,7 +47,8 @@ OBD_UNITS = {"rpm": "rev/min", "load_pct": "%", "throttle_pct": "%", "map_kpa": 
              "stft_pct": "%", "ltft_pct": "%", "spark_adv_deg": "deg", "lambda": "1",
              "intake_air_temp_c": "degC", "battery_v": "V", "baro_kpa": "kPa"}
 _RUNNING = Phase()        # the source itself never goes "offline"; sensors drop out individually
-SABOTAGE_CHANNELS = ("mic", "accel", "crank", "cam")   # sensors an operator may switch off (Sabotage Lab, D140)
+SABOTAGE_CHANNELS = ("mic", "accel", "crank", "cam")   # sensors an operator may switch off (Sabotage Lab, D137)
+WARMUP_S = 20.0           # guidance "warming up" after a start or POST /reset_engine (classifier needs 20 OBD rows)
 
 
 class SimSource:
@@ -62,11 +63,12 @@ class SimSource:
     period = None
 
     def __init__(self, params: EngineParams | None = None, seed: int = 0, thresholds: dict | None = None,
-                 regimes: Regimes | None = None, witness: ClassifierWitness | None = None):
+                 regimes: Regimes | None = None, witness: ClassifierWitness | None = None, reset_n: int = 0):
         if FS % SIGNAL_RATE_HZ or round(CHUNK_S * FS) % DECIMATE:
             raise ValueError("chunk length must be a whole number of display samples")
         self.params = params or EngineParams()
         self.seed = seed
+        self.reset_n = reset_n          # POST /reset_engine count: a fresh engine, same seed, its own run_id
         self.thresholds = thresholds or load_all()
         self.sim = EngineSim(self.params, seed, regimes=regimes, purpose="demo")
         self.features = StreamFeatures()
@@ -84,14 +86,19 @@ class SimSource:
         self._disabled: set[str] = set()                                         # operator-disabled sensors
         self._centres, self._baseline = healthy_fingerprint(self.params, self.seed)
 
+    @property
+    def warming_up(self) -> bool:
+        """The first WARMUP_S of a run: the classifier abstains until its OBD window is full (MIN_OBD_ROWS)."""
+        return self.stream_t < WARMUP_S
+
     @classmethod
-    def from_env(cls) -> "SimSource":
+    def from_env(cls, reset_n: int = 0) -> "SimSource":
         """S720_SIM_SEED: run seed (default 0). S720_SIM_ENGINE: engine seed for a randomised engine
         (default: the reference EngineParams). S720_SIM_REGIMES=eval: harder regimes incl. dropouts."""
         engine = os.environ.get("S720_SIM_ENGINE")
         params = EngineParams.randomised(int(engine)) if engine else None
         regimes = Regimes.eval() if os.environ.get("S720_SIM_REGIMES") == "eval" else None
-        return cls(params, seed=int(os.environ.get("S720_SIM_SEED", "0")), regimes=regimes)
+        return cls(params, seed=int(os.environ.get("S720_SIM_SEED", "0")), regimes=regimes, reset_n=reset_n)
 
     # ------------------------------------------------------------ control (the injection console)
 
@@ -235,7 +242,7 @@ class SimSource:
         scale = self._baseline.max()
         map_pa = float(win.meta["map_pa"])
         fields = {
-            "run_id": f"sim_{self.seed:04d}",
+            "run_id": f"sim_{self.seed:04d}" + (f"_r{self.reset_n}" if self.reset_n else ""),
             "source": "simulated",
             "source_label": "simulated",
             "audioset_pool": None,
@@ -260,8 +267,12 @@ class SimSource:
                           "amplitude": [round(float(v), 3) for v in fp / scale],
                           "baseline_amplitude": [round(float(v), 3) for v in self._baseline / scale]},
         }
-        evidence = Evidence(models=wit.models, physics_rules=rules, anomaly_score=wit.score,
-                            anomaly_threshold=PER_LOCATION_THRESHOLD, severity=None, classifier_location=wit.location)
+        # warm-up: like the classifier (MIN_OBD_ROWS), the anomaly witness waits WARMUP_S, so the start transient of
+        # a fresh engine (POST /reset_engine) can't read as UNCLASSIFIED; the score is still shown
+        score = None if win.t_end < WARMUP_S else wit.score
+        evidence = Evidence(models=wit.models, physics_rules=rules, anomaly_score=score,
+                            anomaly_threshold=PER_LOCATION_THRESHOLD, severity=None, classifier_location=wit.location,
+                            t=round(win.t_end, 3), trims=trim_recovery(w.obd, self.thresholds["injector_clog"]))
         return Window(round(win.t_end, 3), _RUNNING, evidence, fields)
 
 

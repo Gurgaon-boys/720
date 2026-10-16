@@ -33,7 +33,7 @@ function unavailableReason(state, offline, mock) {
   return null;
 }
 
-export default function InjectionConsole({ state, offline, mock, onStart, onStop }) {
+export default function InjectionConsole({ state, offline, mock, onStart, onStop, onReset }) {
   const onReplay = state.mode === 'replay' && state.replay != null;
   const faultIds = onReplay ? REPLAY_FAULT_IDS : FAULT_IDS;
   const [fault, setFault] = useState(onReplay ? 'lean_drift' : 'misfire');
@@ -84,6 +84,13 @@ export default function InjectionConsole({ state, offline, mock, onStart, onStop
   };
   const start = () => send({ kind: 'start', fault, cylinder: cyl }, () => onStart({ fault, cylinder: cyl, severity }));
   const stop = () => send({ kind: 'stop' }, () => onStop());
+  // Reset engine: a fresh healthy simulator engine (same seed). The new run_id remounts this console.
+  const [resetting, setResetting] = useState(false);
+  const reset = () => {
+    setError(null);
+    setResetting(true);
+    onReset().catch((e) => { setResetting(false); setError(e.message); });
+  };
 
   const locked = reason != null || pending != null || inj != null; // inputs: only before a new start
   const runningFor = inj ? Math.max(0, Date.now() / 1000 - inj.started_at) : 0;
@@ -137,6 +144,12 @@ export default function InjectionConsole({ state, offline, mock, onStart, onStop
           ) : (
             <button type="button" className="ack-btn" onClick={start} disabled={reason != null || pending != null}>
               {pending?.kind === 'start' ? 'Waiting for the backend…' : 'Inject'}
+            </button>
+          )}
+          {onReset && !onReplay && (
+            <button type="button" className="ack-btn" onClick={reset} disabled={offline || resetting || state.source !== 'simulated'}
+              title="A fresh healthy engine, same seed: trims and the rule layer start over (about 20 s to warm up)">
+              {resetting ? 'Resetting…' : 'Reset engine'}
             </button>
           )}
         </div>

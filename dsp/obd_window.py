@@ -10,6 +10,7 @@ import numpy as np
 
 WINDOW_S = 30.0
 RETARD_LOOKBACK_S = 60.0
+RECENT_S = 5.0          # "now" for the trims: STFT / LTFT means over the last 5 s (post-misfire recovery gate)
 
 
 def total_trim_pct(stft_pct, ltft_pct):
@@ -28,12 +29,18 @@ def obd_window(t: np.ndarray, stft: np.ndarray, ltft: np.ndarray, spark: np.ndar
     prev = (t > t_end - RETARD_LOOKBACK_S) & (t <= t_end - WINDOW_S)
     n = int(cur.sum())
     if n == 0:
-        return {"n": 0, "trim_mean_pct": 0.0, "trim_sd_pct": 0.0, "ltft_pct": 0.0, "spark_retard_deg": 0.0}
+        return {"n": 0, "trim_mean_pct": 0.0, "trim_sd_pct": 0.0, "ltft_pct": 0.0, "spark_retard_deg": 0.0,
+                "stft_recent_pct": 0.0, "ltft_recent_pct": 0.0}
     trim = total_trim_pct(np.asarray(stft)[cur], np.asarray(ltft)[cur])
     sp = np.asarray(spark, dtype=float)
     retard = float(np.median(sp[prev]) - np.median(sp[cur])) if prev.sum() >= 5 else 0.0
+    rec = (t > t_end - RECENT_S) & (t <= t_end)
+    if not rec.any():
+        rec = cur
     return {"n": n, "trim_mean_pct": float(trim.mean()), "trim_sd_pct": float(trim.std()),
-            "ltft_pct": float(np.mean(np.asarray(ltft)[cur])), "spark_retard_deg": retard}
+            "ltft_pct": float(np.mean(np.asarray(ltft)[cur])), "spark_retard_deg": retard,
+            "stft_recent_pct": float(np.mean(np.asarray(stft, dtype=float)[rec])),
+            "ltft_recent_pct": float(np.mean(np.asarray(ltft, dtype=float)[rec]))}
 
 
 class ObdHistory:
