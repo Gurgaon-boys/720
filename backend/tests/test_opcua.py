@@ -19,14 +19,39 @@ from asyncua import Client, ua
 from websockets.sync.client import connect
 
 from backend.main import create_app
-from backend.opcua_bridge import NE107, NOT_SUPPORTED, OpcuaBridge
+from backend.opcua_bridge import NE107, NOT_SUPPORTED, OpcuaBridge, endpoint_from_env, reachable_endpoints
 from backend.runtime import Runtime
 
 
 def free_port():
-    with socket.socket() as s:
-        s.bind(("127.0.0.1", 0))
-        return s.getsockname()[1]
+    return free_ports(1)[0]
+
+
+def free_ports(n):
+    """n distinct free ports: all sockets stay bound until every port is picked, so two calls can't
+    hand out the same port. The OS may still give a port away before the server binds it, so servers
+    started on one retry on OSError (Rig, _start_bridge)."""
+    socks = [socket.socket() for _ in range(n)]
+    try:
+        for s in socks:
+            s.bind(("127.0.0.1", 0))
+        return [s.getsockname()[1] for s in socks]
+    finally:
+        for s in socks:
+            s.close()
+
+
+async def _start_bridge(runtime, attempts=5):
+    for k in range(attempts):
+        endpoint = f"opc.tcp://127.0.0.1:{free_port()}/720/"
+        bridge = OpcuaBridge(runtime, endpoint)
+        try:
+            await bridge.start()
+            return bridge, endpoint
+        except OSError:
+            await bridge.stop()
+            if k == attempts - 1:
+                raise
 
 
 class Events:
@@ -51,17 +76,24 @@ async def wait_for(fn, timeout=12.0, step=0.05):
     raise AssertionError("condition not met in time")
 
 
+async def event(events, text, timeout=5.0):
+    """The events whose message contains text, once at least one has arrived (subscriptions publish
+    every 50 ms, later under load: never assume a fixed delay)."""
+    async def arrived():
+        return bool(events.find(text))
+    await wait_for(arrived, timeout)
+    return events.find(text)
+
+
 class Rig:
     """Runtime + bridge on a free port, plus a connected client with event subscriptions."""
 
     def __init__(self, scenario):
-        self.endpoint = f"opc.tcp://127.0.0.1:{free_port()}/720/"
         self.runtime = Runtime(scenario)
-        self.bridge = OpcuaBridge(self.runtime, self.endpoint)
 
     async def __aenter__(self):
         await self.runtime.start()
-        await self.bridge.start()
+        self.bridge, self.endpoint = await _start_bridge(self.runtime)
         self.client = Client(self.endpoint)
         await self.client.connect()
         self.idx = await self.client.get_namespace_index("urn:720:hackhive")
@@ -168,9 +200,9 @@ def test_misfire_alarm_ack_and_clear():
             await wait_for(lambda: _ok(r.read("EngineAsset.Decision.State"), lambda v: v == "NORMAL"))
             assert await r.read("EngineAsset.Decision.AlarmId") == ""
             assert await r.read("EngineAsset.AssetHealth") == 0
-            await asyncio.sleep(0.3)
 
             for events in (r.server_events, r.engine_events):
+                await event(events, "a_0001 cleared")
                 raised = events.find("ALARM misfire cyl 3 (a_0001)")
                 assert len(raised) == 1 and raised[0]["sev"] == 800 and raised[0]["source"] == "EngineAsset"
                 assert raised[0]["fault"] == "misfire" and raised[0]["data_source"] == "SIMULATED"
@@ -196,24 +228,21 @@ def test_unclassified_injector_clog_and_sensor_failure():
             await wait_for(lambda: _ok(r.read("EngineAsset.Decision.State"), lambda v: v == "UNCLASSIFIED"))
             assert await r.read("EngineAsset.AssetHealth") == NE107.index("OFF_SPEC")
             assert await r.read("EngineAsset.Decision.RootCause") == "unclassified"
-            await asyncio.sleep(0.2)
-            u = r.server_events.find("Abnormal, unclassified: inspect · physics hint valve_tick cyl 2")
+            u = await event(r.server_events, "Abnormal, unclassified: inspect · physics hint valve_tick cyl 2")
             assert u and u[0]["sev"] == 700
 
             r.runtime.select("injector_clog")
             await wait_for(lambda: _ok(r.read("EngineAsset.Decision.State"), lambda v: v == "ALARM"))
             assert await r.read("EngineAsset.AssetHealth") == NE107.index("MAINTENANCE_REQUIRED")
-            await asyncio.sleep(0.2)
-            assert [e["sev"] for e in r.server_events.find("ALARM injector_clog cyl 1")] == [600]
+            assert [e["sev"] for e in await event(r.server_events, "ALARM injector_clog cyl 1")] == [600]
 
             r.runtime.select("mic_dropout")
             await wait_for(lambda: _ok(r.read("EngineAsset.SensorHealth.mic"), lambda v: v == NE107.index("FAILURE")))
             assert await r.read("EngineAsset.SensorHealth.accel") == 0
             assert await r.read("EngineAsset.AssetHealth") == 0  # sensor health stays separate
-            await asyncio.sleep(0.2)
-            fail = r.server_events.find("Sensor mic FAILURE")
+            fail = await event(r.server_events, "Sensor mic FAILURE")
             assert fail and fail[0]["sev"] == 500 and fail[0]["sensor"] == "mic"
-            assert r.server_events.find("Run changed to fake_mic_dropout")
+            assert await event(r.server_events, "Run changed to fake_mic_dropout")
     run(go())
 
 
@@ -225,19 +254,17 @@ def test_diagnostics_offline():
             assert await r.read("EngineAsset.SensorHealth.DiagnosticStream") == NE107.index("FAILURE")
             assert await r.read("EngineAsset.SensorHealth.LastStateAgeS") > 3.0
             assert await r.read("EngineAsset.AssetHealth") == 0  # stream health isn't engine health
-            await asyncio.sleep(0.2)
-            off = r.server_events.find("Diagnostics offline")
+            off = await event(r.server_events, "Diagnostics offline")
             assert off and off[0]["sev"] == 500 and off[0]["sensor"] == "DiagnosticStream"
             await wait_for(lambda: _ok(r.read("EngineAsset.Diagnostics.DiagnosticsOnline"), lambda v: v is True))
             assert await r.read("EngineAsset.SensorHealth.DiagnosticStream") == 0
-            await asyncio.sleep(0.2)
-            assert r.server_events.find("Diagnostics back online")
+            assert await event(r.server_events, "Diagnostics back online")
     run(go())
 
 
 def test_dashboard_and_opcua_agree():
     """ACK from the dashboard shows up on OPC UA, and ACK from OPC UA shows up on the dashboard."""
-    port, ua_port = free_port(), free_port()
+    port, ua_port = free_ports(2)
     endpoint = f"opc.tcp://127.0.0.1:{ua_port}/720/"
     srv = uvicorn.Server(uvicorn.Config(create_app("misfire", opcua=endpoint), host="127.0.0.1", port=port,
                                         log_level="warning", ws="websockets"))
@@ -322,8 +349,7 @@ def test_real_clip_sensors_and_nulls():
     async def go():
         async with Rig("real_p3") as r:
             await wait_for(lambda: _ok(r.read("EngineAsset.Source"), lambda v: v == "REAL"), timeout=3)
-            await asyncio.sleep(0.3)
-            assert math.isnan(await r.read("EngineAsset.OperatingPoint.Rpm"))
+            await wait_for(lambda: _ok(r.read("EngineAsset.OperatingPoint.Rpm"), math.isnan), timeout=3)
             assert await r.read("EngineAsset.Decision.Cylinder") == 0
             mic = await r.node("EngineAsset.SensorHealth.mic").read_data_value()
             assert mic.StatusCode.is_good() and mic.Value.Value == 0
@@ -332,26 +358,23 @@ def test_real_clip_sensors_and_nulls():
                 assert dv.StatusCode.value == ua.StatusCodes.BadNotConnected
             r.runtime.select("healthy")  # back on a recording that has them
             await wait_for(lambda: _ok(r.read("EngineAsset.Source"), lambda v: v == "SIMULATED"), timeout=3)
-            await asyncio.sleep(1.3)  # OBD is 1 Hz
-            assert (await r.node("EngineAsset.SensorHealth.accel").read_data_value()).StatusCode.is_good()
-            assert (await r.node("EngineAsset.Obd.rpm").read_data_value()).StatusCode.is_good()
+            good = lambda path: _ok(r.node(path).read_data_value(raise_on_bad_status=False), lambda dv: dv.StatusCode.is_good())  # noqa: E731
+            await wait_for(lambda: good("EngineAsset.SensorHealth.accel"), timeout=4)
+            await wait_for(lambda: good("EngineAsset.Obd.rpm"), timeout=4)            # OBD is 1 Hz
 
             r.runtime.select("real_p3")  # simulated -> real: the old run's OBD values must not stay current
             await wait_for(lambda: _ok(r.read("EngineAsset.Source"), lambda v: v == "REAL"), timeout=3)
-            await asyncio.sleep(1.3)
-            dv = await r.node("EngineAsset.Obd.rpm").read_data_value(raise_on_bad_status=False)
-            assert dv.StatusCode.value == ua.StatusCodes.BadNotConnected
+            await wait_for(lambda: _ok(r.node("EngineAsset.Obd.rpm").read_data_value(raise_on_bad_status=False),
+                                       lambda dv: dv.StatusCode.value == ua.StatusCodes.BadNotConnected), timeout=4)
     run(go())
 
 
 def test_start_stop_restart_and_client_reconnect():
     async def go():
-        endpoint = f"opc.tcp://127.0.0.1:{free_port()}/720/"
         runtime = Runtime("healthy")
         await runtime.start()
         try:
-            bridge = OpcuaBridge(runtime, endpoint)
-            await bridge.start()
+            bridge, endpoint = await _start_bridge(runtime)
             assert bridge.running
             client = Client(endpoint)
             await client.connect()
@@ -382,3 +405,13 @@ def test_start_stop_restart_and_client_reconnect():
         finally:
             await runtime.stop()
     run(go())
+
+
+def test_opcua_host_from_environment_and_reachable_endpoints():
+    assert endpoint_from_env({}) == "opc.tcp://127.0.0.1:4840/720/"
+    assert endpoint_from_env({"S720_OPCUA_HOST": "0.0.0.0"}) == "opc.tcp://0.0.0.0:4840/720/"
+    assert endpoint_from_env({"S720_OPCUA_HOST": "0.0.0.0", "S720_OPCUA_ENDPOINT": "opc.tcp://10.0.0.5:4841/x/"}) ==         "opc.tcp://10.0.0.5:4841/x/"
+    assert reachable_endpoints("opc.tcp://127.0.0.1:4840/720/") == ["opc.tcp://127.0.0.1:4840/720/"]
+    lan = reachable_endpoints("opc.tcp://0.0.0.0:4840/720/")
+    assert lan[-1] == "opc.tcp://127.0.0.1:4840/720/" and all("0.0.0.0" not in u for u in lan)
+    assert all(u.startswith("opc.tcp://") and u.endswith(":4840/720/") for u in lan)

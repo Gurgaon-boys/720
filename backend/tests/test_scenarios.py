@@ -101,7 +101,7 @@ def test_ack_flow_through_runtime():
                         (json.dumps({"type": "ack", "alarm_id": alarm_id}), "invalid_message")):
         err = r.rt.handle_ack(bad)
         assert err["type"] == "ack_error" and err["reason"] == reason
-        assert r.rt.rules.decision() == before
+        assert {**r.rt.rules.decision(), "guidance": before["guidance"]} == before   # the broadcast adds guidance
 
     assert r.rt.handle_ack(ack(alarm_id)) is None
     r._drain()
