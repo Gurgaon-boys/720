@@ -24,11 +24,18 @@ every fault the classifier names is a false fault.
 """
 from __future__ import annotations
 
+import os
+
+# one BLAS/OpenMP thread per worker process: 12 workers x multi-threaded numpy oversubscribed the CPU
+# (load ~107 on 12 cores, a 2-3 min job ran > 1 h)
+for _v in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS"):
+    os.environ.setdefault(_v, "1")
+
 import json
 import sys
 import time
 from collections import Counter
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 
 import numpy as np
@@ -169,8 +176,14 @@ def carobd_eval(clf, model: HealthyModel, th: dict, mm: F.MapModel) -> dict:
 def main() -> None:
     t0 = time.time()
     js = jobs()
+    W = []
     with ProcessPoolExecutor() as ex:
-        W = [w for ws in ex.map(run_one, js, chunksize=2) for w in ws]
+        futs = [ex.submit(run_one, j) for j in js]
+        for i, fut in enumerate(as_completed(futs), 1):
+            W += fut.result()
+            if i % 25 == 0 or i == len(js):
+                print(f"  {i}/{len(js)} runs simulated ({time.time() - t0:.0f} s)", flush=True)
+    W.sort(key=lambda w: (w["split"], w["engine"], w["run_fault"], w["t0"]))  # order-independent of completion
     tr = [w for w in W if w["split"] == "train"]
     va = [w for w in W if w["split"] == "val"]
     print(f"simulated {len(js)} runs -> {len(tr)} train / {len(va)} val windows in {time.time() - t0:.0f} s; "
