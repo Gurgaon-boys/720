@@ -281,6 +281,43 @@ def create_app(scenario: str | None = None, validate: bool | None = None, opcua:
         await ws.accept()
         await _serve(ws, runtime.obd_hub, runtime.obd_hub.subscribe())
 
+    @app.websocket("/ws/mic")
+    async def ws_mic(ws: WebSocket):
+        """Optional live microphone (dashboard tab with ?mic=1). Isolated: its own analyser per socket, never the
+        main stream, rule layer or OPC UA. Protocol and limits: backend/live_mic.py."""
+        from backend.live_mic import MicAnalyzer, MicError, parse_chunk, parse_hello
+
+        await ws.accept()
+        analyzer = None
+        try:
+            while True:
+                msg = await ws.receive()
+                if msg["type"] == "websocket.disconnect":
+                    return
+                if analyzer is None:
+                    if msg.get("text") is None:
+                        raise MicError("invalid_hello", "send mic_hello (JSON text) before audio")
+                    parse_hello(msg["text"])
+                    analyzer = await run_in_threadpool(MicAnalyzer)
+                    from backend.live_mic import CHUNK_SAMPLES, LABEL, MAX_CHUNK_BYTES
+                    await ws.send_json({"type": "mic_ready", "sample_rate": 48000, "chunk_samples": CHUNK_SAMPLES,
+                                        "max_chunk_bytes": MAX_CHUNK_BYTES, "label": LABEL})
+                    continue
+                if msg.get("bytes") is None:
+                    raise MicError("invalid_chunk", "audio must be binary float32 frames")
+                x = parse_chunk(msg["bytes"])
+                for res in await run_in_threadpool(analyzer.push, x):
+                    await ws.send_json(res)
+        except MicError as e:
+            log.info("mic socket refused: %s (%s)", e.reason, e.detail)
+            try:
+                await ws.send_json({"type": "mic_error", "reason": e.reason, "detail": e.detail})
+                await ws.close(code=e.close_code)
+            except Exception:
+                pass
+        except Exception:
+            log.exception("mic socket failed")
+
     @app.websocket("/ws/signal")
     async def ws_signal(ws: WebSocket):
         await ws.accept()
