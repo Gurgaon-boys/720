@@ -20,6 +20,9 @@ import TrimTrend from './TrimTrend.jsx';
 import './dashboard.css';
 
 const STALE_S = 3; // a data stream silent this long gets a panel notice (same limit as the UI watchdog)
+// OBD charts shown by default on a live stream (the rest behind "Show all"): speed and load set the
+// operating point; the two fuel trims are what the injector-clog rule reads
+const OBD_PRIMARY = ['rpm', 'load_pct', 'stft_pct', 'ltft_pct'];
 
 export default function Dashboard({ state, obd, obdWindows, transport, signal, error, scenarioError, links, apiUrl, ages, scenarios, scenarioId, onSelectScenario, onAck, onStartInjection, onStopInjection, onResetEngine, ackError, events, offline, lastStateAt, sound, onToggleSound, audioKind, mock }) {
   const color = decisionColor(state?.decision);
@@ -40,21 +43,20 @@ export default function Dashboard({ state, obd, obdWindows, transport, signal, e
     accel: silentFor('accel', 'accel' in sensors),
   };
 
+  const injection = state && (
+    <PanelBoundary name="Injection console" className="inject" resetKey={run}>
+      <InjectionConsole key={state.run_id} state={state} offline={offline} mock={mock} onStart={onStartInjection} onStop={onStopInjection} onReset={onResetEngine} />
+    </PanelBoundary>
+  );
+
   return (
     <section className={`dash${offline ? ' offline' : ''}`} style={{ '--accent': color }} aria-label="Diagnostics">
+      {/* header: what is streaming and how healthy the asset and its sensors are; the scenario list
+          and stream metadata sit behind disclosures so the live sequence starts near the top */}
       <header className="dash-head">
         <div className="dash-title">
           <div className="dash-dot"><i /></div>
-          <div>
-            <h1>720</h1>
-            {state && (
-              <div className="dash-meta mono">
-                {state.run_id} · {state.mode.toUpperCase()}
-                {state.localisation === 'cylinder' ? ` · 4-cyl, firing order ${FIRING_ORDER.join('-')}` : ' · engine geometry unknown'}
-                {' · '}latency {state.latency_ms} ms
-              </div>
-            )}
-          </div>
+          <h1>720</h1>
           {state && (
             <PanelBoundary name="Source badge" variant="inline" resetKey={run}>
               <SourceBadge source={state.source} label={state.source_label} pool={state.audioset_pool} size="large" />
@@ -71,30 +73,47 @@ export default function Dashboard({ state, obd, obdWindows, transport, signal, e
             </PanelBoundary>
           )}
         </div>
-        {scenarios.length > 0 && (
-          <div className="dash-runs">
-            <span className="dash-runs-label">{mock ? 'Demo scenario' : 'Backend scenario (L0, fake)'}</span>
-            {scenarios.map((s) => {
-              const on = s.id === scenarioId;
-              return (
-                <button
-                  key={s.id}
-                  type="button"
-                  className={`run-pill${on ? ' on' : ''}`}
-                  aria-pressed={on}
-                  title={s.description}
-                  onClick={() => onSelectScenario(s.id)}
-                >
-                  {s.name}
-                </button>
-              );
-            })}
-          </div>
-        )}
         {transport?.listReplayFiles && (
           <PanelBoundary name="Source picker" variant="inline">
             <SourcePicker state={state} transport={transport} onSelectSim={onSelectScenario} />
           </PanelBoundary>
+        )}
+        {(scenarios.length > 0 || state) && (
+          <div className="dash-more">
+            {scenarios.length > 0 && (
+              // the mock has no other source control, so its scenarios start open
+              <details className="dash-disclosure" open={mock || undefined}>
+                <summary>{mock ? 'Demo scenarios' : 'Demo scenarios · backend L0, fake'} ({scenarios.length})</summary>
+                <div className="dash-runs">
+                  {scenarios.map((s) => {
+                    const on = s.id === scenarioId;
+                    return (
+                      <button
+                        key={s.id}
+                        type="button"
+                        className={`run-pill${on ? ' on' : ''}`}
+                        aria-pressed={on}
+                        title={s.description}
+                        onClick={() => onSelectScenario(s.id)}
+                      >
+                        {s.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </details>
+            )}
+            {state && (
+              <details className="dash-disclosure">
+                <summary>Technical details</summary>
+                <div className="dash-meta mono">
+                  {state.run_id} · {state.mode.toUpperCase()}
+                  {state.localisation === 'cylinder' ? ` · 4-cyl, firing order ${FIRING_ORDER.join('-')}` : ' · engine geometry unknown'}
+                  {' · '}latency {state.latency_ms} ms · schema {state.schema_version}
+                </div>
+              </details>
+            )}
+          </div>
         )}
         {scenarioError && <p className="scenario-error" role="alert">{scenarioError}</p>}
       </header>
@@ -105,6 +124,7 @@ export default function Dashboard({ state, obd, obdWindows, transport, signal, e
           <AlarmBanner key={state.run_id} state={state} onAck={onAck} ackError={ackError} offline={offline} />
         </PanelBoundary>
       )}
+      {injection}
       {/* no resetKey: the session's events outlive a run change */}
       {state && (
         <PanelBoundary name="Event timeline" variant="banner">
@@ -115,6 +135,7 @@ export default function Dashboard({ state, obd, obdWindows, transport, signal, e
       {error && <div className="dash-error" role="alert">{error}</div>}
       {!state && !error && !offline && <div className="dash-loading">Waiting for the first state message…</div>}
 
+      {/* REAL log replay: the OBD recording is the evidence, so every channel shows by default */}
       {state && replay && (
         <>
           {state.replay.note && <p className="replay-note mono" role="note">{state.replay.note}</p>}
@@ -136,9 +157,6 @@ export default function Dashboard({ state, obd, obdWindows, transport, signal, e
               <StatePanel state={state} />
             </PanelBoundary>
           </div>
-          <PanelBoundary name="Injection console" className="inject" resetKey={run}>
-            <InjectionConsole key={state.run_id} state={state} offline={offline} mock={mock} onStart={onStartInjection} onStop={onStopInjection} onReset={onResetEngine} />
-          </PanelBoundary>
           <p className="panel-note">No crank signal in this data: the cylinder bank, 720° fingerprint and audio panels are hidden.</p>
         </>
       )}
@@ -156,17 +174,15 @@ export default function Dashboard({ state, obd, obdWindows, transport, signal, e
               <Verdict state={state} />
             </PanelBoundary>
           </div>
-          <div className="dash-grid">
+          {/* top-aligned: the State panel keeps its own height instead of stretching to the OBD column */}
+          <div className="dash-grid dash-grid-top">
+            <PanelBoundary name="OBD" className="obd obd-main" resetKey={run}>
+              <ObdPanel obd={obd} source={state.source} hasObd={'obd' in sensors} silentFor={obdSilent} primary={OBD_PRIMARY} />
+            </PanelBoundary>
             <PanelBoundary name="State" className="state-panel" resetKey={run}>
               <StatePanel state={state} />
             </PanelBoundary>
-            <PanelBoundary name="OBD" className="obd" resetKey={run}>
-              <ObdPanel obd={obd} source={state.source} hasObd={'obd' in sensors} silentFor={obdSilent} />
-            </PanelBoundary>
           </div>
-          <PanelBoundary name="Injection console" className="inject" resetKey={run}>
-            <InjectionConsole key={state.run_id} state={state} offline={offline} mock={mock} onStart={onStartInjection} onStop={onStopInjection} onReset={onResetEngine} />
-          </PanelBoundary>
           <PanelBoundary name="Signal" className="strip" resetKey={run}>
             <SignalStrip key={state.run_id} signal={signal} source={state.source} sensors={sensors} silentFor={signalSilent} />
           </PanelBoundary>

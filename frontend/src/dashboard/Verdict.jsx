@@ -37,12 +37,6 @@ export default function Verdict({ state }) {
         )}
       </div>
 
-      <dl className="kv">
-        {rows.map(([k, v]) => (
-          <div key={k}><dt>{k}</dt><dd className="mono">{v}</dd></div>
-        ))}
-      </dl>
-
       <div className="verdict-block votes-block">
         <div className="eyebrow">Models</div>
         <div className="votes">
@@ -55,6 +49,16 @@ export default function Verdict({ state }) {
           ))}
         </div>
       </div>
+
+      {/* the alarm fields repeat the banner's; kept one click away for the record */}
+      <details className="verdict-details">
+        <summary className="eyebrow">Decision details</summary>
+        <dl className="kv">
+          {rows.map(([k, v]) => (
+            <div key={k}><dt>{k}</dt><dd className="mono">{v}</dd></div>
+          ))}
+        </dl>
+      </details>
     </section>
   );
 }

@@ -99,14 +99,28 @@ function Cell({ name, ch, windowS }) {
 
 // hasObd: the state's health.sensors lists an OBD sensor; if not, this recording has no OBD at all
 // silentFor: seconds since the last obd message, once it passes the stale limit (else null)
-export default function ObdPanel({ obd, source, hasObd, silentFor, windowS = WINDOW_S }) {
+// primary: channel names drawn by default, the rest behind "Show all"; without it (a REAL replay,
+// where the OBD log is the evidence) every channel is drawn. The table always lists every channel.
+export default function ObdPanel({ obd, source, hasObd, silentFor, windowS = WINDOW_S, primary = null }) {
+  const [showAll, setShowAll] = useState(false);
   const channels = Object.entries(obd);
   // an AudioSet clip with carOBD beside it; on a carOBD replay the OBD is the recording itself
   const separateRecording = source === 'real' && windowS === WINDOW_S && channels.some(([, ch]) => ch.source === 'real_carobd');
+  const main = primary ? channels.filter(([name]) => primary.includes(name)) : channels;
+  // if none of the primary channels is in this stream, draw everything rather than nothing
+  const collapsible = primary != null && main.length > 0 && main.length < channels.length;
+  const drawn = collapsible && !showAll ? main : channels;
 
   return (
     <section className={`panel obd${silentFor != null ? ' stale' : ''}`}>
-      <h2 className="panel-label">OBD · TRUE RATE</h2>
+      <div className="panel-head">
+        <h2 className="panel-label">OBD · TRUE RATE</h2>
+        {collapsible && (
+          <button type="button" className="toggle-btn" aria-expanded={showAll} onClick={() => setShowAll((v) => !v)}>
+            {showAll ? `Show ${main.length} main channels` : `Show all ${channels.length} channels`}
+          </button>
+        )}
+      </div>
       {silentFor != null && <p className="stale-note mono" role="status">No OBD data for {silentFor} s · showing last values</p>}
       {separateRecording && (
         <p className="panel-note">Separate carOBD recording, not the same vehicle as the audio clip.</p>
@@ -116,11 +130,11 @@ export default function ObdPanel({ obd, source, hasObd, silentFor, windowS = WIN
       ) : (
         <>
           <div className="obd-grid">
-            {channels.map(([name, ch]) => <Cell key={name} name={name} ch={ch} windowS={windowS} />)}
+            {drawn.map(([name, ch]) => <Cell key={name} name={name} ch={ch} windowS={windowS} />)}
           </div>
           <p className="bank-note mono">Last {windowS} s per channel{windowS !== WINDOW_S ? ' (file time)' : ''}, own scale each · line breaks where samples are missing · hover for a sample</p>
           <details className="obd-table">
-            <summary className="eyebrow">Table</summary>
+            <summary className="eyebrow">Table · all {channels.length} channels</summary>
             <table className="mono">
               <thead>
                 <tr><th scope="col">channel</th><th scope="col">latest</th><th scope="col">min</th><th scope="col">max</th><th scope="col">unit</th><th scope="col">rate</th><th scope="col">n</th><th scope="col">source</th></tr>
