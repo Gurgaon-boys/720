@@ -3,7 +3,7 @@ scipy
 pandas
 librosa
 soundfile
-scikit-learn
+scikit-learn==1.9.0
 torch
 matplotlib
 fastapi
