@@ -2,7 +2,11 @@
   "schema_version": "1.5",
   "sent_at": 1760551234.9,
   "channels": {
-    "rpm":      { "t": [12.0, 13.0], "v": [2398, 2405], "unit": "rev/min", "source": "real_carobd" },
-    "stft_pct": { "t": [12.0, 13.0], "v": [1.6, 4.2],   "unit": "%",       "source": "simulator" }
+    "rpm":               { "t": [12.0, 13.0], "v": [2398, 2405],   "unit": "rev/min", "source": "real_carobd" },
+    "stft_pct":          { "t": [12.0, 13.0], "v": [1.6, 4.2],     "unit": "%",       "source": "simulator", "calibration": "real_calibrated" },
+    "lambda":            { "t": [12.0, 13.0], "v": [1.002, 0.998], "unit": "1",       "source": "simulator", "calibration": "sim_only" },
+    "intake_air_temp_c": { "t": [12.0, 13.0], "v": [44, 44],       "unit": "degC",    "source": "simulator", "calibration": "real_calibrated" },
+    "battery_v":         { "t": [12.0, 13.0], "v": [13.77, 13.79], "unit": "V",       "source": "simulator", "calibration": "real_calibrated" },
+    "baro_kpa":          { "t": [12.0, 13.0], "v": [101, 101],     "unit": "kPa",     "source": "simulator", "calibration": "real_calibrated" }
   }
 }

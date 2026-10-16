@@ -68,8 +68,11 @@ def test_every_sim_message_validates(l1):
     for m in r.out["obd"]:
         assert messages.errors("obd", m) == []
         assert set(m["channels"]) == {"rpm", "load_pct", "throttle_pct", "map_kpa", "coolant_c", "stft_pct",
-                                      "ltft_pct", "spark_adv_deg", "lambda"}
+                                      "ltft_pct", "spark_adv_deg", "lambda", "intake_air_temp_c", "battery_v", "baro_kpa"}
         assert all(c["source"] == "simulator" for c in m["channels"].values())
+        # every simulated channel says whether carOBD calibration stands behind it (contract 1.5)
+        assert m["channels"]["lambda"]["calibration"] == "sim_only"
+        assert all(m["channels"][k]["calibration"] == "real_calibrated" for k in ("stft_pct", "intake_air_temp_c", "battery_v", "baro_kpa"))
     channels = set()
     for buf in r.out["signal"]:
         h, data = decode_frame(buf)

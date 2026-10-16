@@ -10,7 +10,7 @@ The HELD-OUT carOBD files are read ONCE, here, after everything above is fixed. 
 from ENGINE_RUN_TIME (data.carobd.duration_s). Every carOBD file is loaded through data.carobd.load().
 
 Reports, overall and per file type: windows, anomaly flags, physics (trim) windows, ADVISORY and
-UNCLASSIFIED windows and episodes, ALARM (structural 0), each per hour with the exact Poisson one-sided
+UNCLASSIFIED, each as windows and episodes (contiguous runs of windows), ALARM (structural 0), each per hour with the exact Poisson one-sided
 95 % bound (docs EVAL_JSON); plus an rpm-transition check on the held-out drive files.
 
 Writes eval/results/column_c_detail.json (eval/build_eval_json.py turns it into the panel's column_c.json).   Usage:  python -m eval.column_c
@@ -103,13 +103,15 @@ def rate(k: int, hours: float, **extra) -> dict:
             "bound_method": "poisson_exact_one_sided_95", "column": "C", "split": "carOBD held-out files", **extra}
 
 
-def run_file(name, model, trim_th) -> dict:
+def run_file(name, model, trim_th, unclassified_windows: int = 2) -> dict:
+    """Windows and episodes (contiguous runs of windows) per level for one file."""
+    from eval.chain import episodes
     ws = windows(name)
-    layer = RuleLayer()
-    c = {"windows": 0, "anomaly_flags": 0, "physics_windows": 0, "advisory_windows": 0, "unclassified_windows": 0,
-         "alarm_windows": 0, "advisory_episodes": 0, "unclassified_episodes": 0, "alarms_raised": 0,
-         "transition_windows": 0, "transition_flags": 0, "steady_flags": 0}
+    layer = RuleLayer(unclassified_windows=unclassified_windows)
+    m = {k: [] for k in ("anomaly_flags", "physics", "advisory", "unclassified", "alarm")}
+    c = {"windows": 0, "transition_windows": 0, "transition_flags": 0, "steady_flags": 0}
     prev = "NORMAL"
+    c["alarms_raised"] = 0
     for w in ws:
         s = score(model, w)
         rule = trim_drift(w, trim_th)
@@ -117,19 +119,20 @@ def run_file(name, model, trim_th) -> dict:
         st = d["state"]
         flag = s > PER_LOCATION_THRESHOLD
         c["windows"] += 1
-        c["anomaly_flags"] += flag
-        c["physics_windows"] += rule["fired"]
-        c["advisory_windows"] += st == "ADVISORY"
-        c["unclassified_windows"] += st == "UNCLASSIFIED"
-        c["alarm_windows"] += st == "ALARM"
-        c["advisory_episodes"] += st == "ADVISORY" and prev != "ADVISORY"
-        c["unclassified_episodes"] += st == "UNCLASSIFIED" and prev != "UNCLASSIFIED"
+        m["anomaly_flags"].append(flag)
+        m["physics"].append(rule["fired"])
+        m["advisory"].append(st == "ADVISORY")
+        m["unclassified"].append(st == "UNCLASSIFIED")
+        m["alarm"].append(st == "ALARM")
         c["alarms_raised"] += st == "ALARM" and prev != "ALARM"
         trans = w["rpm_range"] > TRANSITION_RPM
         c["transition_windows"] += trans
         c["transition_flags"] += trans and (flag or rule["fired"])
         c["steady_flags"] += (not trans) and (flag or rule["fired"])
         prev = st
+    for k, v in m.items():
+        c[f"{k}_windows"] = int(sum(v))
+        c[f"{k}_episodes"] = episodes(np.array(v, dtype=bool)) if v else 0
     c["hours"] = duration_s(load(CAROBD_DIR / name)) / 3600
     return c
 
@@ -151,15 +154,18 @@ def main():
     trim_th = load_thresholds(TRIM_DRIFT)
 
     # ---- the held-out files, read once
+    # (L3: also replayed with the pre-L3 one-window UNCLASSIFIED, for the before/after; nothing is refitted)
     per_file = {f: run_file(f, model, trim_th) for f in heldout}
+    per_file_before = {f: run_file(f, model, trim_th, unclassified_windows=1) for f in heldout}
 
-    def summarise(files):
-        tot = {k: sum(per_file[f][k] for f in files) for k in per_file[files[0]]}
+    def summarise(files, pf=None):
+        pf = pf or per_file
+        tot = {k: sum(pf[f][k] for f in files) for k in pf[files[0]]}
         h = tot["hours"]
         return {
             "files": len(files), "hours": round(h, 3), "windows": tot["windows"],
-            "anomaly_flags": rate(tot["anomaly_flags"], h, unit="windows"),
-            "physics_trim_windows": rate(tot["physics_windows"], h, unit="windows"),
+            "anomaly_flags": rate(tot["anomaly_flags_episodes"], h, unit="episodes", windows=tot["anomaly_flags_windows"]),
+            "physics_trim_windows": rate(tot["physics_episodes"], h, unit="episodes", windows=tot["physics_windows"]),
             "advisories": rate(tot["advisory_episodes"], h, unit="episodes", windows=tot["advisory_windows"]),
             "unclassified": rate(tot["unclassified_episodes"], h, unit="episodes", windows=tot["unclassified_windows"]),
             "classifier_false_faults": None,
@@ -180,16 +186,21 @@ def main():
                        "thresholds": {k: round(v["threshold"], 3) for k, v in model["bands"].items()},
                        "n_fit": {k: v["n_fit"] for k, v in model["bands"].items()},
                        "n_threshold": {k: v["n_val"] for k, v in model["bands"].items()}},
+        "unclassified_windows_required": 2,
         "overall": summarise(heldout),
+        "overall_before_l3": {**summarise(heldout, per_file_before), "note": "one-window UNCLASSIFIED (before L3)"},
         "by_type": {ty: summarise([f for f in heldout if file_type(f) == ty]) for ty in types},
         "per_file": {f: {k: (round(v, 4) if isinstance(v, float) else v) for k, v in c.items()} for f, c in per_file.items()},
     }
     OUT.write_text(json.dumps(res, indent=1))
     o = res["overall"]
     print(f"held-out: {o['files']} files, {o['hours']:.2f} h, {o['windows']} windows")
-    for k in ("anomaly_flags", "physics_trim_windows", "advisories", "unclassified", "alarms"):
-        r = o[k]
-        print(f"  {k:22s} {r['events']:5d}  {r['per_hour']:.2f}/h  (95% upper {r['upper_95_per_hour']:.2f}/h)")
+    for lab, o in (("after (2-window UNCLASSIFIED)", res["overall"]), ("before (1-window)", res["overall_before_l3"])):
+        print(lab)
+        for k in ("anomaly_flags", "physics_trim_windows", "advisories", "unclassified", "alarms"):
+            r = o[k]
+            print(f"  {k:22s} episodes {r['events']:5d} = {r['per_hour']:.2f}/h (95% upper {r['upper_95_per_hour']:.2f}/h)"
+                  f"  windows {r.get('windows', r['events'])}")
     for ty, s in res["by_type"].items():
         print(f"  {ty:6s} {s['hours']:.2f} h  advisories {s['advisories']['events']}  unclassified {s['unclassified']['events']}  flags {s['anomaly_flags']['events']}")
     print("  transitions:", o["transition_check"])

@@ -38,8 +38,11 @@ from __future__ import annotations
 import asyncio
 import logging
 import math
+import os
+import socket
 import time
 from datetime import datetime, timezone
+from urllib.parse import urlsplit
 
 from asyncua import Server, ua
 from asyncua.common.instantiate_util import instantiate
@@ -55,6 +58,36 @@ logging.getLogger("asyncua.common.copy_node_util").setLevel(logging.ERROR)
 
 NS_URI = "urn:720:hackhive"
 DEFAULT_ENDPOINT = "opc.tcp://127.0.0.1:4840/720/"
+DEFAULT_PORT, ENDPOINT_PATH = 4840, "/720/"
+
+
+def endpoint_from_env(env=None) -> str:
+    """S720_OPCUA_ENDPOINT wins; else opc.tcp://<S720_OPCUA_HOST>:4840/720/ (host default 127.0.0.1, local only;
+    0.0.0.0 listens on every interface so a LAN client such as UaExpert on another laptop can connect)."""
+    env = os.environ if env is None else env
+    if env.get("S720_OPCUA_ENDPOINT"):
+        return env["S720_OPCUA_ENDPOINT"]
+    return f"opc.tcp://{env.get('S720_OPCUA_HOST', '127.0.0.1')}:{DEFAULT_PORT}{ENDPOINT_PATH}"
+
+
+def reachable_endpoints(endpoint: str) -> list[str]:
+    """The URLs a client can actually dial: for 0.0.0.0, this machine's IPv4 addresses (LAN first) plus 127.0.0.1."""
+    u = urlsplit(endpoint)
+    if u.hostname not in ("0.0.0.0", ""):
+        return [endpoint]
+    ips = set()
+    try:
+        ips |= {a[4][0] for a in socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET)}
+    except OSError:
+        pass
+    try:                                         # the address of the default route (no packet is sent)
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sk:
+            sk.connect(("10.255.255.255", 1))
+            ips.add(sk.getsockname()[0])
+    except OSError:
+        pass
+    lan = sorted(ip for ip in ips if not ip.startswith("127."))
+    return [f"opc.tcp://{ip}:{u.port}{u.path}" for ip in lan + ["127.0.0.1"]]
 OFFLINE_S = 3.0  # same threshold as the UI watchdog
 NE107 = ["NORMAL", "FAILURE", "CHECK_FUNCTION", "OFF_SPEC", "MAINTENANCE_REQUIRED"]  # DI values 0..4
 NULL_DATETIME = datetime(1601, 1, 1, tzinfo=timezone.utc)
@@ -144,6 +177,8 @@ class OpcuaBridge:
         self.running = True
         self._tasks = [asyncio.create_task(self._consume()), asyncio.create_task(self._watchdog())]
         log.info("OPC UA server on %s", self.endpoint)
+        for url in reachable_endpoints(self.endpoint):
+            print(f"OPC UA reachable at {url}", flush=True)
 
     async def stop(self) -> None:
         for t in self._tasks:
