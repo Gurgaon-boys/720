@@ -70,6 +70,8 @@ def assign(clips: list[dict], seed: int) -> tuple[dict[str, list[dict]], int]:
     forced = 0
     for c in sorted(clips, key=lambda c: c["clip_id"]):
         entry = {"clip_id": c["clip_id"], "video_id": c["video_id"], "start": c["start"], "engine_tag": c["target_class"]}
+        if c.get("plausibly_4cyl"):
+            entry["plausibly_4cyl"] = c["plausibly_4cyl"]  # y = strict subset, unsure = relaxed (D65)
         if c["target_class"] == "knock":
             out["knock_check"].append(entry)
         elif c["video_id"] in knock_videos:

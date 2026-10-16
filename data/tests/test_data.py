@@ -169,3 +169,29 @@ def test_vet_merge_modes(tmp_path, monkeypatch):
     kept, rep = run("--raters", "a", "--audit", "b")
     assert kept == ["v1_0", "v2_0", "v3_0"]  # the audit rater never removes clips
     assert rep["agreement"]["_audit"] == {"rater": "b", "overlap_clips": 2, "survival_agreement": 0.5}
+
+
+def test_vet_merge_corrections_and_unsure_4cyl(tmp_path, monkeypatch):
+    import json as _json
+
+    import vet_merge
+    monkeypatch.setattr(vet_merge, "VET_DIR", tmp_path)
+    monkeypatch.setattr(vet_merge, "OUT_CLIPS", tmp_path / "vetted_clips.csv")
+    monkeypatch.setattr(vet_merge, "EVAL", tmp_path)
+    monkeypatch.setattr(vet_merge, "CORRECTIONS", {})
+    # answered inverted: "y" on speech meant "clean"
+    _write_rater(tmp_path / "a.csv", [("v1_0", "idling", ("y", "y", "y", "")), ("v2_0", "idling", ("y", "unsure", "y", "")),
+                                      ("v3_0", "idling", ("y", "n", "y", "")), ("v4_0", "idling", ("y", "y", "n", ""))])
+    (tmp_path / "a_corrections.json").write_text(_json.dumps(
+        {"flip": {"speech_or_music": {"rated_at_lte": "x", "reason": "inverted"}}}))
+
+    def run(*argv):
+        monkeypatch.setattr(sys, "argv", ["vet_merge.py", "--raters", "a", *argv])
+        vet_merge.main()
+        rows = (tmp_path / "vetted_clips.csv").read_text().splitlines()
+        return sorted(r.split(",")[0] for r in rows[1:]), rows[0]
+
+    kept, header = run()
+    assert kept == ["v1_0"] and header.endswith("plausibly_4cyl")  # v4 had real speech after the flip
+    kept, _ = run("--accept-unsure-4cyl")
+    assert kept == ["v1_0", "v2_0"]  # unsure accepted, "n" still rejected

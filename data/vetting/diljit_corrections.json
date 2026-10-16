@@ -1,0 +1,10 @@
+{
+  "rater": "diljit",
+  "created_at": "2026-10-16T06:40:00Z",
+  "flip": {
+    "speech_or_music": {
+      "rated_at_lte": "2026-10-16T06:18:58Z",
+      "reason": "Rater read 'Speech or music audible?' as 'is the clip OK?' for every answer up to this time (confirmed by the rater, and by notes such as 'it is just music' answered n). y<->n swapped for those rows; later answers are literal."
+    }
+  }
+}
