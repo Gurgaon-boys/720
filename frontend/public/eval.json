@@ -1,8 +1,8 @@
 {
   "eval_version": "0.1",
   "placeholder": false,
-  "generated_at": "2026-10-16T05:33:20Z",
-  "source_commit": "607b1a0",
+  "generated_at": "2026-10-16T05:40:05Z",
+  "source_commit": "bd1b717",
   "produced_by": "python -m eval.build_eval_json",
   "false_positives": {
     "headline": {
@@ -122,21 +122,27 @@
     "split_gap": {
       "random": {
         "kind": "metric",
-        "value": null,
-        "unit": null,
-        "n": null,
+        "value": 0.9673,
+        "unit": "balanced accuracy",
+        "n": 11230,
         "ci_95": null,
         "column": "A",
-        "split": "random"
+        "split": "random (by window)",
+        "model": "SVM",
+        "task": "misfire vs healthy, per 4-cycle window (balanced accuracy), sim 1.0.0",
+        "source": "eval/table_a_misfire.json"
       },
       "grouped": {
         "kind": "metric",
-        "value": null,
-        "unit": null,
-        "n": null,
+        "value": 0.9663,
+        "unit": "balanced accuracy",
+        "n": 11230,
         "ci_95": null,
         "column": "A",
-        "split": "grouped by run"
+        "split": "grouped by run",
+        "model": "SVM",
+        "task": "misfire vs healthy, per 4-cycle window (balanced accuracy), sim 1.0.0",
+        "source": "eval/table_a_misfire.json"
       }
     },
     "model_comparison": [
@@ -144,40 +150,46 @@
         "model": "Baseline",
         "result": {
           "kind": "metric",
-          "value": null,
-          "unit": null,
-          "n": null,
+          "value": 0.8986,
+          "unit": "balanced accuracy",
+          "n": 11230,
           "ci_95": null,
           "column": "A",
-          "split": "grouped by run (identical across models)"
+          "split": "grouped by run (identical across models)",
+          "task": "misfire vs healthy, per 4-cycle window (balanced accuracy), sim 1.0.0",
+          "source": "eval/table_a_misfire.json"
         },
-        "sd_across_seeds": null
+        "sd_across_seeds": 0.0005
       },
       {
         "model": "SVM",
         "result": {
           "kind": "metric",
-          "value": null,
-          "unit": null,
-          "n": null,
+          "value": 0.9663,
+          "unit": "balanced accuracy",
+          "n": 11230,
           "ci_95": null,
           "column": "A",
-          "split": "grouped by run (identical across models)"
+          "split": "grouped by run (identical across models)",
+          "task": "misfire vs healthy, per 4-cycle window (balanced accuracy), sim 1.0.0",
+          "source": "eval/table_a_misfire.json"
         },
-        "sd_across_seeds": null
+        "sd_across_seeds": 0.0003
       },
       {
         "model": "ANN",
         "result": {
           "kind": "metric",
-          "value": null,
-          "unit": null,
-          "n": null,
+          "value": 0.9618,
+          "unit": "balanced accuracy",
+          "n": 11230,
           "ci_95": null,
           "column": "A",
-          "split": "grouped by run (identical across models)"
+          "split": "grouped by run (identical across models)",
+          "task": "misfire vs healthy, per 4-cycle window (balanced accuracy), sim 1.0.0",
+          "source": "eval/table_a_misfire.json"
         },
-        "sd_across_seeds": null
+        "sd_across_seeds": 0.0016
       },
       {
         "model": "CNN",
