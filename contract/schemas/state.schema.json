@@ -18,11 +18,33 @@
     "number_array": { "type": "array", "items": { "type": "number" } }
   },
   "properties": {
-    "schema_version": { "const": "1.5" },
+    "schema_version": { "const": "1.6" },
     "sent_at": { "type": "number", "description": "unix seconds" },
     "units": { "type": "object", "additionalProperties": { "type": "string" } },
     "run_id": { "type": "string", "minLength": 1 },
     "source": { "enum": ["simulated", "injected", "real"] },
+    "source_label": {
+      "enum": ["simulated", "real_replay", "real_replay_injected", "real_upload", "real_upload_injected"],
+      "description": "1.6 (optional): what the dashboard badge says. real_replay = a recorded REAL log replayed (never 'live'); *_injected = a fault added on top of real data (state.injection says which); real_upload = a user-uploaded log, unverified"
+    },
+    "replay": {
+      "description": "1.6 (optional): present on a REAL log replay (mode 'replay')",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["file", "file_type", "uploaded", "speed", "position_s", "duration_s", "loop", "witnesses", "max_decision", "note"],
+      "properties": {
+        "file": { "type": "string" },
+        "file_type": { "enum": ["idle", "drive", "live", "campus", "long", "upload"] },
+        "uploaded": { "type": "boolean" },
+        "speed": { "type": "number", "exclusiveMinimum": 0, "description": "replay speed, x real time" },
+        "position_s": { "type": "number", "minimum": 0, "description": "file time of this message, s" },
+        "duration_s": { "type": "number", "exclusiveMinimum": 0 },
+        "loop": { "type": "integer", "minimum": 0 },
+        "witnesses": { "type": "array", "uniqueItems": true, "items": { "enum": ["physics", "anomaly", "classifier"] } },
+        "max_decision": { "enum": ["ADVISORY", "ALARM"], "description": "ADVISORY: single witness (no classifier loaded); ADVISORY also covers UNCLASSIFIED" },
+        "note": { "type": "string" }
+      }
+    },
     "audioset_pool": { "enum": ["P1", "P2", "P3", null] },
     "engine_tag": { "enum": ["vetted_car", null] },
     "mode": { "enum": ["live", "replay"] },
@@ -134,8 +156,8 @@
           "required": ["active", "fault", "cylinder", "severity", "started_at"],
           "properties": {
             "active": { "const": true },
-            "fault": { "$ref": "#/$defs/fault" },
-            "cylinder": { "type": "integer", "minimum": 1, "maximum": 4 },
+            "fault": { "anyOf": [{ "$ref": "#/$defs/fault" }, { "const": "lean_drift" }], "description": "1.6: lean_drift = fuel-trim ramp added to a REAL carOBD replay" },
+            "cylinder": { "type": ["integer", "null"], "minimum": 1, "maximum": 4, "description": "1.6: null for a bank-wide injection (lean_drift)" },
             "severity": { "$ref": "#/$defs/unit_interval" },
             "started_at": { "type": "number", "description": "unix seconds" }
           }

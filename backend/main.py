@@ -21,7 +21,7 @@ import logging
 import os
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, WebSocket
+from fastapi import FastAPI, HTTPException, Request, WebSocket
 from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -29,7 +29,7 @@ from pydantic import BaseModel
 from backend.messages import SCHEMA_VERSION
 from backend.opcua_bridge import OpcuaBridge, endpoint_from_env
 from backend.runtime import Hub, Runtime, put_latest
-from backend.sources import describe, make_source, source_names
+from backend.sources import REPLAY, describe, make_source, source_names
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 log = logging.getLogger("backend")
@@ -96,19 +96,81 @@ def create_app(scenario: str | None = None, validate: bool | None = None, opcua:
             raise HTTPException(400, "use /maintenance/on or /maintenance/off")
         runtime.set_maintenance(mode == "on")
         return {"maintenance": runtime.maintenance_mode}
+    # ------------------------------------------------------------ REAL carOBD replay
+
+    @app.get("/replay/files")
+    async def replay_files():
+        """Held-out carOBD files by type (idle, drive, live, campus, long) and uploaded logs."""
+        from backend.sources import carobd_replay as cr
+
+        files = await run_in_threadpool(cr.list_files)
+        cur = runtime.scenario
+        return {"files": files, "speeds": list(cr.SPEEDS),
+                "current": {"file": cur.file_ref, "speed": cur.speed} if cur.name == REPLAY else None}
+
+    @app.post("/replay")
+    async def replay(body: ReplayRequest):
+        """Switch to the REAL carOBD replay of one file at 1x / 10x / 30x. Resets stream time and the rule layer."""
+        from backend.sources import carobd_replay as cr
+
+        try:
+            source = await run_in_threadpool(cr.CarObdReplay, body.file, body.speed)
+        except ValueError as e:
+            raise HTTPException(422, str(e)) from e
+        runtime.select(REPLAY, source)
+        return {"current": REPLAY, "file": body.file, "speed": source.speed}
+
+    @app.post("/replay/speed")
+    async def replay_speed(body: SpeedRequest):
+        """Change the replay speed without restarting the file."""
+        src = runtime.scenario
+        if src.name != REPLAY:
+            raise HTTPException(409, "not replaying; POST /replay first")
+        try:
+            src.set_speed(body.speed)
+        except ValueError as e:
+            raise HTTPException(422, str(e)) from e
+        return {"speed": src.speed}
+
+    @app.post("/upload_obd")
+    async def upload_obd(request: Request, filename: str = "upload.csv"):
+        """A carOBD-format CSV as the raw request body (Content-Type text/csv), at most 5 MB. Validated
+        with the same loader, stored under data/uploads/ with a random id, and listed as a replay file
+        labelled REAL (uploaded, unverified). Select it with POST /replay {"file": "upload:<id>"}."""
+        from backend.sources import carobd_replay as cr
+
+        declared = request.headers.get("content-length")
+        if declared and declared.isdigit() and int(declared) > cr.MAX_UPLOAD_BYTES:
+            raise HTTPException(413, f"file is larger than {cr.MAX_UPLOAD_BYTES // (1024 * 1024)} MB")
+        data = bytearray()
+        async for part in request.stream():
+            data += part
+            if len(data) > cr.MAX_UPLOAD_BYTES:
+                raise HTTPException(413, f"file is larger than {cr.MAX_UPLOAD_BYTES // (1024 * 1024)} MB")
+        try:
+            meta = await run_in_threadpool(cr.save_upload, filename, bytes(data), runtime.clock())
+        except ValueError as e:
+            raise HTTPException(422, str(e)) from e
+        log.info("UPLOAD %s -> %s (%d rows, %.0f s)", meta["name"], meta["id"], meta["rows"], meta["duration_s"])
+        return {"file": f"upload:{meta['id']}", **meta}
+
     @app.post("/inject")
     async def inject(body: Injection):
-        """Inject a fault into the live simulator (source "sim" only). Applies from the next engine cycle."""
+        """Inject a fault: into the live simulator (source "sim"), or `lean_drift` onto the REAL carOBD
+        replay (labelled REAL+INJECTED). Applies from the next engine cycle / logged row."""
         src = runtime.scenario
         if not hasattr(src, "inject"):
-            raise HTTPException(409, f"source {src.name!r} has no simulator; POST /scenario/sim first")
+            raise HTTPException(409, f"source {src.name!r} takes no injection; POST /scenario/sim or /replay first")
+        cylinder = None if src.name == REPLAY else body.cylinder
+        if cylinder is None and src.name != REPLAY:
+            raise HTTPException(422, "cylinder is required for the simulator")
         try:
-            runtime.inject(body.fault, body.cylinder, body.severity)  # echoed in state.injection
+            runtime.inject(body.fault, cylinder, body.severity)  # echoed in state.injection
         except NotImplementedError as e:
             raise HTTPException(501, str(e)) from e
         except ValueError as e:
             raise HTTPException(422, str(e)) from e
-        logging.getLogger("backend").info("INJECT %s cyl %d p=%.2f at t=%.2f s", body.fault, body.cylinder,
+        logging.getLogger("backend").info("INJECT %s cyl %s p=%.2f at t=%.2f s", body.fault, cylinder,
                                           body.severity, src.stream_t)
         return {"injected": body.model_dump(), "t": round(src.stream_t, 3)}
 
@@ -116,7 +178,7 @@ def create_app(scenario: str | None = None, validate: bool | None = None, opcua:
     async def clear_faults():
         src = runtime.scenario
         if not hasattr(src, "clear_faults"):
-            raise HTTPException(409, f"source {src.name!r} has no simulator")
+            raise HTTPException(409, f"source {src.name!r} takes no injection")
         runtime.clear_faults()  # state.injection -> null
         return {"cleared": True, "t": round(src.stream_t, 3)}
 
@@ -148,8 +210,17 @@ def create_app(scenario: str | None = None, validate: bool | None = None, opcua:
 
 class Injection(BaseModel):
     fault: str
-    cylinder: int
+    cylinder: int | None = None   # required by the simulator; ignored by the carOBD replay (bank-wide)
     severity: float
+
+
+class ReplayRequest(BaseModel):
+    file: str                     # "heldout:<name>" or "upload:<id>" (GET /replay/files)
+    speed: float = 10
+
+
+class SpeedRequest(BaseModel):
+    speed: float
 
 
 async def _serve(ws: WebSocket, hub: Hub, q: asyncio.Queue, receiver=None) -> None:

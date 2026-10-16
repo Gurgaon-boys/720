@@ -94,7 +94,7 @@ def test_ack_flow_through_runtime():
     alarm_id = r.states[-1]["decision"]["alarm_id"]
 
     def ack(aid, op="judge"):
-        return json.dumps({"schema_version": "1.5", "type": "ack", "alarm_id": aid, "operator": op, "sent_at": r.now})
+        return json.dumps({"schema_version": "1.6", "type": "ack", "alarm_id": aid, "operator": op, "sent_at": r.now})
 
     before = r.states[-1]["decision"]
     for bad, reason in ((ack("a_9999"), "unknown_alarm_id"), ("not json", "invalid_message"),
@@ -174,5 +174,5 @@ def test_alarm_ids_never_repeat_across_scenario_switches():
     r.t = 0.0
     r.advance(3)
     assert r.states[-1]["decision"]["alarm_id"] == "a_0002"
-    assert r.rt.handle_ack(json.dumps({"schema_version": "1.5", "type": "ack", "alarm_id": "a_0001",
+    assert r.rt.handle_ack(json.dumps({"schema_version": "1.6", "type": "ack", "alarm_id": "a_0001",
                                        "operator": "judge", "sent_at": 1.0}))["reason"] == "unknown_alarm_id"

@@ -58,12 +58,12 @@ async def probe(url: str, seconds: float, do_ack: bool, bad_ack: bool) -> int:
                     last_state = summary
                 if bad_ack and not sent_bad:
                     sent_bad = True
-                    await ws.send(json.dumps({"schema_version": "1.5", "type": "ack", "alarm_id": "a_9999",
+                    await ws.send(json.dumps({"schema_version": "1.6", "type": "ack", "alarm_id": "a_9999",
                                               "operator": "probe", "sent_at": time.time()}))
                 if do_ack and not acked and d["state"] == "ALARM" and not d["acked"]:
                     acked = True
                     print(f"  -> sending ACK for {d['alarm_id']}")
-                    await ws.send(json.dumps({"schema_version": "1.5", "type": "ack", "alarm_id": d["alarm_id"],
+                    await ws.send(json.dumps({"schema_version": "1.6", "type": "ack", "alarm_id": d["alarm_id"],
                                               "operator": "probe", "sent_at": time.time()}))
 
     async def obd():

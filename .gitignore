@@ -44,3 +44,6 @@ desktop.ini
 .idea/
 .vscode/
 *.swp
+
+# Uploaded OBD logs (POST /upload_obd)
+data/uploads/

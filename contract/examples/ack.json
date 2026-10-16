@@ -1,1 +1,1 @@
-{ "schema_version": "1.5", "type": "ack", "alarm_id": "a_0007", "operator": "judge", "sent_at": 1760551240.1 }
+{ "schema_version": "1.6", "type": "ack", "alarm_id": "a_0007", "operator": "judge", "sent_at": 1760551240.1 }
