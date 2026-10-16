@@ -69,12 +69,25 @@ def headline_fp() -> dict:
 
 
 def secondary_fp() -> dict:
-    # AudioSet P3 results don't exist until vetting is finished and the audio pipeline runs on P3
+    a = load("audio_p3.json")
     split = "held-out pool P3 (by video id)"
-    return {"dataset": "AudioSet P3 (single-rater vetted car idle; pending)",
-            "anomaly_flags": null_rate("C", split), "advisories": null_rate("C", split),
-            "classifier_false_faults": null_rate("C", split),
-            "alarms": null_rate("C", split, structurally_limited=True)}
+    if a is None:
+        return {"dataset": "AudioSet P3 (vetted car idle; pending)",
+                "anomaly_flags": null_rate("C", split), "advisories": null_rate("C", split),
+                "classifier_false_faults": null_rate("C", split),
+                "alarms": null_rate("C", split, structurally_limited=True)}
+    p, L, src = a["P3"], a["P3"]["levels"], "eval/audio_p3.json"
+    ep = L["1_anomaly_flags"]["episodes"]
+    unit = "episodes (runs of consecutive 1 s windows)"
+    as_rate = lambda r, **kw: rate_from({k: r[k] for k in ("count", "hours", "per_hour", "upper95_per_hour")},
+                                        p["clips"], split, src, unit=unit, **kw)
+    return {
+        "dataset": f"AudioSet P3, single-rater vetted ({p['clips']} clips, {p['hours'] * 60:.1f} min)",
+        "anomaly_flags": as_rate(ep),
+        "advisories": as_rate(L["3_advisories"], structurally_limited=True, note=L["3_advisories"]["note"]),
+        "classifier_false_faults": null_rate("C", split, note=L["4_classifier_false_faults"]),
+        "alarms": as_rate(L["5_alarms"], structurally_limited=True, note=L["5_alarms"]["note"]),
+    }
 
 
 def column_a() -> dict:
@@ -113,7 +126,15 @@ def column_c() -> dict:
     if obd is None:
         return {"obd_branch": null_metric("C", "held-out carOBD files")}
     w = obd["heldout"]["levels"]["1_anomaly_flags"]["windows"]
-    return {"obd_branch": {"kind": "metric", "value": w["rate"], "unit": "fraction of 30 s windows flagged (healthy data)",
+    out = {}
+    a = load("audio_p3.json")
+    if a is not None:
+        d = a["knock_check"]["detection"]
+        out["knock_check"] = {"kind": "proportion", "successes": d["k"], "n": d["n"], "value": d["rate"],
+                              "ci_95": d["wilson95"], "ci_method": "wilson_95", "column": "C",
+                              "split": "knock_check pool (single-rater agreed detonation, >= 15 kHz)",
+                              "detector": a["knock_check"]["detector"], "source": "eval/audio_p3.json"}
+    return {**out, "obd_branch": {"kind": "metric", "value": w["rate"], "unit": "fraction of 30 s windows flagged (healthy data)",
                            "n": w["n"], "ci_95": w["wilson95"], "column": "C", "split": "held-out carOBD files (by file)",
                            "source": "eval/obd_carobd.json"}}
 

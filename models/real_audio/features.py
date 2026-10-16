@@ -75,9 +75,13 @@ def window_features(w: np.ndarray) -> list[float]:
             float(20 * np.log10(np.max(np.abs(w)) / rms)), *map(float, mfcc)]
 
 
+SILENCE_RMS = 1e-5  # digital silence (some YouTube clips have muted stretches): not engine audio
+
+
 def clip_features(path) -> np.ndarray:
-    """(n_windows, len(FEATURES)) for one clip."""
-    return np.array([window_features(w) for w in frames(load(path))])
+    """(n_windows, len(FEATURES)) for one clip; windows of digital silence are skipped."""
+    ws = [w for w in frames(load(path)) if np.sqrt(np.mean(w ** 2)) > SILENCE_RMS]
+    return np.array([window_features(w) for w in ws]).reshape(len(ws), len(FEATURES))
 
 
 _KNOCK_SOS = butter(4, KNOCK_BAND, btype="bandpass", fs=SR, output="sos")

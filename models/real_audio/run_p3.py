@@ -101,6 +101,23 @@ def evaluate(clips: list[dict], feats: dict[str, np.ndarray], dur: dict[str, flo
     }
 
 
+def post_hoc_auroc(pos: list[float], neg: list[float], n_boot: int = 2000) -> dict:
+    """Threshold-free separability of the knock score (AUROC, bootstrap 95%). Added AFTER the
+    pre-registered detection rate was seen (D78); the detection rate stays the reported result."""
+    from sklearn.metrics import roc_auc_score
+    if not pos or not neg:
+        return {"note": "not computable"}
+    pos, neg = np.asarray(pos), np.asarray(neg)
+    lab = lambda a, b: np.r_[np.ones(len(a)), np.zeros(len(b))]
+    rng = np.random.default_rng(0)
+    bs = [roc_auc_score(lab(i, j), np.r_[pos[i], neg[j]]) for i, j in
+          ((rng.integers(0, len(pos), len(pos)), rng.integers(0, len(neg), len(neg))) for _ in range(n_boot))]
+    return {"auroc_knock_vs_healthy_P3": round(float(roc_auc_score(lab(pos, neg), np.r_[pos, neg])), 3),
+            "bootstrap95": [round(float(v), 3) for v in np.percentile(bs, [2.5, 97.5])],
+            "n_knock": len(pos), "n_healthy": len(neg),
+            "note": "POST-HOC: computed after seeing the pre-registered detection rate, which stays the reported result"}
+
+
 def main() -> None:
     pools = json.loads(POOLS.read_text())
     if not pools.get("vetted"):
@@ -119,8 +136,13 @@ def main() -> None:
         kscore = dict(zip([c["clip_id"] for c in all_clips],
                           ex.map(knock_score, [paths[c["clip_id"]] for c in all_clips], chunksize=4)))
     print(f"features for {len(ids)} clips, knock scores for {len(all_clips)} in {time.time() - t0:.0f} s")
+    empty = [i for i in ids if len(feats[i]) == 0]
+    if empty:
+        raise SystemExit(f"clips with no non-silent window: {empty}")
 
-    val_v = {c["video_id"] for c in P2 if stable_hash(c["video_id"], SEED) < VAL_FRAC}
+    # salted: P2 itself was chosen by stable_hash(video_id, SEED) in [0.4, 0.7), so the unsalted hash
+    # would put every P2 video on the same side
+    val_v = {c["video_id"] for c in P2 if stable_hash(f"p2-fit-val:{c['video_id']}", SEED) < VAL_FRAC}
     fit_c = [c for c in P2 if c["video_id"] not in val_v]
     val_c = [c for c in P2 if c["video_id"] in val_v]
     model = HealthyModel(FEATURES).fit([w for c in fit_c for w in as_windows(feats[c["clip_id"]])])
@@ -145,6 +167,8 @@ def main() -> None:
         "detection": proportion_summary(int(det), len(kn)),
         "false_positive_healthy_P3": proportion_summary(int(fp), len(hp3)),
         "excluded_band_limited": {"knock_check": len(KN) - len(kn), "P3": len(P3) - len(hp3)},
+        "post_hoc_descriptive": post_hoc_auroc([kscore[c["clip_id"]] for c in kn],
+                                               [kscore[c["clip_id"]] for c in hp3]),
         "scores": {"knock_check_median": round(float(np.median([kscore[c["clip_id"]] for c in kn])), 3) if kn else None,
                    "healthy_P3_median": round(float(np.median([kscore[c["clip_id"]] for c in hp3])), 3) if hp3 else None},
     }
