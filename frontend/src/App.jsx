@@ -7,10 +7,13 @@ import ViewTabs, { panelId, tabId, useViewTab } from './dashboard/ViewTabs.jsx';
 import { audioContext, createAlarmTone, createEnginePlayer } from './lib/audio.js';
 import { DEMO_SOURCE, isDemoMode } from './lib/demoMode.js';
 
+const REPLAY_SOURCE = 'carobd_replay';
+
 const DEMO = isDemoMode();
 
 const OPERATOR = 'operator';
-const OBD_KEEP = 60; // samples per channel (~60 s at 1 Hz)
+const OBD_KEEP = 400; // samples per channel (~400 s at 1 Hz; a REAL replay at 30x fills it faster)
+const WINDOWS_KEEP = 120; // OBD branch windows kept for the trim trend (REAL replay)
 const OFFLINE_MS = 3000; // UI watchdog: no `state` for 3 s → diagnostics offline (contract rule 4)
 const WATCHDOG_TICK_MS = 250;
 const LIST_RETRY_MS = 5000; // scenario list: retry interval after a failed load
@@ -51,6 +54,7 @@ export default function App() {
   const [scenarioId, setScenarioId] = useState(null);
   const [state, setState] = useState(null);
   const [obd, setObd] = useState({});
+  const [obdWindows, setObdWindows] = useState([]); // REAL replay: one point per OBD branch window
   const [signal, setSignal] = useState({});
   const [error, setError] = useState(null);
   const [scenarioError, setScenarioError] = useState(null);
@@ -94,8 +98,10 @@ export default function App() {
         setScenarios(list);
         setScenarioId(transport.scenarioId);
         setScenarioError(null);
-        // demo mode: start on the live simulator (once; a backend already on it is left alone)
-        if (DEMO && transport.scenarioId !== DEMO_SOURCE && list.some((x) => x.id === DEMO_SOURCE)) {
+        // demo mode: start on the live simulator (once; a backend already on it, or on the REAL replay,
+        // is left alone: the replay is picked in the source picker, which demo mode keeps)
+        if (DEMO && transport.scenarioId !== DEMO_SOURCE && transport.scenarioId !== REPLAY_SOURCE
+            && list.some((x) => x.id === DEMO_SOURCE)) {
           return transport.setScenario(DEMO_SOURCE).then(() => setScenarioId(DEMO_SOURCE));
         }
         return undefined;
@@ -118,9 +124,17 @@ export default function App() {
           if (runIdRef.current != null) {
             setObd({});
             setSignal({});
+            setObdWindows([]);
             arrivedRef.current = {};
           }
           runIdRef.current = msg.run_id;
+        }
+        // REAL replay: a new OBD branch window (features_summary.window_t0_s changes) adds a trend point
+        const fs = msg.replay ? msg.features_summary : null;
+        if (fs && fs.window_t0_s != null && msg.anomaly.score != null) {
+          setObdWindows((w) => (w.length && w[w.length - 1].t0 === fs.window_t0_s ? w : [...w, {
+            t0: fs.window_t0_s, t: fs.window_t0_s + 30, trim: fs.total_trim_pct, trimMax: fs.trim_rule_max_pct, score: msg.anomaly.score,
+          }].slice(-WINDOWS_KEEP)));
         }
         setState(msg);
       }),
@@ -168,6 +182,7 @@ export default function App() {
     // clear buffers so the new run doesn't mix with the old one
     setObd({});
     setSignal({});
+    setObdWindows([]);
     setAudioAvailable(false);
     setAckError(null);
     arrivedRef.current = {};
@@ -234,6 +249,8 @@ export default function App() {
           <Dashboard
             state={state}
             obd={obd}
+            obdWindows={obdWindows}
+            transport={usingMock ? null : transportRef.current}
             signal={signal}
             error={error}
             scenarioError={scenarioError}

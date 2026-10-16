@@ -6,6 +6,8 @@ export const FAULTS = {
   misfire: { name: 'Misfire', short: 'NO FIRE', color: '#ffa94d', title: (c) => (c ? `Misfire · Cyl ${c}` : 'Misfire'), sub: 'Combustion missing on one cylinder' },
   knock: { name: 'Knock', short: 'KNOCK', color: '#ff5a6e', title: (c) => (c ? `Knock · Cyl ${c}` : 'Knock'), sub: 'Pressure ringing just after top dead centre' },
   injector_clog: { name: 'Injector clog', short: 'CLOG', color: '#f783ac', title: (c) => (c ? `Injector clog · Cyl ${c}` : 'Injector clog'), sub: 'Less fuel delivered; the ECU trims to compensate' },
+  // injection only (REAL carOBD replay, contract 1.6): never a decision fault
+  lean_drift: { name: 'Lean drift', short: 'LEAN', color: '#f783ac', title: () => 'Lean drift (fuel trims)', sub: 'Fuel-trim ramp added to a real log' },
   valve_tick: { name: 'Valve tick', short: 'TICK', color: '#b197fc', title: (c) => (c ? `Valve-train · Cyl ${c}` : 'Valve-train wear'), sub: 'Extra impacts at valve-closing angles' },
 };
 
@@ -100,6 +102,14 @@ export const SOURCES = {
   real: { name: 'REAL', style: 'solid' },
   simulated: { name: 'SIMULATED', style: 'dashed' },
   injected: { name: 'INJECTED', style: 'double' },
+};
+// state.source_label (1.6, optional) → the big badge. Replayed real data is never called live.
+export const SOURCE_LABELS = {
+  simulated: { name: 'SIMULATED', style: 'dashed', detail: 'engine simulator' },
+  real_replay: { name: 'REAL · REPLAY', style: 'solid', detail: 'recorded carOBD log, replayed (not live)' },
+  real_replay_injected: { name: 'REAL + INJECTED', style: 'double', detail: 'real log + injected lean drift' },
+  real_upload: { name: 'REAL · UPLOAD', style: 'solid', detail: 'uploaded log, unverified, replayed' },
+  real_upload_injected: { name: 'REAL + INJECTED', style: 'double', detail: 'uploaded log (unverified) + injected lean drift' },
 };
 export function sourceInfo(source) {
   const s = SOURCES[source];
