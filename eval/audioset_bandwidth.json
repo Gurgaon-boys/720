@@ -1,0 +1,80 @@
+{
+  "created_at": "2026-10-16T04:52:25Z",
+  "git_commit": "1130c03294ad09ab3f99f671bee6233262bdb341",
+  "produced_by": "data/audioset_bandwidth.py",
+  "method": "highest frequency within 50 dB of the 0.3-5 kHz PSD reference (90th pct)",
+  "knock_band_hz": [
+    5000,
+    15000
+  ],
+  "by_class": {
+    "engine": {
+      "clips": 1500,
+      "median_hz": 15597,
+      "covers_knock_band_15k": 824,
+      "below_5k": 91,
+      "histogram": {
+        "0-3 kHz": 0,
+        "3-5 kHz": 91,
+        "5-8 kHz": 189,
+        "8-12 kHz": 233,
+        "12-15 kHz": 163,
+        "15-18 kHz": 416,
+        "18-20 kHz": 121,
+        "20-22 kHz": 234,
+        "22-24 kHz": 53
+      }
+    },
+    "idling": {
+      "clips": 1500,
+      "median_hz": 15515,
+      "covers_knock_band_15k": 806,
+      "below_5k": 132,
+      "histogram": {
+        "0-3 kHz": 2,
+        "3-5 kHz": 130,
+        "5-8 kHz": 182,
+        "8-12 kHz": 234,
+        "12-15 kHz": 146,
+        "15-18 kHz": 424,
+        "18-20 kHz": 93,
+        "20-22 kHz": 258,
+        "22-24 kHz": 31
+      }
+    },
+    "knock": {
+      "clips": 640,
+      "median_hz": 15820,
+      "covers_knock_band_15k": 430,
+      "below_5k": 22,
+      "histogram": {
+        "0-3 kHz": 0,
+        "3-5 kHz": 22,
+        "5-8 kHz": 46,
+        "8-12 kHz": 84,
+        "12-15 kHz": 58,
+        "15-18 kHz": 227,
+        "18-20 kHz": 49,
+        "20-22 kHz": 132,
+        "22-24 kHz": 22
+      }
+    },
+    "all": {
+      "clips": 3640,
+      "median_hz": 15644,
+      "covers_knock_band_15k": 2060,
+      "below_5k": 245,
+      "histogram": {
+        "0-3 kHz": 2,
+        "3-5 kHz": 243,
+        "5-8 kHz": 417,
+        "8-12 kHz": 551,
+        "12-15 kHz": 367,
+        "15-18 kHz": 1067,
+        "18-20 kHz": 263,
+        "20-22 kHz": 624,
+        "22-24 kHz": 106
+      }
+    }
+  }
+}
