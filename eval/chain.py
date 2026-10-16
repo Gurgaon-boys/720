@@ -121,11 +121,13 @@ def scores(rec: dict, thresholds: dict | None) -> np.ndarray:
     return np.where(rec["valid"], s, np.nan)
 
 
-def replay(rec: dict, thresholds: dict | None = None, unclassified_windows: int = 2) -> dict:
+def replay(rec: dict, thresholds: dict | None = None, unclassified_windows: int = 2,
+           corroborate_windows: int | None = None) -> dict:
     """Step the real rule layer over a recording. thresholds: {band: distance threshold}; None = the
     checkpoint's pooled-window thresholds (the configuration before L3)."""
     sc = scores(rec, thresholds)
-    layer = RuleLayer(unclassified_windows=unclassified_windows)
+    layer = (RuleLayer(unclassified_windows=unclassified_windows) if corroborate_windows is None else
+             RuleLayer(unclassified_windows=unclassified_windows, corroborate_windows=corroborate_windows))
     n = len(sc)
     out = {k: np.zeros(n, dtype=bool) for k in ("counted", "anomaly_flags", "classifier_false_faults", "physics_windows",
                                                  "advisory", "unclassified", "alarm", "alarm_raised", "advisory_persist2",
