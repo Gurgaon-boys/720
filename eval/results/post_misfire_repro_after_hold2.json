@@ -1,0 +1,78 @@
+{
+ "label": "SIM 2.1 (live demo backend)",
+ "hold_s": 2.0,
+ "misfire_alarm_s": 0.76,
+ "first_alarm_id": "a_0001",
+ "new_alarms_after_clear": [],
+ "first_normal_after_clear_s": 31.22,
+ "state_messages_after_clear": {
+  "ALARM": 12,
+  "ADVISORY": 296,
+  "UNCLASSIFIED": 4,
+  "NORMAL": 890
+ },
+ "classifier_cylinder_sequence": [
+  3,
+  1,
+  4,
+  3,
+  4,
+  2,
+  4,
+  3,
+  2,
+  4,
+  2,
+  3,
+  1,
+  4,
+  2,
+  4,
+  2,
+  4,
+  2,
+  4
+ ],
+ "changes": [
+  {
+   "t_after_clear_s": 0.04,
+   "state": "ALARM",
+   "fault": "misfire",
+   "location": 3,
+   "alarm_id": "a_0001",
+   "guidance": "Reduce load; inspect coil and plug on cyl 3"
+  },
+  {
+   "t_after_clear_s": 1.22,
+   "state": "ADVISORY",
+   "fault": "misfire",
+   "location": 3,
+   "alarm_id": null,
+   "guidance": "One witness only (misfire): keep running, watch for ALARM"
+  },
+  {
+   "t_after_clear_s": 1.43,
+   "state": "ADVISORY",
+   "fault": null,
+   "location": null,
+   "alarm_id": null,
+   "guidance": "Recovering after misfire: fuel trims re-adapting"
+  },
+  {
+   "t_after_clear_s": 30.84,
+   "state": "UNCLASSIFIED",
+   "fault": null,
+   "location": null,
+   "alarm_id": null,
+   "guidance": "Unknown pattern: inspect, do not clear"
+  },
+  {
+   "t_after_clear_s": 31.22,
+   "state": "NORMAL",
+   "fault": null,
+   "location": null,
+   "alarm_id": null,
+   "guidance": null
+  }
+ ]
+}
