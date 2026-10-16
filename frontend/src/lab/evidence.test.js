@@ -102,3 +102,30 @@ test('the SVM row is the classifier witness when several models are sent', () =>
   ] }), offlineSet(sensors()));
   assert.deepEqual([c.model, c.label, c.p], ['SVM', 'knock', 0.81]);
 });
+
+test('outcome: removing ACCEL loses the knock rule and the classifier, keeps the misfire and clog rules', async () => {
+  const { outcome } = await import('./evidence.js');
+  const s = state({ models: [], decision: { state: 'ALARM', alarm_id: 'a_0002', acked: false, fault: 'misfire', location: 3, witnesses: ['physics', 'classifier'] } });
+  const sens = sensors({ accel: { commanded: true, health: 'FAILURE' } });
+  const off = offlineSet(sens);
+  const c = classifierWitness(s, off);
+  const o = outcome({ state: s, sensors: sens, classifier: c, level: evidenceLevel(c, off) });
+  assert.deepEqual(o.removed, ['accel']);
+  assert.deepEqual(o.lost.map((x) => x.id), ['knock_rule', 'classifier']);
+  assert.ok(o.kept.some((x) => x.id === 'misfire_rule') && o.kept.some((x) => x.id === 'clog_rule'));
+  const big = o.verdicts.map((v) => v.big);
+  assert.ok(big.includes('No new alarm can be confirmed'));
+  assert.ok(big.includes('a_0002 stays latched'));
+  assert.ok(big.some((b) => b.startsWith('Rule layer now: ALARM · misfire · cyl 3')));
+});
+
+test('outcome: removing CAM only holds the phase; nothing diagnostic is lost', async () => {
+  const { outcome } = await import('./evidence.js');
+  const sens = sensors({ cam: { commanded: true, health: 'FAILURE' } });
+  const off = offlineSet(sens);
+  const c = classifierWitness(state(), off);
+  const o = outcome({ state: state(), sensors: sens, classifier: c, level: evidenceLevel(c, off) });
+  assert.deepEqual(o.lost, []);
+  assert.deepEqual(o.held.map((x) => x.id), ['phase']);
+  assert.equal(o.verdicts[0].big, 'New alarms can still be confirmed');
+});

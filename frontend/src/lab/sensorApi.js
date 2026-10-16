@@ -1,9 +1,13 @@
-// Sabotage Lab: HTTP client for the backend's sensor controls (D137).
+// Sabotage Lab: HTTP client for the backend's sensor controls (D137) and the Resilience Lab reads (D138).
 //   GET  /sensors               which sensors the backend has switched off (+ last health)
 //   POST /sensor/{ch}/off|on    switch one off / back on (409 off the simulator, 422 unknown channel)
 //   POST /sensors/restore       switch every sensor back on
-// A reply only says the command was ACCEPTED. Whether the sensor is actually offline or live again is
-// read from state.health.sensors (the backend watchdog), never from this reply.
+//   GET  /events?after=N        incident record (requested / accepted / refused / confirmed), backend clock
+//   GET  /investigate           Reliability Agent: read-only tools, deterministic answers
+//   GET  /industrial            OPC UA server facts (endpoint, last publish, last event, last command)
+//   GET  /report                printable incident report (HTML)
+// A reply only says a command was ACCEPTED. Whether a sensor is actually offline or live again is read
+// from state.health.sensors (the backend watchdog), never from this reply.
 
 export function createSensorApi(apiUrl) {
   if (!apiUrl) return null; // mock transport: no backend to command
@@ -27,5 +31,9 @@ export function createSensorApi(apiUrl) {
     off: (ch) => call('POST', `/sensor/${encodeURIComponent(ch)}/off`),
     on: (ch) => call('POST', `/sensor/${encodeURIComponent(ch)}/on`),
     restore: () => call('POST', '/sensors/restore'),
+    events: (after = 0) => call('GET', `/events?after=${after}`),
+    investigate: (trigger) => call('GET', `/investigate${trigger ? `?trigger=${encodeURIComponent(trigger)}` : ''}`),
+    industrial: () => call('GET', '/industrial'),
+    reportUrl: `${http}/report`,
   };
 }

@@ -169,3 +169,33 @@ watchdog, physics witness and recovery still work; skip step 4 and say plainly t
 API: `GET /sensors`, `POST /sensor/{mic|accel|crank|cam}/off|on`, `POST /sensors/restore` (409 off the simulator,
 422 for any other channel). A reply only means the command was accepted; the sensor's state comes from
 `state.health.sensors`.
+
+## 8. Industrial Resilience Lab (the SABOTAGE LAB tab, 60–90 s judge script)
+
+The tab is now **720 — INDUSTRIAL RESILIENCE LAB** (D138): a 3D stage (the engine with its four sensors cabled to a
+"720 EDGE" unit and an OPC UA mast), a **What just happened** panel, the **720 Reliability Agent**, a **Live
+incident timeline** with **Export incident report**, and an **Industrial link** panel. Start the backend 30 s
+before (classifier warm-up). Measured on this laptop, browser click → first broadcast showing the change:
+
+| # | Judge does | What they see | Measured |
+|---|---|---|---|
+| 1 | Nothing | All four cables carry white pulses into 720 EDGE; PHYSICS quiet, ML "healthy p ≈ 0.9", decision NORMAL; mast rings = OPC UA publishing | — |
+| 2 | **Inject** misfire, cyl 3, 1.00 | Cylinder 3 glows; PHYSICS fired, ML misfire; red decision light; "ALARM confirmed · misfire · cylinder 3"; the agent investigates the new ALARM by itself | ADVISORY 0.55–0.69 s, **ALARM 0.93–0.99 s** |
+| 3 | **ACCEL → Disable** (or UaExpert `EngineAsset.DisableSensor("accel")`) | ACCEL cable amber "AWAITING WATCHDOG", then **fractures red with a spark**; ML lamp off; **What just happened**: YOU REMOVED ACCEL → 720 LOST knock rule, ML classifier witness → STILL WORKING misfire rule, injector-clog rule, localisation → RESULT "No new alarm can be confirmed", "a_000N stays latched", "Rule layer now: ALARM"; key line; agent explains which sensor, which evidence, whether the fault can still be confirmed; timeline shows requested → accepted → confirmed | accepted ~0.1 s; **classifier gone 0.17–0.40 s**; **watchdog FAILURE 3.06–3.25 s** |
+| 4 | **Acknowledge alarm** | Decision drops to **ADVISORY, physics only** (the latch resets once its two-witness match is gone, D124) | 0.23 s |
+| 5 | **ACCEL → Enable** | Cable rejoins, pulses resume; ML lamp back only when the model answers again; a new ALARM is confirmed | **sensor LIVE 0.23–0.29 s; classifier back 0.94–1.03 s; new ALARM 1.20–1.36 s** |
+| 6 | **Export incident report** | Printable page (print → PDF): asset, source, episodes, alarm ids, sensor availability, physics and ML evidence, ACK, timeline with phases, agent findings, limitations | — |
+
+Closing line: *"Most systems tell you when an engine fails. 720 also tells you when its own diagnosis can no longer
+be trusted."*
+
+**From UaExpert** (bidirectional): `EngineAsset → DisableSensor("accel")` returned `(True, "")`; 4 s later
+`SensorHealth/accel = 1` (FAILURE); the lab's 3D cable broke, the timeline showed "Disable ACCEL · via opcua", and
+the Industrial link showed it as the last command plus the emitted OPC UA event "Sensor accel FAILURE".
+
+**Fallbacks.** No classifier checkpoint: ML lamp "no input" from the start, decision tops out at ADVISORY; do steps
+1, 3, 5 and say the second witness is missing. WebGL lost: the 3D stage offers "Restart 3D view"; everything else
+(outcome, agent, timeline, report) works without it. Agent: it is deterministic and runs on the backend; there is no
+language model to fail.
+
+API (D138): `GET /events?after=N`, `GET /investigate`, `GET /industrial`, `GET /report`.

@@ -167,6 +167,10 @@ class OpcuaBridge:
         self._last_state_mono: float | None = None
         self._online = True
         self._tasks: list[asyncio.Task] = []
+        # for the Sabotage Lab's Industrial Link panel (D138): facts about what this server actually did
+        self.last_publish: float | None = None     # backend clock of the last state written to the address space
+        self.last_event: dict | None = None        # the last OPC UA event emitted
+        self.events_emitted = 0
         runtime.add_listener(self._on_message)
 
     # ------------------------------------------------------------ lifecycle
@@ -384,6 +388,7 @@ class OpcuaBridge:
         entry[3] = False
 
     async def _apply_state(self, m: dict) -> None:
+        self.last_publish = self.runtime.clock()
         self._last_state_mono = time.monotonic()
         d, h, op = m["decision"], m["health"], m["operating_point"]
         if self._prev is not None and self._prev["run_id"] != m["run_id"]:
@@ -519,6 +524,10 @@ class OpcuaBridge:
         # the diagnostic time for state-driven events; server time for watchdog events
         when = _dt(m["sent_at"]) if m and not stale else None
         log.info("OPC UA event [%d] %s", severity, message)
+        self.events_emitted += 1
+        self.last_event = {"t": round(self.runtime.clock(), 3), "message": message, "severity": severity}
+        self.runtime.events.record("opcua_event", "confirmed", f"OPC UA event emitted: {message}", via="opcua",
+                                   severity=severity, message=message)
         for gen in self._gens:
             ev = gen.event
             ev.Message = ua.LocalizedText(message)
@@ -564,7 +573,7 @@ class OpcuaBridge:
             try:
                 # the REAL carOBD replay's lean_drift is bank-wide: cylinder null, as on POST /inject
                 cyl = None if self.runtime.scenario.name == "carobd_replay" else int(cylinder)
-                self.runtime.inject(str(fault), cyl, float(severity))
+                self.runtime.inject(str(fault), cyl, float(severity), via="opcua")
                 log.info("OPC UA Inject(%s, %s, %s) accepted", fault, cylinder, severity)
                 return self._reply(True, "")
             except (NotImplementedError, ValueError, TypeError) as e:
@@ -576,7 +585,7 @@ class OpcuaBridge:
         """Same Runtime call as the HTTP sensor routes (D137). Accepted only means the command was taken;
         the sensor's actual state comes from SensorHealth/<channel> (the watchdog, 3 s)."""
         try:
-            fn(str(channel))
+            fn(str(channel), via="opcua")
         except (SensorControlError, ValueError) as e:
             log.info("OPC UA %s(%s) refused: %s", name, channel, e)
             return self._reply(False, str(e))

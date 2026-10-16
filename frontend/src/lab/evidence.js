@@ -135,3 +135,43 @@ export function integrityNotes(state, level, classifier) {
   }
   return notes;
 }
+
+// ------------------------------------------------------------ outcome: what removing sensors did (D138)
+// Static facts about what each sensor feeds (same table as backend/investigator.py), combined with the
+// backend's broadcast. It says what was lost and what still works; the verdict lines quote the rule layer.
+export const CAPABILITIES = [
+  { id: 'misfire_rule', name: 'Misfire rule', needs: ['crank'] },
+  { id: 'knock_rule', name: 'Knock rule', needs: ['accel'] },
+  { id: 'clog_rule', name: 'Injector-clog rule', needs: [] }, // OBD fuel trims: not switchable here
+  { id: 'classifier', name: 'ML classifier witness', needs: ['crank', 'accel'] },
+  { id: 'localisation', name: 'Cylinder localisation', needs: ['crank'] },
+  { id: 'signature', name: 'Acoustic signature display', needs: ['mic'] },
+  { id: 'phase', name: '720° cycle phase', needs: ['cam'], soft: true }, // held from the last cam pulse
+];
+
+export function outcome({ state, sensors, classifier, level }) {
+  const off = offlineSet(sensors);
+  const removed = LAB_SENSORS.filter((ch) => off.has(ch));
+  const lost = CAPABILITIES.filter((c) => c.needs.some((n) => off.has(n)) && !c.soft)
+    .map((c) => ({ ...c, because: c.needs.filter((n) => off.has(n)).map((n) => SENSOR_INFO[n].short) }));
+  const held = CAPABILITIES.filter((c) => c.soft && c.needs.some((n) => off.has(n)));
+  const kept = CAPABILITIES.filter((c) => !c.needs.some((n) => off.has(n)));
+  const d = state?.decision ?? {};
+  const verdicts = [];
+  const newAlarm = level === 'FULL';
+  if (removed.length) {
+    verdicts.push({ tone: newAlarm ? 'ok' : 'amber', big: newAlarm ? 'New alarms can still be confirmed' : 'No new alarm can be confirmed', sub: newAlarm ? 'Both witnesses keep their inputs.' : 'The rule layer needs two matching witnesses; one is gone.' });
+  }
+  if (d.state === 'ALARM') {
+    verdicts.push(d.acked
+      ? { tone: 'red', big: `${d.alarm_id} acknowledged`, sub: 'It resets once its own two-witness match is gone (D124).' }
+      : { tone: 'red', big: `${d.alarm_id} stays latched`, sub: 'Losing a witness never clears an alarm: it waits for the operator ACK.' });
+  }
+  const witnesses = (d.witnesses ?? []).join(' + ') || 'no witness';
+  verdicts.push({
+    tone: d.state === 'ALARM' ? 'red' : d.state === 'NORMAL' ? 'neutral' : 'amber',
+    big: `Rule layer now: ${d.state ?? '—'}${d.fault ? ` · ${d.fault.replace('_', ' ')}` : ''}${d.location ? ` · cyl ${d.location}` : ''}`,
+    sub: d.state === 'ALARM' ? `Confirmed by ${witnesses}.` : `Current witnesses: ${witnesses}.`,
+  });
+  return { removed, lost, held, kept, verdicts, classifierGone: classifier?.status !== 'ACTIVE' && removed.length > 0 };
+}
