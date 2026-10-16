@@ -90,7 +90,7 @@ function useSensorControl(api, active, runId) {
 // ------------------------------------------------------------ the view
 
 export default function SabotageLab({
-  state, signal, ages, offline, active, apiUrl, mock, onAck, onStartInjection, onStopInjection, ackError,
+  state, signal, ages, offline, active, apiUrl, mock, onAck, onStartInjection, onStopInjection, ackError, onSelectScenario,
 }) {
   const api = useMemo(() => (mock ? null : createSensorApi(apiUrl)), [apiUrl, mock]);
   const runId = state?.run_id ?? null;
@@ -151,8 +151,11 @@ export default function SabotageLab({
           <SensorPanel
             sensors={sensors} canControl={canControl} ctl={ctl} onCommand={sendCommand}
             why={controlBlocker({ api, isSim, ctl, offline, mock })}
+            onSwitchToSim={api && !offline && (!isSim || ctl.controllable === false) && onSelectScenario
+              ? () => { log.note('Switch source to the live simulator'); onSelectScenario('sim'); setTimeout(ctl.refresh, 1500); }
+              : null}
           />
-          <InjectPanel state={state} enabled={Boolean(api) && isSim && !offline} onStart={onStartInjection} onStop={onStopInjection} log={log} />
+          <InjectPanel state={state} enabled={Boolean(api) && isSim && ctl.controllable === true && !offline} onStart={onStartInjection} onStop={onStopInjection} log={log} />
         </aside>
 
         <div className="lab-center">
@@ -182,7 +185,7 @@ export default function SabotageLab({
 function controlBlocker({ api, isSim, ctl, offline, mock }) {
   if (mock || !api) return 'Sensor controls need the live backend (VITE_API_URL).';
   if (offline) return 'Diagnostics offline: controls paused until the stream returns.';
-  if (!isSim || ctl.controllable === false) return 'Sensor controls exist only on the live simulator. Select the simulator source on the 2D dashboard.';
+  if (!isSim || ctl.controllable === false) return 'The backend is not on the live simulator, so sensor cuts and fault injection are off. Switch to it here (starts a fresh run).';
   return null;
 }
 
@@ -232,7 +235,7 @@ function LabHeader({ level, scripted }) {
 
 // ------------------------------------------------------------ left: controls
 
-function SensorPanel({ sensors, canControl, ctl, onCommand, why }) {
+function SensorPanel({ sensors, canControl, ctl, onCommand, why, onSwitchToSim }) {
   const anyOff = LAB_SENSORS.some((ch) => sensors[ch].commanded);
   return (
     <section className="lab-card" aria-label="Sensor control">
@@ -272,6 +275,9 @@ function SensorPanel({ sensors, canControl, ctl, onCommand, why }) {
         })}
       </ul>
       {why && <p className="lab-note">{why}</p>}
+      {onSwitchToSim && (
+        <button type="button" className="lab-btn primary" onClick={onSwitchToSim}>Switch to live simulator</button>
+      )}
       {ctl.error && <p className="lab-note err" role="alert">{ctl.error}</p>}
       <p className="lab-note faint">Disable blanks the sensor inside the simulator. The watchdog confirms it after 3 s without data; nothing here changes until the backend says so.</p>
     </section>

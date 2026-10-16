@@ -320,6 +320,7 @@ export default function App() {
                   onStartInjection={startInjection}
                   onStopInjection={stopInjection}
                   ackError={ackError}
+                  onSelectScenario={selectScenario}
                 />
               </Suspense>
             </PanelBoundary>
