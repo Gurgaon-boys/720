@@ -1,8 +1,8 @@
 {
   "eval_version": "0.1",
   "placeholder": false,
-  "generated_at": "2026-10-16T07:51:10Z",
-  "source_commit": "b1d795f",
+  "generated_at": "2026-10-16T14:13:26Z",
+  "source_commit": "6d0789b",
   "produced_by": "python -m eval.build_eval_json",
   "false_positives": {
     "headline": {
@@ -111,12 +111,23 @@
   },
   "operator_projection": {
     "engines": 50,
-    "value": null,
-    "unit": "alarms per hour",
-    "basis": null,
-    "assumptions": null,
-    "column": "C",
-    "split": "held-out files"
+    "value": 0.0,
+    "upper_95": 74.89330683884974,
+    "unit": "operator notifications per hour (ALARM + UNCLASSIFIED episodes)",
+    "basis": "0 episodes in 2.00 engine-h x 50 engines (SIM 2.1, soak_fresh3 engines 1100-1139 (unseen)); exact Poisson 95 % upper 74.9 per hour, above the ~12/h manageable guidance: too little exposure yet to bound a 50-engine fleet",
+    "guidance_per_operator_hour": {
+      "very likely acceptable (1 per 10 min)": 6.0,
+      "maximum manageable (2 per 10 min)": 12.0
+    },
+    "assumptions": [
+      "50 engines like the SIM 2.1 healthy third-soak fleet, independent, steady operation",
+      "every ALARM and every UNCLASSIFIED episode is one operator notification; ADVISORY is logged, not annunciated",
+      "nuisance load on a healthy fleet only (true fault alarms come on top)",
+      "guidance: EEMUA 191 / ANSI/ISA-18.2 average alarm rate per operator (6/h acceptable, 12/h max manageable)"
+    ],
+    "column": "A",
+    "split": "soak_fresh3 engines 1100-1139 (unseen)",
+    "source": "eval/results/alarm_budget.json"
   },
   "column_a": {
     "split_gap": {
@@ -307,6 +318,7 @@
   },
   "notes": {
     "column_a": "sim 2.1 four-class results (eval/results/column_a.json, Dipen, DECISIONS D90-D94); the sim v1 misfire-only slice (eval/table_a_misfire.json, D63) is an earlier result",
-    "column_c": "headline = the pre-registered OBD branch v1 (eval/obd_carobd.json, D55-D58). A second, later read of the same held-out files with a different OBD model (eval/results/column_c.json) is a secondary analysis and not on the panel"
+    "column_c": "headline = the pre-registered OBD branch v1 (eval/obd_carobd.json, D55-D58). A second, later read of the same held-out files with a different OBD model (eval/results/column_c.json) is a secondary analysis and not on the panel",
+    "l3": "L3 (Dipen, D95-D101): UNCLASSIFIED needs 2 windows and the healthy-model threshold comes from engine-to-engine spread on validation engines; the third untouched soak and the alarm budget are in eval/results/soak_l3_fresh3.json and alarm_budget.json. The pre-registered carOBD headline (OBD branch v1) is unchanged"
   }
 }

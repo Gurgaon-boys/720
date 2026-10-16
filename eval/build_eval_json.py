@@ -127,7 +127,7 @@ def operator_projection() -> dict:
                      f"x {p['engines']} engines ({sim['label']}, {sim['split']}); exact Poisson 95 % upper "
                      f"{p['fleet_upper_95_per_hour']:.1f} per hour, above the ~12/h manageable guidance: too little "
                      f"exposure yet to bound a {p['engines']}-engine fleet",
-            "guidance_per_operator_hour": p["guidance_per_operator_hour"], "assumptions": p["assumptions"],
+            "guidance_per_operator_hour": p["guidance_per_operator_hour"], "assumptions": "; ".join(p["assumptions"]),
             "column": "A", "split": sim["split"], "source": "eval/results/alarm_budget.json"}
 
 
