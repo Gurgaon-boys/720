@@ -95,7 +95,7 @@ The console uses the backend's existing simulator routes (L1, `backend/README.md
 ```
 
 - `fault`: `misfire | knock | injector_clog | valve_tick`; `cylinder`: 1–4; `severity`: the **requested** severity (0–1) as sent to the simulator, not a measurement. The rule layer's own estimate stays in `decision.severity`.
-- Only on `mode: "live"` with `source: "simulated"`. Injection alone does not set CHECK_FUNCTION: that is only for the backend's explicit maintenance/test mode, and never over a fault (D44, superseding that part of D14). The injected fault goes through the normal rule layer; no shortcut to ALARM. Clearing does not clear a latched alarm: the usual ACK + healthy windows apply.
+- Only on `mode: "live"` with `source: "simulated"`. Injection alone does not set CHECK_FUNCTION: that is only for the backend's explicit maintenance/test mode, and never over a fault (D44, superseding that part of D14). The injected fault goes through the normal rule layer; no shortcut to ALARM. Clearing does not clear a latched alarm: the usual ACK + 2 windows without its fault matching apply (D124).
 - One injection at a time is enough for the console; if the simulator holds several, send the latest.
 
 The UI never assumes a request worked: it shows an injection only once `state.injection` says so. A live backend that sends no `injection` field (schema 1.3) gets a disabled console with "backend injection unavailable".

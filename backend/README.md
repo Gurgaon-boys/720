@@ -44,7 +44,7 @@ Pick a scenario with `S720_SCENARIO=<name>` before starting, or switch while run
 | Scenario | What happens |
 |---|---|
 | `healthy` | NORMAL throughout |
-| `misfire` | Healthy 2 s → misfire cyl 3, both witnesses → ALARM on the 2nd window, latched until ACK + 2 healthy windows |
+| `misfire` | Healthy 2 s → misfire cyl 3, both witnesses → ALARM on the 2nd window, latched until ACK + 2 windows without a misfire match |
 | `knock` | Same, knock on cyl 2 |
 | `injector_clog` | Same, cyl 1; asset health MAINTENANCE_REQUIRED |
 | `advisory` | Classifier says knock, physics rule quiet → ADVISORY, never ALARM |
@@ -133,7 +133,7 @@ Each window is assessed on its own (match / conflict / unclassified / advisory /
 
 - **ALARM** after 2 consecutive windows where the classifier majority (Baseline excluded, mean p ≥ 0.6) and the physics rule name the same fault. The first such window is ADVISORY.
 - The alarm stays latched until acknowledged, even if the fault clears first. **ACK only marks it acknowledged.**
-- **Reset to NORMAL** on the first window evaluation where the alarm is acknowledged and the last 2 consecutive windows were healthy. An ACK after the fault has already cleared resets on the next window, never inside the ACK itself.
+- **Reset** on the first window evaluation where the alarm is acknowledged and the last 2 consecutive windows were not a two-witness `match` for the alarm's own fault (D124; it was "2 healthy windows"). Whatever remains then shows as itself (UNCLASSIFIED, ADVISORY or NORMAL). An ACK after the fault has already cleared resets on the next window, never inside the ACK itself.
 - A new episode gets a new `alarm_id` (`a_0001`, `a_0002`, …), never reused while the server runs, even across scenario switches. One alarm is active at a time.
 - While latched, `decision` reports the evidence that raised it (`witnesses: [physics, classifier]`, `consecutive_windows` ≥ 2, live while the fault still matches).
 - NE 107 asset health: misfire/knock alarm and UNCLASSIFIED → OFF_SPEC, injector clog alarm → MAINTENANCE_REQUIRED, everything else NORMAL. Sensor health comes from the watchdog.
