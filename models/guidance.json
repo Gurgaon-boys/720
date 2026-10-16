@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "description": "One-line operator action per (fault, NE 107 state). Read by models/guidance.py:guidance(); deterministic, no learning. {cyl} is the decision's cylinder, {sensor} the failed sensor(s).",
   "priority": "ALARM > UNCLASSIFIED > sensor FAILURE > ADVISORY > NORMAL: one line, the most urgent",
   "alarm": {
@@ -10,5 +10,11 @@
   "unclassified|OFF_SPEC": "Unknown pattern: inspect, do not clear",
   "sensor|FAILURE": "Check sensor wiring ({sensor}); engine state unknown",
   "advisory|NORMAL": "One witness only ({fault}): keep running, watch for ALARM",
-  "normal|NORMAL": null
+  "normal|NORMAL": null,
+  "capability": {
+    "_note": "Lines keyed by what the SOURCE can do, not only by fault/state (models/guidance.py: capability). They replace the generic line for that key.",
+    "single_witness_real_obd": {
+      "advisory|NORMAL": "Single witness on real OBD data: ALARM needs a second witness this source doesn't have."
+    }
+  }
 }

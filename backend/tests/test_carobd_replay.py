@@ -152,6 +152,9 @@ def test_runtime_echoes_lean_drift_with_no_cylinder_and_every_message_validates(
         assert m["mode"] == "replay" and m["localisation"] == "none" and m["replay"]["file"] == "drive2.csv"
         assert m["replay"]["max_decision"] == "ADVISORY" and "never ALARM" in m["replay"]["note"]
         assert m["decision"]["state"] != "ALARM"
+    adv = [m for m in states if m["decision"]["state"] == "ADVISORY"]
+    assert adv and all(m["decision"]["guidance"] == "Single witness on real OBD data: ALARM needs a second witness "
+                       "this source doesn't have." for m in adv)
     inj = [m for m in states if m["injection"] is not None]
     assert inj and all(m["injection"]["fault"] == "lean_drift" and m["injection"]["cylinder"] is None
                        and m["source"] == "injected" and m["source_label"] == "real_replay_injected" for m in inj)
@@ -172,7 +175,7 @@ def test_with_an_obd_classifier_alarm_follows_the_two_witness_rule():
     out = run_rules(s, 700, inject_at=300)
     alarms = [d for _, _, _, d in out if d["state"] == "ALARM"]
     assert alarms and alarms[0]["fault"] == "injector_clog" and alarms[0]["witnesses"] == ["physics", "classifier"]
-    assert s.replay_info()["max_decision"] == "ALARM"
+    assert s.replay_info()["max_decision"] == "ALARM" and s.guidance_capability is None
 
 
 def test_classifier_is_absent_unless_models_obd_classifier_exists():

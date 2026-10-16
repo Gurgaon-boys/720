@@ -342,6 +342,11 @@ class CarObdReplay:
     # ------------------------------------------------------------ labels
 
     @property
+    def guidance_capability(self) -> str | None:
+        """Operator guidance keyed by what this source can do (models/guidance.json "capability", D132)."""
+        return "single_witness_real_obd" if self.classifier is None else None
+
+    @property
     def source_label(self) -> str:
         base = "real_upload" if self.uploaded else "real_replay"
         return f"{base}_injected" if self.injecting else base

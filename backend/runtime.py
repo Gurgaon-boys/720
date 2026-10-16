@@ -167,7 +167,8 @@ class Runtime:
         w = self.last_window
         now = self.clock()
         health = {"asset_ne107": asset_ne107(decision, self.maintenance_mode), "sensors": self.watchdog.status(now)}
-        decision = {**decision, "guidance": guidance(decision, health)}
+        cap = getattr(self.scenario, "guidance_capability", None)   # e.g. single-witness REAL replay (D132)
+        decision = {**decision, "guidance": guidance(decision, health, cap)}
         latency = round((time.perf_counter() - start) * 1000, 2)
         msg = messages.state_message(sent_at=now, decision=decision, health=health, latency_ms=latency,
                                      injection=self.injection, **w.fields)

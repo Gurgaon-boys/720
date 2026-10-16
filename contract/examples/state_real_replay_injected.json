@@ -67,7 +67,7 @@
     "acked": false,
     "acked_by": null,
     "acked_at": null,
-    "guidance": "One witness only (injector_clog): keep running, watch for ALARM"
+    "guidance": "Single witness on real OBD data: ALARM needs a second witness this source doesn't have."
   },
   "health": {
     "asset_ne107": "NORMAL",

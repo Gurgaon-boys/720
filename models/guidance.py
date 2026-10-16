@@ -1,8 +1,12 @@
 """Operator guidance: one deterministic line per (fault, NE 107 state), from models/guidance.json.
 
-guidance(decision, health) is a pure function of the contract's `decision` and `health` objects. Precedence
+guidance(decision, health, capability) is a pure function of the contract's `decision` and `health` objects. Precedence
 (one line, the most urgent): a latched ALARM, then UNCLASSIFIED, then any sensor in FAILURE (diagnostics
 from the remaining sensors can't be trusted), then a single-witness ADVISORY. NORMAL gives None.
+
+capability names what the SOURCE can do (D132), e.g. "single_witness_real_obd" for a REAL carOBD replay with no
+OBD classifier: there, ALARM is impossible, so its ADVISORY line must not say "watch for ALARM". A capability
+line replaces the generic line with the same key; keys it doesn't define fall back to the generic ones.
 """
 
 from __future__ import annotations
@@ -19,8 +23,12 @@ def table() -> dict:
     return json.loads(GUIDANCE.read_text(encoding="utf-8"))
 
 
-def guidance(decision: dict, health: dict) -> str | None:
+def guidance(decision: dict, health: dict, capability: str | None = None) -> str | None:
     g = table()
+    if capability is not None:
+        if capability not in g["capability"]:
+            raise KeyError(f"unknown guidance capability {capability!r}")
+        g = {**g, **g["capability"][capability]}
     state, ne107 = decision["state"], health["asset_ne107"]
     cyl = decision.get("location")
     if state == "ALARM":
