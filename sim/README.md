@@ -72,9 +72,27 @@ chunk = sim.step(0.5)
 | Reciprocating inertia | −m x″ x′ ω² per cylinder (0.45 kg), exact slider-crank. It dominates the 2nd order at high rpm, as on a real inline-4 |
 | Regimes (`Regimes.eval()`) | Tooth jitter 2 µs; crank torsional flex 0.02° × (rpm/1000)^1.5 at the wheel; accessory-torque noise 1 N m; sensor dropouts 0.3/min per channel (NaN audio, missing teeth or OBD) |
 
-Every new random source has its own seeded stream, drawn whether or not a fault is active, so v1's streams are untouched and every fault at severity 0 is bit-identical to healthy (tested). ECU/OBD values marked `# TODO carOBD-calib` in `sim/params.py` are engineering defaults: `data/splits/` has no carOBD split yet.
+Every new random source has its own seeded stream, drawn whether or not a fault is active, so v1's streams are untouched and every fault at severity 0 is bit-identical to healthy (tested). ECU/OBD values are set from carOBD calibration files from 2.1 on (below).
 
 ```bash
 python -m sim.demo_v2     # docs/figures/sim_v2_knock.png, sim_v2_clog_trim.png, sim_v2_valve_tick.png
 ```
 
+
+## 2.1 (`sim_version` 2.1.0): OBD realism from carOBD calibration files
+
+`python -m sim.calibrate_ecu` reads the **90 carOBD calibration files** (29.1 h; never the held-out ones) through `data/carobd.py:load()` and writes `sim/ecu_calibration.json`. `EcuParams` values marked `# carOBD` come from it:
+
+| Quantity | carOBD (calibration files) | Sim 2.1 |
+|---|---|---|
+| PID refresh | 0.45–0.55 Hz per PID (round-robin polling) | 0.55 Hz per PID, staggered; rows at 1 Hz hold each PID's last poll |
+| OBD resolution | STFT/LTFT 0.78 % steps, MAP / coolant 1 unit | same (SAE J1979 scaling) |
+| Idle STFT spread | sd 1.76 % per 30 s (median of 77 files) | O2 limit-cycle dither on fuelling, sd 2.1 %, tau 0.5 s → OBD STFT sd 1.85 % per 30 s |
+| LTFT across files | file means sd 1.56 % | per-engine fuel bias N(0, 1.56 %) drawn for randomised engines (already learned out by LTFT); reference engine 0 |
+| Idle MAP | median 29 kPa, IQR 27–35 | 35 kPa (inside the IQR; idle load unchanged) |
+| Idle throttle / calc. load | 16.5 % / 28.2 % at 29 kPa | throttle 16.5 %; VE 0.985 |
+| Coolant | warm 87 °C; warm-up 11.3 °C/min → first-order τ 183 s | warm start 87 °C, τ 183 s |
+| Timing advance | 5th–95th percentile −4…25°, idle median 1° | 14° at idle … 28° at 2,800 rpm (**idle mismatch kept**: matching it would move combustion phasing and every crank-angle threshold) |
+
+Not identifiable from carOBD (marked `# not in carOBD`): lambda transport delay (no O2 PID), STFT/LTFT time constants (0.5 Hz polls), coolant load gain.
+The dither and fuel bias change combustion slightly, so the misfire thresholds were recalibrated for 2.1. The soak and robustness numbers in D64 are sim 2.0.

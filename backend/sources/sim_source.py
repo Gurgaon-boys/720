@@ -5,10 +5,13 @@ ask for, so it runs in real time. Windows of 4 whole cycles with 50% overlap fin
 2 cycles (300 ms at idle); the rule layer is stepped once per finished window, and the state
 ticks in between resend the last decision (`fresh=False`).
 
-Witnesses: the physics (misfire) rule only. There is no classifier yet, so `models` is empty and
-the rule layer can raise ADVISORY but never ALARM. There is no healthy (anomaly) model either, so
-`anomaly.score` is null (schema 1.5); `anomaly.per_location` carries the calibrated crank roughness
-for the per-cylinder bars, and `anomaly.threshold` is the bars' limit.
+Witnesses (L2): the physics rules (misfire half-order energy, knock band energy, trim drift) and,
+through models/witness.py, the fast classifier (SVM) and the healthy model (Mahalanobis). The rule
+layer raises ALARM only when a physics rule and the classifier name the same fault (and cylinder)
+for 2 consecutive windows. Without a trained checkpoint (models/checkpoints/fast_v1.pkl), or with
+S720_CLASSIFIER=0, the source falls back to L1: `models` empty, `anomaly.score` null, ADVISORY at most.
+`anomaly.per_location` carries the calibrated crank roughness for the bars; the anomaly score is
+scaled so its limit is the same 0.5.
 
 Channels: `signal` carries mic and accel (4 kHz display streams) and the mic STFT; `obd` carries
 the simulator's ECU values at 1 Hz (rpm, load, throttle, MAP, coolant, STFT, LTFT, spark advance,
@@ -26,9 +29,11 @@ from scipy import signal as sps
 
 from backend.rule_layer import Evidence
 from backend.scenarios import SIGNAL_RATE_HZ, SIGNAL_S, WINDOW_S, Phase, Window
-from dsp.features import fingerprint, window_features
-from dsp.rules import PER_LOCATION_THRESHOLD, load_thresholds, misfire_half_order, per_location
+from dsp.features import fingerprint
+from dsp.rules import PER_LOCATION_THRESHOLD, all_rules, load_all, per_location
 from dsp.windows import CycleWindower
+from models.features import StreamFeatures
+from models.witness import ClassifierWitness
 from sim import FS, EngineParams, EngineSim
 from sim.params import Regimes
 
@@ -52,14 +57,16 @@ class SimSource:
     period = None
 
     def __init__(self, params: EngineParams | None = None, seed: int = 0, thresholds: dict | None = None,
-                 regimes: Regimes | None = None):
+                 regimes: Regimes | None = None, witness: ClassifierWitness | None = None):
         if FS % SIGNAL_RATE_HZ or round(CHUNK_S * FS) % DECIMATE:
             raise ValueError("chunk length must be a whole number of display samples")
         self.params = params or EngineParams()
         self.seed = seed
-        self.thresholds = thresholds or load_thresholds()
+        self.thresholds = thresholds or load_all()
         self.sim = EngineSim(self.params, seed, regimes=regimes, purpose="demo")
-        self.windower = CycleWindower(4, 0.5)
+        self.features = StreamFeatures()
+        self.witness = witness if witness is not None else default_witness()
+        self.classifier_ms: list[float] = []
         self.stream_t = 0.0
         self._ready: list[Window] = []
         self._last: Window | None = None
@@ -151,8 +158,8 @@ class SimSource:
         while self.stream_t < t - 1e-9:
             chunk = self.sim.step(CHUNK_S)
             t_end = float(chunk["t"][-1]) + 1 / FS
-            for win in self.windower.push(chunk):
-                self._ready.append(self._process(win))
+            for w in self.features.push(chunk):
+                self._ready.append(self._process(w))
             for ch in DISPLAY_GAIN:
                 y, self._lp_zi[ch] = sps.sosfilt(self._lp, np.nan_to_num(chunk[ch]), zi=self._lp_zi[ch])
                 self._disp[ch] = np.concatenate([self._disp[ch], (DISPLAY_GAIN[ch] * y[::DECIMATE]).astype(np.float32)])
@@ -165,9 +172,12 @@ class SimSource:
             self._drops += [(d["channel"], d["t0"], d["t1"]) for d in chunk["dropouts"]]
             self.stream_t = t_end
 
-    def _process(self, win) -> Window:
-        f = window_features(win)
-        rule = misfire_half_order(f, self.thresholds)
+    def _process(self, w) -> Window:
+        win, f = w.win, w.features
+        rules = all_rules(f, w.obd, self.thresholds)
+        wit = self.witness(w.vector, f["rpm_mean"], f["crank_valid"] and f["accel_valid"])
+        if wit.cpu_ms:
+            self.classifier_ms = (self.classifier_ms + [wit.cpu_ms])[-500:]
         _, fp = fingerprint(win)
         scale = self._baseline.max()
         map_pa = float(win.meta["map_pa"])
@@ -183,18 +193,35 @@ class SimSource:
             "localisation": "cylinder",
             "features_summary": {"half_order_energy": round(f["half_order_energy"], 5),
                                  "half_order_ratio_v1": round(f["half_order_ratio"], 4),
-                                 "roughness_max": round(float(f["roughness"].max()), 5)},
-            "anomaly": {"score": None, "threshold": PER_LOCATION_THRESHOLD,
-                        "per_location": per_location(f["roughness"], self.thresholds, f["rpm_mean"], f["map_kpa"])},
-            "models": [],
-            "physics_rules": [rule],
+                                 "roughness_max": round(float(f["roughness"].max()), 5),
+                                 "knock_db_max": round(float(np.max(f["knock_db"])), 2),
+                                 "trim_mean_pct": round(w.obd["trim_mean_pct"], 2),
+                                 **({"classifier_cylinder": wit.location} if wit.location else {})},
+            "anomaly": {"score": wit.score, "threshold": PER_LOCATION_THRESHOLD,
+                        "per_location": per_location(f["roughness"], self.thresholds["misfire"], f["rpm_mean"],
+                                                     f["map_kpa"])},
+            "models": wit.models,
+            "physics_rules": rules,
             "signature": {"crank_deg": [round(float(c), 1) for c in self._centres],
                           "amplitude": [round(float(v), 3) for v in fp / scale],
                           "baseline_amplitude": [round(float(v), 3) for v in self._baseline / scale]},
         }
-        evidence = Evidence(models=[], physics_rules=[rule], anomaly_score=None,
-                            anomaly_threshold=PER_LOCATION_THRESHOLD, severity=None)
+        evidence = Evidence(models=wit.models, physics_rules=rules, anomaly_score=wit.score,
+                            anomaly_threshold=PER_LOCATION_THRESHOLD, severity=None, classifier_location=wit.location)
         return Window(round(win.t_end, 3), _RUNNING, evidence, fields)
+
+
+_WITNESS: ClassifierWitness | None = None
+
+
+def default_witness() -> ClassifierWitness:
+    """One loaded checkpoint shared by every SimSource in the process. S720_CLASSIFIER=0 disables it."""
+    global _WITNESS
+    if os.environ.get("S720_CLASSIFIER") == "0":
+        return ClassifierWitness(path=None)
+    if _WITNESS is None:
+        _WITNESS = ClassifierWitness()
+    return _WITNESS
 
 
 @lru_cache(maxsize=8)

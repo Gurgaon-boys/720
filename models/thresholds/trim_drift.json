@@ -1,0 +1,55 @@
+{
+ "rule": "trim_drift",
+ "version": 1,
+ "rule_basis": "obd",
+ "created_at": "2026-10-16T04:55:15+00:00",
+ "source": "carOBD calibration files (healthy real ECU); checked on healthy simulator runs",
+ "feature_definition": "30 s window mean of (1 + STFT)(1 + LTFT) - 1, %; fires above threshold (lean correction)",
+ "window_s": 30.0,
+ "overlap": 0.5,
+ "min_samples": 20,
+ "retard_exclude_deg": 1.0,
+ "target_fpr_per_window": 0.001,
+ "margin": 1.25,
+ "threshold_pct": 9.708,
+ "carobd": {
+  "files": 90,
+  "windows": 6094,
+  "quantile_pct": 7.766,
+  "p50_pct": -0.517,
+  "p01_pct": -7.152,
+  "p99_pct": 5.575,
+  "max_pct": 8.565
+ },
+ "sim_check": {
+  "sim_version": "2.1.0",
+  "engine_seeds": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11
+  ],
+  "windows": 360,
+  "false_positives": 0,
+  "fpr_upper_95": 0.008333333333333333,
+  "p50_pct": -0.598,
+  "p99_pct": 2.211,
+  "max_pct": 2.657
+ },
+ "clog_expected_trim_pct": {
+  "s=0.1": 2.56,
+  "s=0.2": 5.26,
+  "s=0.3": 8.11,
+  "s=0.4": 11.11,
+  "s=0.5": 14.29,
+  "s=0.6": 17.65
+ }
+}

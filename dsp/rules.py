@@ -20,6 +20,8 @@ import numpy as np
 THRESHOLDS_DIR = Path(__file__).resolve().parents[1] / "models" / "thresholds"
 MISFIRE_HALF_ORDER = THRESHOLDS_DIR / "misfire_half_order.json"
 MISFIRE_HALF_ORDER_V1 = THRESHOLDS_DIR / "misfire_half_order_v1.json"
+KNOCK_BAND_ENERGY = THRESHOLDS_DIR / "knock_band_energy.json"
+TRIM_DRIFT = THRESHOLDS_DIR / "trim_drift.json"
 PER_LOCATION_THRESHOLD = 0.5
 
 
@@ -76,3 +78,41 @@ def per_location(roughness: np.ndarray, thresholds: dict, rpm: float | None = No
     """Roughness scaled for the dashboard bars: 0..1, with the band's calibrated limit at 0.5."""
     lim = band_for(thresholds, rpm, map_kpa)["roughness"]["threshold"]
     return [round(float(np.clip(r / (2 * lim), 0.0, 1.0)), 3) for r in roughness]
+
+
+def knock_band_energy(features: dict, thresholds: dict) -> dict:
+    """Knock rule, crank-angle version: a cylinder's knock-band ringing energy right after its TDC
+    (features["knock_db"]) exceeds that cylinder's healthy baseline for the rpm band by more than the
+    calibrated excess. Location = the cylinder with the largest excess."""
+    if not features.get("accel_valid", True):
+        return {"rule": "knock", "fired": False, "location": None, "rule_basis": "crank_angle"}
+    band = band_for(thresholds, features.get("rpm_mean"))["knock_db"]
+    excess = np.asarray(features["knock_db"]) - np.asarray(band["baseline_per_cylinder"])
+    fired = bool(excess.max() > band["threshold_excess_db"])
+    return {"rule": "knock", "fired": fired, "location": int(np.argmax(excess) + 1) if fired else None,
+            "rule_basis": "crank_angle"}
+
+
+def trim_drift(obd: dict, thresholds: dict) -> dict:
+    """Injector-clog rule, OBD version: the bank's total fuel trim (1 + STFT)(1 + LTFT) - 1, averaged
+    over the last 30 s of OBD, sits above the healthy range measured on carOBD calibration files.
+
+    Trims are bank-wide, so the rule names no cylinder (the classifier's weak-cylinder evidence does).
+    It doesn't run while the ECU is pulling spark (knock control), so knock can't read as clog, nor
+    without a full 30 s of OBD. obd: {"trim_mean_pct", "n", "spark_retard_deg"} from dsp.obd_window."""
+    off = {"rule": "injector_clog", "fired": False, "location": None, "rule_basis": "obd"}
+    if obd.get("n", 0) < thresholds["min_samples"] or obd.get("spark_retard_deg", 0.0) > thresholds["retard_exclude_deg"]:
+        return off
+    return {**off, "fired": bool(obd["trim_mean_pct"] > thresholds["threshold_pct"])}
+
+
+def load_all() -> dict:
+    """Every physics rule's thresholds, by fault name."""
+    return {"misfire": load_thresholds(MISFIRE_HALF_ORDER), "knock": load_thresholds(KNOCK_BAND_ENERGY),
+            "injector_clog": load_thresholds(TRIM_DRIFT)}
+
+
+def all_rules(features: dict, obd: dict, th: dict) -> list[dict]:
+    """The physics witnesses for one window, in contract order (misfire, knock, injector_clog)."""
+    return [misfire_half_order(features, th["misfire"]), knock_band_energy(features, th["knock"]),
+            trim_drift(obd, th["injector_clog"])]

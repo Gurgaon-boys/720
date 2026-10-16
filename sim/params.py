@@ -1,8 +1,8 @@
 """Sim v2 parameter sets beside EngineParams: the ECU/OBD layer and the harder evaluation regimes.
 
-carOBD calibration status: data/splits/ holds no carOBD split yet, so no file has been used.
-Every value marked `# TODO carOBD-calib` is a documented engineering default, to be replaced
-from the carOBD CALIBRATION files only (never the held-out files) once the split exists.
+carOBD calibration (sim 2.1): ECU/OBD constants marked `# carOBD` were measured on the 90 carOBD
+CALIBRATION files only (29.1 h; never the held-out files) by `python -m sim.calibrate_ecu`, which
+writes sim/ecu_calibration.json. Values carOBD can't identify are marked `# not in carOBD` with why.
 """
 
 from __future__ import annotations
@@ -14,12 +14,16 @@ from dataclasses import dataclass
 class EcuParams:
     """Slow ECU layer. The loops run once per firing (sim-internal, fast); OBD samples them at ~1 Hz."""
 
-    obd_period_s: float = 1.0                 # OBD-II reporting interval (carOBD logs at ~1 Hz)
+    obd_period_s: float = 1.0                 # OBD row interval (the backend's obd channel is 1 Hz)
+    pid_refresh_hz: float = 0.55              # each PID's own refresh, polled round-robin  # carOBD: median 0.45-0.55 Hz
 
     # spark advance (deg BTDC). The ECU fires the plug early enough that combustion starts at the
     # engine's own timing (EngineParams.soc_deg): spark advance = -soc_deg + ignition delay in crank
     # degrees, which grows with rpm. Knock retard moves combustion later from there.
-    ignition_delay_s: float = 0.0012          # spark to start of combustion  # TODO carOBD-calib
+    # carOBD: timing advance 5th-95th percentile -4..25 deg (sim: 14 deg at idle .. 28 deg at 2800 rpm).
+    # Its idle median is 1 deg (ECU idle spark reserve); matching it would move combustion phasing and
+    # every crank-angle threshold, so the sim keeps MBT-like idle timing (DECISIONS: OBD realism).
+    ignition_delay_s: float = 0.0012          # spark to start of combustion  # not in carOBD (range checked)
     adv_max_deg: float = 40.0
 
     # knock control: retard per detected knock event, slow recovery, per cylinder
@@ -29,25 +33,28 @@ class EcuParams:
     knock_soften_deg: float = 4.0             # knock probability x exp(-retard / this): retard suppresses knock
 
     # closed-loop fuel trim on the exhaust lambda sensor (bank of 4 cylinders)
-    lambda_transport_s: float = 0.08          # exhaust valve -> sensor  # TODO carOBD-calib
+    lambda_transport_s: float = 0.08          # exhaust valve -> sensor  # not in carOBD (no O2 PID)
     lambda_mix_tau_s: float = 0.02            # exhaust mixing ahead of the sensor; sets the per-cylinder ripple
     lambda_noise: float = 0.003               # sensor noise (lambda units)
-    stft_tau_s: float = 1.0                   # STFT integrator time constant  # TODO carOBD-calib
+    stft_tau_s: float = 1.0                   # STFT integrator time constant  # not in carOBD (0.5 Hz polls can't resolve it)
+    stft_dither_sd: float = 0.021             # O2 limit-cycle dither on STFT (fraction)  # carOBD: idle STFT sd 1.76 % per 30 s
+    stft_dither_tau_s: float = 0.5
     stft_limit: float = 0.25                  # +-25 %
-    ltft_tau_s: float = 60.0                  # LTFT learns the STFT mean  # TODO carOBD-calib
+    ltft_tau_s: float = 60.0                  # LTFT learns the STFT mean  # not in carOBD (drift is driving-dominated)
+    ltft_engine_sd: float = 0.0156            # per-engine learned fuel bias  # carOBD: LTFT file means sd 1.56 %
     ltft_limit: float = 0.25
     lean_cov_gain: float = 10.0               # combustion CoV x (1 + gain * leanness): lean cylinders burn less steadily
 
     # coolant (thermostat-controlled first-order)
-    coolant_start_c: float = 88.0             # TODO carOBD-calib
-    coolant_target_c: float = 90.0            # TODO carOBD-calib
-    coolant_load_gain_c: float = 3.0          # target + gain x load fraction  # TODO carOBD-calib
-    coolant_tau_s: float = 120.0              # TODO carOBD-calib
+    coolant_start_c: float = 87.0             # warm start  # carOBD: warm median 87 degC
+    coolant_target_c: float = 86.0            # 86 + 3 x idle MAP fraction ~ 87  # carOBD: warm median 87 degC
+    coolant_load_gain_c: float = 3.0          # target + gain x load fraction  # not in carOBD (fan-controlled, flat)
+    coolant_tau_s: float = 183.0              # carOBD: warm-up 11.3 degC/min, first-order tau 183 s
 
     # throttle and calculated load from MAP
     baro_pa: float = 101_325.0
-    volumetric_eff: float = 0.90              # calculated load = MAP / baro x VE  # TODO carOBD-calib
-    throttle_idle_pct: float = 12.0           # TODO carOBD-calib
+    volumetric_eff: float = 0.985             # calculated load = MAP / baro x VE  # carOBD: idle load 28.2 % at MAP 29 kPa
+    throttle_idle_pct: float = 16.5           # carOBD: idle throttle median 16.5 %
     throttle_map0_pa: float = 30_000.0
     throttle_exp: float = 1.3
 

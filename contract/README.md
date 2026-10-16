@@ -1,6 +1,6 @@
 # contract/
 
-**Owner:** Nishant · **schema_version: `1.5`** · Source: plan section 12 (1.4 = 1.3 + `state.injection`, D46; 1.5 = 1.4 + nullable `anomaly.score`, D55, proposed by Dipen)
+**Owner:** Nishant · **schema_version: `1.5`** · Source: plan section 12 (1.4 = 1.3 + `state.injection`, D46; 1.5 = 1.4 + nullable `anomaly.score` and `rule_basis: "obd"`, D55, proposed by Dipen)
 
 This contract is the only interface between the simulator/DSP/models, the backend and the dashboard. **It is locked.** Any change bumps `schema_version` in every schema and example, gets a line in `docs/DECISIONS.md`, and must pass `python contract/validate.py`.
 
@@ -29,6 +29,7 @@ We send one channel per rate because a single big message per update would choke
 10. **Health** uses the NAMUR NE 107 states `NORMAL`, `FAILURE`, `CHECK_FUNCTION`, `OFF_SPEC` and `MAINTENANCE_REQUIRED`. `health.asset_ne107` is asset (engine) health. `health.sensors` is sensor health, kept separate.
 11. **`injection`** (1.4, required) echoes the accepted `POST /inject` body while a simulator fault is injected: `{active: true, fault, cylinder, severity, started_at}`, and is `null` otherwise (after `POST /clear_faults`, on a scenario switch, and on every non-simulator source). `severity` is the **requested** value, not a measurement; the rule layer's estimate stays in `decision.severity`. An injected fault goes through the normal rule layer, and clearing it doesn't clear a latched alarm. CHECK_FUNCTION is not tied to injection (D44: explicit maintenance mode only).
 12. **`anomaly.score`** (1.5) is `null` when no healthy (anomaly) model stands behind it, e.g. the live simulator before the healthy model exists. Never send a placeholder number. A null score is not an anomaly witness. `per_location` and `threshold` stay numbers.
+13. **`rule_basis: "obd"`** (1.5) marks a physics rule computed from OBD values (the injector-clog trim-drift rule: 30 s of STFT + LTFT). Trims are bank-wide, so it reports `location: null`.
 
 The schemas enforce rules 5 and 6 for `source: "real"`: `localisation` must be `"none"` and the `signature` arrays must be empty.
 

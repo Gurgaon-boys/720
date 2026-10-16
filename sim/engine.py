@@ -48,12 +48,16 @@ from scipy.integrate import cumulative_trapezoid
 
 from sim.params import HELD_OUT_FAULTS, EcuParams, Regimes
 
-SIM_VERSION = "2.0.0"
+SIM_VERSION = "2.1.0"
+ACCEL_RMS_TAU_S = 1.0     # running RMS behind the accelerometer's noise level
 FS = 48_000
 
 SUPPORTED_FAULTS = ("misfire", "knock", "injector_clog", "valve_tick")
 PLANNED_FAULTS: tuple = ()
 PURPOSES = ("general", "demo", "eval", "calibration", "training")
+# OBD-II (SAE J1979) PID resolution: trims 100/128 %, MAP 1 kPa, coolant 1 degC, timing 0.5 deg, throttle/load 100/255 %
+OBD_RESOLUTION = {"rpm": 0.25, "load_pct": 100 / 255, "throttle_pct": 100 / 255, "map_kpa": 1.0, "coolant_c": 1.0,
+                  "stft_pct": 100 / 128, "ltft_pct": 100 / 128, "spark_adv_deg": 0.5}
 OBD_CHANNELS = ("rpm", "load_pct", "throttle_pct", "map_kpa", "coolant_c", "stft_pct", "ltft_pct",
                 "spark_adv_deg", "lambda")
 
@@ -91,6 +95,7 @@ class EngineParams:
     friction_c0_nm: float = 12.0
     friction_c1_nms: float = 0.02       # friction torque = c0 + c1 * omega
     load_nm: float = 5.0                # accessory load
+    fuel_bias: float = 0.0              # injector-flow / airflow error the ECU's LTFT has learned out (v2.1)
 
     # idle-speed PI controller acting on throttle (MAP)
     rpm_target: float = 800.0
@@ -187,6 +192,8 @@ class EngineParams:
         )
         if region == "test":
             p = replace(p, inertia_kgm2=u(0.22, 0.26))   # drawn last, so train engines match v1
+        # LTFT spread across carOBD calibration files (sim/ecu_calibration.json); drawn after everything else
+        p = replace(p, fuel_bias=float(rng.normal(0.0, EcuParams().ltft_engine_sd)))
         return replace(p, **overrides)
 
 
@@ -289,6 +296,9 @@ class EngineSim:
         self._rng_ecu = np.random.default_rng(s_ecu)
         self._rng_regime = np.random.default_rng(s_regime)
         self._rng_drop = np.random.default_rng(s_drop)
+        s_an_red, s_an_white = ss.spawn(2)             # 2.1: accel background noise, one stream per term
+        self._rng_accel_red = np.random.default_rng(s_an_red)
+        self._rng_accel_white = np.random.default_rng(s_an_white)
 
         self._build_geometry()
         self._build_engine_identity()
@@ -324,7 +334,8 @@ class EngineSim:
 
         # ECU state
         self._stft = 0.0
-        self._ltft = 0.0
+        self._ltft = 1.0 / (1.0 + p.fuel_bias) - 1.0       # already learned: this engine's fuel bias is trimmed out
+        self._dither = 0.0                                 # STFT limit cycle (switching O2 sensor), fraction
         self._retard = np.zeros(4)                    # knock retard per cylinder, deg
         self._phi_mix = 1.0
         self._lambda_meas = 1.0
@@ -440,7 +451,8 @@ class EngineSim:
             "mic": mic,
             "accel": accel,
             "cylinder_pressure": pressure,
-            "ecu_fast": {key: np.array([r[key] for r in fast]) for key in ("t",) + OBD_CHANNELS},
+            "ecu_fast": {**{key: np.array([r[key] for r in fast]) for key in ("t",) + OBD_CHANNELS},
+                         "retard_deg": np.array([r["retard_deg"] for r in fast]).reshape(-1, 4)},
             "obd": obd,
             "dropouts": [{"channel": ch, "t0": a, "t1": b} for ch, a, b in drops],
             "labels": labels,
@@ -521,6 +533,7 @@ class EngineSim:
         p = self.params
         self._noise_zi = np.zeros(1)
         self._accel_noise_zi = np.zeros(1)
+        self._accel_ms_zi = None
         self._bg_sos = sps.butter(4, p.bg_highpass_hz, btype="highpass", fs=FS, output="sos")
         self._bg_zi = np.zeros((self._bg_sos.shape[0], 2))
         self._knock_freqs = tuple(rho * p.knock_sound_speed_mps / (math.pi * p.bore_m) for rho in p.knock_mode_rho)
@@ -602,7 +615,7 @@ class EngineSim:
             # IVC happens at the start of this event's compression: trapped charge follows current MAP
             p_ivc = self._map
             # equivalence ratio: bank trim x this cylinder's injector
-            phi = (1 + self._stft) * (1 + self._ltft) * (1 - cyc["clog"][i])
+            phi = (1 + self._stft + self._dither) * (1 + self._ltft) * (1 + p.fuel_bias) * (1 - cyc["clog"][i])
             lean = max(0.0, 1.0 - phi)
             q_scale = max(0.0, self._cyl_factor[i] + p.ccv_cov * cyc["_n"][i] * (1 + self.ecu.lean_cov_gain * lean))
             # combustion starts at the engine's timing, later by this cylinder's knock retard
@@ -751,6 +764,8 @@ class EngineSim:
             _, ph = self._slugs.pop(0)
             self._phi_mix += (ph - self._phi_mix) * (1 - math.exp(-dt / e.lambda_mix_tau_s))
         noise = e.lambda_noise * self._rng_ecu.standard_normal()
+        a = math.exp(-dt / e.stft_dither_tau_s)
+        self._dither = a * self._dither + math.sqrt(1 - a * a) * e.stft_dither_sd * self._rng_ecu.standard_normal()
         self._lambda_meas = 1.0 / max(self._phi_mix, 0.05) + noise
         # STFT integrates the fuelling error 1 - 1/lambda (lean -> add fuel). It is linear in the
         # equivalence ratio, so the per-cylinder ripple averages out and the bank settles at mean phi = 1
@@ -781,22 +796,32 @@ class EngineSim:
             "throttle_pct": min(100.0, e.throttle_idle_pct + (100.0 - e.throttle_idle_pct) * x ** e.throttle_exp),
             "map_kpa": self._map / 1e3,
             "coolant_c": self._coolant,
-            "stft_pct": 100.0 * self._stft,
+            "stft_pct": 100.0 * (self._stft + self._dither),
             "ltft_pct": 100.0 * self._ltft,
             "spark_adv_deg": self._spark_advance(rpm) - float(self._retard.mean()),
             "lambda": self._lambda_meas,
+            "retard_deg": self._retard.copy(),                # per cylinder (ECU knock control), sim-internal
         }
 
     def _obd_samples(self, t_end):
-        """OBD-II samples at obd_period_s: each reads the latest ECU value at that instant (sample and hold)."""
+        """OBD-II rows every obd_period_s. As in carOBD, each PID is polled round-robin and refreshes
+        only every 1 / pid_refresh_hz (staggered per PID), so a row holds each PID's last polled value,
+        quantised to the OBD-II resolution."""
         out = []
-        period = self.ecu.obd_period_s
+        e = self.ecu
+        period, hz, n = e.obd_period_s, e.pid_refresh_hz, len(OBD_CHANNELS)
         times = np.array([r["t"] for r in self._fast])
         while self._obd_next * period < t_end:
             ts = self._obd_next * period
-            j = max(int(np.searchsorted(times, ts, side="right")) - 1, 0)
-            rec = self._fast[j]
-            out.append({"t": ts, **{k: float(rec[k]) for k in OBD_CHANNELS}})
+            row = {"t": ts}
+            for k, ch in enumerate(OBD_CHANNELS):
+                off = k / (n * hz)
+                tp = max(math.floor((ts - off) * hz + 1e-9) / hz + off, 0.0) if ts >= off else 0.0
+                j = max(int(np.searchsorted(times, tp + 1e-12, side="right")) - 1, 0)
+                q = OBD_RESOLUTION.get(ch)
+                v = float(self._fast[j][ch])
+                row[ch] = round(v / q) * q if q else v
+            out.append(row)
             self._obd_next += 1
         return out
 
@@ -880,10 +905,22 @@ class EngineSim:
         return mic.astype(np.float32)
 
     def _render_accel(self, n0, n_samples):
+        """Clean modal response + coloured noise at accel_snr_db against a 1 s running RMS of the clean
+        signal (state kept across chunks), so the output doesn't depend on the chunk size (2.1; 2.0
+        scaled by each chunk's own RMS, which at 50 ms chunks made the noise follow the firing envelope)."""
         clean = self._accel.render(n0, n_samples)
-        noise = self._coloured_noise(self._rng_accel, "_accel_noise_zi", n_samples)
-        rms = float(np.sqrt(np.mean(clean**2))) if n_samples else 0.0
-        return (clean + noise * rms * 10 ** (-self.params.accel_snr_db / 20)).astype(np.float32)
+        a_red = self.params.noise_pole
+        red, self._accel_noise_zi = sps.lfilter([math.sqrt(1 - a_red * a_red)], [1, -a_red],
+                                                self._rng_accel_red.standard_normal(n_samples), zi=self._accel_noise_zi)
+        noise = 0.8 * red + 0.6 * self._rng_accel_white.standard_normal(n_samples)      # unit variance
+        if not n_samples:
+            return clean.astype(np.float32)
+        a = math.exp(-1.0 / (ACCEL_RMS_TAU_S * FS))
+        sq = clean.astype(float) ** 2
+        if self._accel_ms_zi is None:
+            self._accel_ms_zi = np.array([a * float(np.mean(sq[: int(0.01 * FS)]))])
+        ms, self._accel_ms_zi = sps.lfilter([1 - a], [1, -a], sq, zi=self._accel_ms_zi)
+        return (clean + noise * np.sqrt(ms) * 10 ** (-self.params.accel_snr_db / 20)).astype(np.float32)
 
     # ------------------------------------------------------------------ metadata
 

@@ -1,0 +1,2324 @@
+{
+ "created_at": "2026-10-16T06:14:49+00:00",
+ "sim_version": "2.1.0",
+ "source": "simulated healthy runs, soak engine seeds (never trained/tuned on), regimes on",
+ "column": "A",
+ "split": "soak engines (unseen)",
+ "engines": [
+  200,
+  201,
+  202,
+  203,
+  204,
+  205,
+  206,
+  207,
+  208,
+  209,
+  210,
+  211,
+  212,
+  213,
+  214,
+  215,
+  216,
+  217,
+  218,
+  219,
+  220,
+  221,
+  222,
+  223,
+  224,
+  225,
+  226,
+  227,
+  228,
+  229,
+  230,
+  231,
+  232,
+  233,
+  234,
+  235,
+  236,
+  237,
+  238,
+  239
+ ],
+ "runs": 40,
+ "hours": 2.0,
+ "windows": 55276,
+ "per_hour": {
+  "anomaly_flags": {
+   "events": 132,
+   "hours": 2.0,
+   "per_hour": 66.0,
+   "lower_95": 55.66970541603385,
+   "upper_95": 78.24178793383133,
+   "method": "Wilson on per-window proportion"
+  },
+  "classifier_false_faults": {
+   "events": 7,
+   "hours": 2.0,
+   "per_hour": 3.5,
+   "lower_95": 1.6954464047587101,
+   "upper_95": 7.2247336559598425,
+   "method": "Wilson on per-window proportion"
+  },
+  "physics_windows": {
+   "events": 35,
+   "hours": 2.0,
+   "per_hour": 17.5,
+   "lower_95": 12.58457141332209,
+   "upper_95": 24.333662824165298,
+   "method": "Wilson on per-window proportion"
+  },
+  "advisory": {
+   "events": 34,
+   "hours": 2.0,
+   "per_hour": 17.0,
+   "lower_95": 12.166810421342474,
+   "upper_95": 23.751493309831744,
+   "method": "Wilson on per-window proportion"
+  },
+  "unclassified": {
+   "events": 132,
+   "hours": 2.0,
+   "per_hour": 66.0,
+   "lower_95": 55.66970541603385,
+   "upper_95": 78.24178793383133,
+   "method": "Wilson on per-window proportion"
+  },
+  "alarm_windows": {
+   "events": 0,
+   "hours": 2.0,
+   "per_hour": 0.0,
+   "upper_95": 1.5,
+   "method": "rule of three (3/T)"
+  },
+  "alarms_raised": {
+   "events": 0,
+   "hours": 2.0,
+   "per_hour": 0.0,
+   "upper_95": 1.5,
+   "method": "rule of three (3/T)"
+  },
+  "advisory_persist2": {
+   "events": 10,
+   "hours": 2.0,
+   "per_hour": 5.0,
+   "lower_95": 2.7160425170305245,
+   "upper_95": 9.203929062627546,
+   "method": "Wilson on per-window proportion"
+  }
+ },
+ "note": "advisory_persist2 is the optional 2-window persistence for single-witness advisories, measured only (the default is unchanged). alarms_raised counts latch episodes (each auto-acknowledged so later ones can be counted).",
+ "classifier_ms_median": 7.032425000943476,
+ "p_min": 0.6,
+ "runs_detail": [
+  {
+   "i": 0,
+   "seed": 3200,
+   "rpm": 2898.5,
+   "load_nm": 6.49,
+   "hours": 0.05,
+   "windows": 2172,
+   "anomaly_flags": 0,
+   "classifier_false_faults": 1,
+   "physics_windows": 1,
+   "advisory": 2,
+   "unclassified": 0,
+   "alarm_windows": 0,
+   "alarms_raised": 0,
+   "advisory_persist2": 0,
+   "classifier_ms_median": 8.032300000195391,
+   "events": [
+    [
+     74.74,
+     "ADVISORY",
+     "misfire",
+     null,
+     "advisory",
+     [],
+     "misfire"
+    ],
+    [
+     85.01,
+     "ADVISORY",
+     "misfire",
+     3,
+     "advisory",
+     [
+      "misfire"
+     ],
+     null
+    ]
+   ]
+  },
+  {
+   "i": 1,
+   "seed": 3201,
+   "rpm": 1975.9,
+   "load_nm": 36.89,
+   "hours": 0.05,
+   "windows": 1480,
+   "anomaly_flags": 9,
+   "classifier_false_faults": 0,
+   "physics_windows": 2,
+   "advisory": 0,
+   "unclassified": 9,
+   "alarm_windows": 0,
+   "alarms_raised": 0,
+   "advisory_persist2": 0,
+   "classifier_ms_median": 9.295099999690137,
+   "events": [
+    [
+     67.42,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     88.32,
+     "UNCLASSIFIED",
+     "misfire",
+     1,
+     "unclassified",
+     [
+      "misfire"
+     ],
+     "healthy"
+    ],
+    [
+     95.84,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     116.25,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     130.7,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     164.1,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     177.59,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     189.25,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     189.37,
+     "UNCLASSIFIED",
+     "misfire",
+     1,
+     "unclassified",
+     [
+      "misfire"
+     ],
+     "healthy"
+    ]
+   ]
+  },
+  {
+   "i": 2,
+   "seed": 3202,
+   "rpm": 2480.0,
+   "load_nm": 28.65,
+   "hours": 0.05,
+   "windows": 1858,
+   "anomaly_flags": 0,
+   "classifier_false_faults": 0,
+   "physics_windows": 1,
+   "advisory": 1,
+   "unclassified": 0,
+   "alarm_windows": 0,
+   "alarms_raised": 0,
+   "advisory_persist2": 0,
+   "classifier_ms_median": 8.616499999334337,
+   "events": [
+    [
+     134.88,
+     "ADVISORY",
+     "knock",
+     3,
+     "advisory",
+     [
+      "knock"
+     ],
+     "healthy"
+    ]
+   ]
+  },
+  {
+   "i": 3,
+   "seed": 3203,
+   "rpm": 914.5,
+   "load_nm": 3.61,
+   "hours": 0.05,
+   "windows": 684,
+   "anomaly_flags": 0,
+   "classifier_false_faults": 0,
+   "physics_windows": 0,
+   "advisory": 0,
+   "unclassified": 0,
+   "alarm_windows": 0,
+   "alarms_raised": 0,
+   "advisory_persist2": 0,
+   "classifier_ms_median": 12.448400000721449,
+   "events": []
+  },
+  {
+   "i": 4,
+   "seed": 3204,
+   "rpm": 2558.2,
+   "load_nm": 30.44,
+   "hours": 0.05,
+   "windows": 1917,
+   "anomaly_flags": 0,
+   "classifier_false_faults": 0,
+   "physics_windows": 0,
+   "advisory": 0,
+   "unclassified": 0,
+   "alarm_windows": 0,
+   "alarms_raised": 0,
+   "advisory_persist2": 0,
+   "classifier_ms_median": 8.263600000645965,
+   "events": []
+  },
+  {
+   "i": 5,
+   "seed": 3205,
+   "rpm": 2107.4,
+   "load_nm": 8.17,
+   "hours": 0.05,
+   "windows": 1578,
+   "anomaly_flags": 0,
+   "classifier_false_faults": 0,
+   "physics_windows": 3,
+   "advisory": 3,
+   "unclassified": 0,
+   "alarm_windows": 0,
+   "alarms_raised": 0,
+   "advisory_persist2": 1,
+   "classifier_ms_median": 8.824599999570637,
+   "events": [
+    [
+     31.45,
+     "ADVISORY",
+     "knock",
+     2,
+     "advisory",
+     [
+      "knock"
+     ],
+     "healthy"
+    ],
+    [
+     31.56,
+     "ADVISORY",
+     "knock",
+     2,
+     "advisory",
+     [
+      "knock"
+     ],
+     "healthy"
+    ],
+    [
+     170.28,
+     "ADVISORY",
+     "knock",
+     4,
+     "advisory",
+     [
+      "knock"
+     ],
+     "healthy"
+    ]
+   ]
+  },
+  {
+   "i": 6,
+   "seed": 3206,
+   "rpm": 1791.8,
+   "load_nm": 19.35,
+   "hours": 0.05,
+   "windows": 1342,
+   "anomaly_flags": 0,
+   "classifier_false_faults": 1,
+   "physics_windows": 0,
+   "advisory": 1,
+   "unclassified": 0,
+   "alarm_windows": 0,
+   "alarms_raised": 0,
+   "advisory_persist2": 0,
+   "classifier_ms_median": 9.667300000728574,
+   "events": [
+    [
+     90.44,
+     "ADVISORY",
+     "misfire",
+     null,
+     "advisory",
+     [],
+     "misfire"
+    ]
+   ]
+  },
+  {
+   "i": 7,
+   "seed": 3207,
+   "rpm": 1036.3,
+   "load_nm": 35.47,
+   "hours": 0.05,
+   "windows": 775,
+   "anomaly_flags": 0,
+   "classifier_false_faults": 0,
+   "physics_windows": 0,
+   "advisory": 0,
+   "unclassified": 0,
+   "alarm_windows": 0,
+   "alarms_raised": 0,
+   "advisory_persist2": 0,
+   "classifier_ms_median": 11.171400000421272,
+   "events": []
+  },
+  {
+   "i": 8,
+   "seed": 3208,
+   "rpm": 1149.0,
+   "load_nm": 5.9,
+   "hours": 0.05,
+   "windows": 860,
+   "anomaly_flags": 0,
+   "classifier_false_faults": 0,
+   "physics_windows": 0,
+   "advisory": 0,
+   "unclassified": 0,
+   "alarm_windows": 0,
+   "alarms_raised": 0,
+   "advisory_persist2": 0,
+   "classifier_ms_median": 11.494299998958013,
+   "events": []
+  },
+  {
+   "i": 9,
+   "seed": 3209,
+   "rpm": 947.9,
+   "load_nm": 25.59,
+   "hours": 0.05,
+   "windows": 709,
+   "anomaly_flags": 0,
+   "classifier_false_faults": 0,
+   "physics_windows": 0,
+   "advisory": 0,
+   "unclassified": 0,
+   "alarm_windows": 0,
+   "alarms_raised": 0,
+   "advisory_persist2": 0,
+   "classifier_ms_median": 12.354200000117999,
+   "events": []
+  },
+  {
+   "i": 10,
+   "seed": 3210,
+   "rpm": 836.6,
+   "load_nm": 39.54,
+   "hours": 0.05,
+   "windows": 625,
+   "anomaly_flags": 1,
+   "classifier_false_faults": 0,
+   "physics_windows": 1,
+   "advisory": 0,
+   "unclassified": 1,
+   "alarm_windows": 0,
+   "alarms_raised": 0,
+   "advisory_persist2": 0,
+   "classifier_ms_median": 12.004999998680432,
+   "events": [
+    [
+     87.03,
+     "UNCLASSIFIED",
+     "misfire",
+     4,
+     "unclassified",
+     [
+      "misfire"
+     ],
+     "healthy"
+    ]
+   ]
+  },
+  {
+   "i": 11,
+   "seed": 3211,
+   "rpm": 2108.9,
+   "load_nm": 8.95,
+   "hours": 0.05,
+   "windows": 1579,
+   "anomaly_flags": 0,
+   "classifier_false_faults": 0,
+   "physics_windows": 2,
+   "advisory": 2,
+   "unclassified": 0,
+   "alarm_windows": 0,
+   "alarms_raised": 0,
+   "advisory_persist2": 1,
+   "classifier_ms_median": 9.284049999223498,
+   "events": [
+    [
+     175.76,
+     "ADVISORY",
+     "knock",
+     3,
+     "advisory",
+     [
+      "knock"
+     ],
+     "healthy"
+    ],
+    [
+     175.87,
+     "ADVISORY",
+     "knock",
+     3,
+     "advisory",
+     [
+      "knock"
+     ],
+     "healthy"
+    ]
+   ]
+  },
+  {
+   "i": 12,
+   "seed": 3212,
+   "rpm": 1962.7,
+   "load_nm": 21.61,
+   "hours": 0.05,
+   "windows": 1470,
+   "anomaly_flags": 16,
+   "classifier_false_faults": 0,
+   "physics_windows": 0,
+   "advisory": 0,
+   "unclassified": 16,
+   "alarm_windows": 0,
+   "alarms_raised": 0,
+   "advisory_persist2": 0,
+   "classifier_ms_median": 8.957150000242109,
+   "events": [
+    [
+     32.62,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     32.74,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     43.86,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     43.98,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     51.82,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     58.3,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     75.54,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     80.19,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     91.56,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     91.68,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     93.75,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     99.14,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     109.54,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     116.25,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     152.82,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     195.75,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ]
+   ]
+  },
+  {
+   "i": 13,
+   "seed": 3213,
+   "rpm": 1001.5,
+   "load_nm": 18.5,
+   "hours": 0.05,
+   "windows": 749,
+   "anomaly_flags": 0,
+   "classifier_false_faults": 0,
+   "physics_windows": 0,
+   "advisory": 0,
+   "unclassified": 0,
+   "alarm_windows": 0,
+   "alarms_raised": 0,
+   "advisory_persist2": 0,
+   "classifier_ms_median": 12.300950000280864,
+   "events": []
+  },
+  {
+   "i": 14,
+   "seed": 3214,
+   "rpm": 2576.0,
+   "load_nm": 34.98,
+   "hours": 0.05,
+   "windows": 1930,
+   "anomaly_flags": 0,
+   "classifier_false_faults": 0,
+   "physics_windows": 0,
+   "advisory": 0,
+   "unclassified": 0,
+   "alarm_windows": 0,
+   "alarms_raised": 0,
+   "advisory_persist2": 0,
+   "classifier_ms_median": 8.25549999899522,
+   "events": []
+  },
+  {
+   "i": 15,
+   "seed": 3215,
+   "rpm": 1913.3,
+   "load_nm": 44.76,
+   "hours": 0.05,
+   "windows": 1433,
+   "anomaly_flags": 7,
+   "classifier_false_faults": 1,
+   "physics_windows": 5,
+   "advisory": 2,
+   "unclassified": 7,
+   "alarm_windows": 0,
+   "alarms_raised": 0,
+   "advisory_persist2": 0,
+   "classifier_ms_median": 9.32239999929152,
+   "events": [
+    [
+     61.76,
+     "UNCLASSIFIED",
+     "misfire",
+     2,
+     "unclassified",
+     [
+      "misfire"
+     ],
+     "healthy"
+    ],
+    [
+     100.77,
+     "UNCLASSIFIED",
+     "misfire",
+     2,
+     "unclassified",
+     [
+      "misfire"
+     ],
+     "healthy"
+    ],
+    [
+     100.9,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     118.7,
+     "ADVISORY",
+     "misfire",
+     2,
+     "advisory",
+     [
+      "misfire"
+     ],
+     "healthy"
+    ],
+    [
+     119.21,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     119.71,
+     "ADVISORY",
+     "knock",
+     null,
+     "advisory",
+     [],
+     "knock"
+    ],
+    [
+     148.06,
+     "UNCLASSIFIED",
+     "misfire",
+     2,
+     "unclassified",
+     [
+      "misfire"
+     ],
+     "healthy"
+    ],
+    [
+     152.96,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     161.98,
+     "UNCLASSIFIED",
+     "misfire",
+     2,
+     "unclassified",
+     [
+      "misfire"
+     ],
+     "healthy"
+    ]
+   ]
+  },
+  {
+   "i": 16,
+   "seed": 3216,
+   "rpm": 1801.9,
+   "load_nm": 22.35,
+   "hours": 0.05,
+   "windows": 1350,
+   "anomaly_flags": 0,
+   "classifier_false_faults": 0,
+   "physics_windows": 0,
+   "advisory": 0,
+   "unclassified": 0,
+   "alarm_windows": 0,
+   "alarms_raised": 0,
+   "advisory_persist2": 0,
+   "classifier_ms_median": 9.513750000223808,
+   "events": []
+  },
+  {
+   "i": 17,
+   "seed": 3217,
+   "rpm": 2865.9,
+   "load_nm": 3.64,
+   "hours": 0.05,
+   "windows": 2147,
+   "anomaly_flags": 0,
+   "classifier_false_faults": 0,
+   "physics_windows": 0,
+   "advisory": 0,
+   "unclassified": 0,
+   "alarm_windows": 0,
+   "alarms_raised": 0,
+   "advisory_persist2": 0,
+   "classifier_ms_median": 7.97699999930046,
+   "events": []
+  },
+  {
+   "i": 18,
+   "seed": 3218,
+   "rpm": 2821.1,
+   "load_nm": 9.45,
+   "hours": 0.05,
+   "windows": 2114,
+   "anomaly_flags": 0,
+   "classifier_false_faults": 0,
+   "physics_windows": 0,
+   "advisory": 0,
+   "unclassified": 0,
+   "alarm_windows": 0,
+   "alarms_raised": 0,
+   "advisory_persist2": 0,
+   "classifier_ms_median": 6.831400000010035,
+   "events": []
+  },
+  {
+   "i": 19,
+   "seed": 3219,
+   "rpm": 2026.7,
+   "load_nm": 3.97,
+   "hours": 0.05,
+   "windows": 1518,
+   "anomaly_flags": 0,
+   "classifier_false_faults": 0,
+   "physics_windows": 15,
+   "advisory": 15,
+   "unclassified": 0,
+   "alarm_windows": 0,
+   "alarms_raised": 0,
+   "advisory_persist2": 6,
+   "classifier_ms_median": 6.969099998968886,
+   "events": [
+    [
+     63.91,
+     "ADVISORY",
+     "knock",
+     1,
+     "advisory",
+     [
+      "knock"
+     ],
+     "healthy"
+    ],
+    [
+     64.03,
+     "ADVISORY",
+     "knock",
+     1,
+     "advisory",
+     [
+      "knock"
+     ],
+     "healthy"
+    ],
+    [
+     73.86,
+     "ADVISORY",
+     "knock",
+     3,
+     "advisory",
+     [
+      "knock"
+     ],
+     "healthy"
+    ],
+    [
+     121.35,
+     "ADVISORY",
+     "knock",
+     3,
+     "advisory",
+     [
+      "knock"
+     ],
+     "healthy"
+    ],
+    [
+     121.47,
+     "ADVISORY",
+     "knock",
+     3,
+     "advisory",
+     [
+      "knock"
+     ],
+     "healthy"
+    ],
+    [
+     172.98,
+     "ADVISORY",
+     "knock",
+     4,
+     "advisory",
+     [
+      "knock"
+     ],
+     "healthy"
+    ],
+    [
+     173.1,
+     "ADVISORY",
+     "knock",
+     4,
+     "advisory",
+     [
+      "knock"
+     ],
+     "healthy"
+    ],
+    [
+     173.8,
+     "ADVISORY",
+     "knock",
+     4,
+     "advisory",
+     [
+      "knock"
+     ],
+     "healthy"
+    ],
+    [
+     173.92,
+     "ADVISORY",
+     "knock",
+     4,
+     "advisory",
+     [
+      "knock"
+     ],
+     "healthy"
+    ],
+    [
+     177.48,
+     "ADVISORY",
+     "knock",
+     4,
+     "advisory",
+     [
+      "knock"
+     ],
+     null
+    ],
+    [
+     177.6,
+     "ADVISORY",
+     "knock",
+     4,
+     "advisory",
+     [
+      "knock"
+     ],
+     "healthy"
+    ],
+    [
+     181.98,
+     "ADVISORY",
+     "knock",
+     3,
+     "advisory",
+     [
+      "knock"
+     ],
+     "healthy"
+    ],
+    [
+     184.82,
+     "ADVISORY",
+     "knock",
+     1,
+     "advisory",
+     [
+      "knock"
+     ],
+     "healthy"
+    ],
+    [
+     184.94,
+     "ADVISORY",
+     "knock",
+     1,
+     "advisory",
+     [
+      "knock"
+     ],
+     "healthy"
+    ],
+    [
+     208.15,
+     "ADVISORY",
+     "knock",
+     3,
+     "advisory",
+     [
+      "knock"
+     ],
+     "healthy"
+    ]
+   ]
+  },
+  {
+   "i": 20,
+   "seed": 3220,
+   "rpm": 859.1,
+   "load_nm": 13.49,
+   "hours": 0.05,
+   "windows": 642,
+   "anomaly_flags": 0,
+   "classifier_false_faults": 0,
+   "physics_windows": 0,
+   "advisory": 0,
+   "unclassified": 0,
+   "alarm_windows": 0,
+   "alarms_raised": 0,
+   "advisory_persist2": 0,
+   "classifier_ms_median": 6.0156999998071115,
+   "events": []
+  },
+  {
+   "i": 21,
+   "seed": 3221,
+   "rpm": 2841.1,
+   "load_nm": 37.82,
+   "hours": 0.05,
+   "windows": 2129,
+   "anomaly_flags": 60,
+   "classifier_false_faults": 1,
+   "physics_windows": 0,
+   "advisory": 1,
+   "unclassified": 60,
+   "alarm_windows": 0,
+   "alarms_raised": 0,
+   "advisory_persist2": 0,
+   "classifier_ms_median": 6.88090000039665,
+   "events": [
+    [
+     34.02,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     34.1,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     34.19,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     34.27,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     34.36,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     34.44,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     34.52,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     34.61,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     34.69,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     34.77,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     34.86,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     34.94,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     35.03,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     35.11,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     35.2,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     35.28,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     35.37,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     35.45,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     35.53,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     35.62,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     35.7,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     35.79,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     35.87,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     35.96,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     36.04,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     36.13,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     36.21,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     36.3,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     36.38,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     36.47,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     36.55,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     36.64,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     36.72,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     36.81,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     36.89,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     36.97,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     37.06,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     37.14,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     37.22,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     37.31,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     37.39,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     37.48,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     37.56,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     37.65,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     37.73,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     37.82,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     37.9,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     37.99,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     38.07,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     38.15,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ]
+   ]
+  },
+  {
+   "i": 22,
+   "seed": 3222,
+   "rpm": 2748.4,
+   "load_nm": 10.33,
+   "hours": 0.05,
+   "windows": 2059,
+   "anomaly_flags": 0,
+   "classifier_false_faults": 0,
+   "physics_windows": 0,
+   "advisory": 0,
+   "unclassified": 0,
+   "alarm_windows": 0,
+   "alarms_raised": 0,
+   "advisory_persist2": 0,
+   "classifier_ms_median": 6.910249999236839,
+   "events": []
+  },
+  {
+   "i": 23,
+   "seed": 3223,
+   "rpm": 2881.9,
+   "load_nm": 29.8,
+   "hours": 0.05,
+   "windows": 2159,
+   "anomaly_flags": 0,
+   "classifier_false_faults": 0,
+   "physics_windows": 0,
+   "advisory": 0,
+   "unclassified": 0,
+   "alarm_windows": 0,
+   "alarms_raised": 0,
+   "advisory_persist2": 0,
+   "classifier_ms_median": 7.090850000167848,
+   "events": []
+  },
+  {
+   "i": 24,
+   "seed": 3224,
+   "rpm": 959.2,
+   "load_nm": 6.29,
+   "hours": 0.05,
+   "windows": 718,
+   "anomaly_flags": 0,
+   "classifier_false_faults": 0,
+   "physics_windows": 0,
+   "advisory": 0,
+   "unclassified": 0,
+   "alarm_windows": 0,
+   "alarms_raised": 0,
+   "advisory_persist2": 0,
+   "classifier_ms_median": 5.603699999483069,
+   "events": []
+  },
+  {
+   "i": 25,
+   "seed": 3225,
+   "rpm": 1308.5,
+   "load_nm": 40.2,
+   "hours": 0.05,
+   "windows": 980,
+   "anomaly_flags": 4,
+   "classifier_false_faults": 0,
+   "physics_windows": 0,
+   "advisory": 0,
+   "unclassified": 4,
+   "alarm_windows": 0,
+   "alarms_raised": 0,
+   "advisory_persist2": 0,
+   "classifier_ms_median": 6.03305000004184,
+   "events": [
+    [
+     89.44,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     119.15,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     147.77,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     155.48,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ]
+   ]
+  },
+  {
+   "i": 26,
+   "seed": 3226,
+   "rpm": 2350.7,
+   "load_nm": 33.16,
+   "hours": 0.05,
+   "windows": 1761,
+   "anomaly_flags": 0,
+   "classifier_false_faults": 2,
+   "physics_windows": 2,
+   "advisory": 4,
+   "unclassified": 0,
+   "alarm_windows": 0,
+   "alarms_raised": 0,
+   "advisory_persist2": 1,
+   "classifier_ms_median": 6.974000001719105,
+   "events": [
+    [
+     89.54,
+     "ADVISORY",
+     "knock",
+     3,
+     "advisory",
+     [
+      "knock"
+     ],
+     "healthy"
+    ],
+    [
+     89.64,
+     "ADVISORY",
+     "knock",
+     3,
+     "advisory",
+     [
+      "knock"
+     ],
+     "healthy"
+    ],
+    [
+     132.22,
+     "ADVISORY",
+     "misfire",
+     null,
+     "advisory",
+     [],
+     "misfire"
+    ],
+    [
+     162.75,
+     "ADVISORY",
+     "knock",
+     null,
+     "advisory",
+     [],
+     "knock"
+    ]
+   ]
+  },
+  {
+   "i": 27,
+   "seed": 3227,
+   "rpm": 1636.3,
+   "load_nm": 21.53,
+   "hours": 0.05,
+   "windows": 1225,
+   "anomaly_flags": 0,
+   "classifier_false_faults": 0,
+   "physics_windows": 0,
+   "advisory": 0,
+   "unclassified": 0,
+   "alarm_windows": 0,
+   "alarms_raised": 0,
+   "advisory_persist2": 0,
+   "classifier_ms_median": 6.288500000664499,
+   "events": []
+  },
+  {
+   "i": 28,
+   "seed": 3228,
+   "rpm": 2678.0,
+   "load_nm": 39.52,
+   "hours": 0.05,
+   "windows": 2006,
+   "anomaly_flags": 34,
+   "classifier_false_faults": 0,
+   "physics_windows": 0,
+   "advisory": 0,
+   "unclassified": 34,
+   "alarm_windows": 0,
+   "alarms_raised": 0,
+   "advisory_persist2": 0,
+   "classifier_ms_median": 6.702399999994668,
+   "events": [
+    [
+     34.02,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     34.11,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     34.2,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     34.29,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     34.38,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     34.47,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     34.56,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     34.65,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     34.74,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     34.83,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     34.92,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     35.01,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     35.1,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     35.19,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     35.28,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     35.37,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     35.46,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     35.55,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     35.63,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     35.72,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     35.81,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     35.9,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     35.99,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     36.08,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     36.18,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     36.27,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     36.36,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     36.45,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     36.54,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     36.63,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     36.72,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     36.81,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     36.9,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ],
+    [
+     36.99,
+     "UNCLASSIFIED",
+     null,
+     null,
+     "unclassified",
+     [],
+     "healthy"
+    ]
+   ]
+  },
+  {
+   "i": 29,
+   "seed": 3229,
+   "rpm": 725.6,
+   "load_nm": 32.45,
+   "hours": 0.05,
+   "windows": 542,
+   "anomaly_flags": 0,
+   "classifier_false_faults": 0,
+   "physics_windows": 0,
+   "advisory": 0,
+   "unclassified": 0,
+   "alarm_windows": 0,
+   "alarms_raised": 0,
+   "advisory_persist2": 0,
+   "classifier_ms_median": 5.8003000003736815,
+   "events": []
+  },
+  {
+   "i": 30,
+   "seed": 3230,
+   "rpm": 1228.0,
+   "load_nm": 6.98,
+   "hours": 0.05,
+   "windows": 919,
+   "anomaly_flags": 0,
+   "classifier_false_faults": 0,
+   "physics_windows": 2,
+   "advisory": 2,
+   "unclassified": 0,
+   "alarm_windows": 0,
+   "alarms_raised": 0,
+   "advisory_persist2": 1,
+   "classifier_ms_median": 6.248299998333096,
+   "events": [
+    [
+     137.02,
+     "ADVISORY",
+     "knock",
+     4,
+     "advisory",
+     [
+      "knock"
+     ],
+     "healthy"
+    ],
+    [
+     137.22,
+     "ADVISORY",
+     "knock",
+     4,
+     "advisory",
+     [
+      "knock"
+     ],
+     "healthy"
+    ]
+   ]
+  },
+  {
+   "i": 31,
+   "seed": 3231,
+   "rpm": 1589.7,
+   "load_nm": 24.32,
+   "hours": 0.05,
+   "windows": 1190,
+   "anomaly_flags": 0,
+   "classifier_false_faults": 0,
+   "physics_windows": 0,
+   "advisory": 0,
+   "unclassified": 0,
+   "alarm_windows": 0,
+   "alarms_raised": 0,
+   "advisory_persist2": 0,
+   "classifier_ms_median": 6.793849999667145,
+   "events": []
+  },
+  {
+   "i": 32,
+   "seed": 3232,
+   "rpm": 2157.8,
+   "load_nm": 23.96,
+   "hours": 0.05,
+   "windows": 1616,
+   "anomaly_flags": 0,
+   "classifier_false_faults": 0,
+   "physics_windows": 0,
+   "advisory": 0,
+   "unclassified": 0,
+   "alarm_windows": 0,
+   "alarms_raised": 0,
+   "advisory_persist2": 0,
+   "classifier_ms_median": 6.834300000264193,
+   "events": []
+  },
+  {
+   "i": 33,
+   "seed": 3233,
+   "rpm": 865.6,
+   "load_nm": 37.0,
+   "hours": 0.05,
+   "windows": 647,
+   "anomaly_flags": 0,
+   "classifier_false_faults": 0,
+   "physics_windows": 0,
+   "advisory": 0,
+   "unclassified": 0,
+   "alarm_windows": 0,
+   "alarms_raised": 0,
+   "advisory_persist2": 0,
+   "classifier_ms_median": 5.745700000261422,
+   "events": []
+  },
+  {
+   "i": 34,
+   "seed": 3234,
+   "rpm": 1729.8,
+   "load_nm": 22.13,
+   "hours": 0.05,
+   "windows": 1295,
+   "anomaly_flags": 0,
+   "classifier_false_faults": 0,
+   "physics_windows": 0,
+   "advisory": 0,
+   "unclassified": 0,
+   "alarm_windows": 0,
+   "alarms_raised": 0,
+   "advisory_persist2": 0,
+   "classifier_ms_median": 6.933099999514525,
+   "events": []
+  },
+  {
+   "i": 35,
+   "seed": 3235,
+   "rpm": 2822.6,
+   "load_nm": 34.67,
+   "hours": 0.05,
+   "windows": 2115,
+   "anomaly_flags": 0,
+   "classifier_false_faults": 0,
+   "physics_windows": 0,
+   "advisory": 0,
+   "unclassified": 0,
+   "alarm_windows": 0,
+   "alarms_raised": 0,
+   "advisory_persist2": 0,
+   "classifier_ms_median": 5.824100000609178,
+   "events": []
+  },
+  {
+   "i": 36,
+   "seed": 3236,
+   "rpm": 2703.0,
+   "load_nm": 23.47,
+   "hours": 0.05,
+   "windows": 2025,
+   "anomaly_flags": 0,
+   "classifier_false_faults": 0,
+   "physics_windows": 0,
+   "advisory": 0,
+   "unclassified": 0,
+   "alarm_windows": 0,
+   "alarms_raised": 0,
+   "advisory_persist2": 0,
+   "classifier_ms_median": 6.009100001392653,
+   "events": []
+  },
+  {
+   "i": 37,
+   "seed": 3237,
+   "rpm": 1058.1,
+   "load_nm": 30.87,
+   "hours": 0.05,
+   "windows": 791,
+   "anomaly_flags": 0,
+   "classifier_false_faults": 0,
+   "physics_windows": 0,
+   "advisory": 0,
+   "unclassified": 0,
+   "alarm_windows": 0,
+   "alarms_raised": 0,
+   "advisory_persist2": 0,
+   "classifier_ms_median": 7.281500000317465,
+   "events": []
+  },
+  {
+   "i": 38,
+   "seed": 3238,
+   "rpm": 1254.9,
+   "load_nm": 43.12,
+   "hours": 0.05,
+   "windows": 939,
+   "anomaly_flags": 0,
+   "classifier_false_faults": 1,
+   "physics_windows": 0,
+   "advisory": 1,
+   "unclassified": 0,
+   "alarm_windows": 0,
+   "alarms_raised": 0,
+   "advisory_persist2": 0,
+   "classifier_ms_median": 6.934099999853061,
+   "events": [
+    [
+     127.47,
+     "ADVISORY",
+     "misfire",
+     null,
+     "advisory",
+     [],
+     "misfire"
+    ]
+   ]
+  },
+  {
+   "i": 39,
+   "seed": 3239,
+   "rpm": 1639.4,
+   "load_nm": 39.95,
+   "hours": 0.05,
+   "windows": 1228,
+   "anomaly_flags": 1,
+   "classifier_false_faults": 0,
+   "physics_windows": 1,
+   "advisory": 0,
+   "unclassified": 1,
+   "alarm_windows": 0,
+   "alarms_raised": 0,
+   "advisory_persist2": 0,
+   "classifier_ms_median": 6.854799999928218,
+   "events": [
+    [
+     181.7,
+     "UNCLASSIFIED",
+     "misfire",
+     1,
+     "unclassified",
+     [
+      "misfire"
+     ],
+     "healthy"
+    ]
+   ]
+  }
+ ],
+ "wall_s": 254.6
+}

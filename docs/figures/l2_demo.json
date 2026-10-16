@@ -1,0 +1,225 @@
+{
+ "faults": [
+  {
+   "fault": "misfire",
+   "cylinder": 3,
+   "severity": 1.0,
+   "expected": "ALARM",
+   "injected_stream_t": 35.15,
+   "states_seen": [
+    "ADVISORY",
+    "ALARM",
+    "NORMAL"
+   ],
+   "reached": true,
+   "time_to_state_s": 1.09,
+   "opcua_at_state": {
+    "State": "ALARM",
+    "AlarmId": "a_0001",
+    "Acked": false,
+    "Fault": "misfire",
+    "Cylinder": 3
+   },
+   "alarm_id": "a_0001",
+   "back_to_normal_s": 31.15
+  },
+  {
+   "fault": "knock",
+   "cylinder": 2,
+   "severity": 1.0,
+   "expected": "ALARM",
+   "injected_stream_t": 73.6,
+   "states_seen": [
+    "ADVISORY",
+    "ALARM",
+    "NORMAL"
+   ],
+   "reached": true,
+   "time_to_state_s": 0.62,
+   "opcua_at_state": {
+    "State": "ALARM",
+    "AlarmId": "a_0002",
+    "Acked": false,
+    "Fault": "knock",
+    "Cylinder": 2
+   },
+   "alarm_id": "a_0002",
+   "back_to_normal_s": 0.43
+  },
+  {
+   "fault": "injector_clog",
+   "cylinder": 1,
+   "severity": 0.5,
+   "expected": "ALARM",
+   "injected_stream_t": 80.3,
+   "states_seen": [
+    "ADVISORY",
+    "ALARM",
+    "NORMAL",
+    "UNCLASSIFIED"
+   ],
+   "reached": true,
+   "time_to_state_s": 22.22,
+   "opcua_at_state": {
+    "State": "ALARM",
+    "AlarmId": "a_0003",
+    "Acked": false,
+    "Fault": "injector_clog",
+    "Cylinder": 1
+   },
+   "alarm_id": "a_0003",
+   "back_to_normal_s": 31.5
+  },
+  {
+   "fault": "valve_tick",
+   "cylinder": 4,
+   "severity": 1.0,
+   "expected": "UNCLASSIFIED",
+   "injected_stream_t": 140.15,
+   "states_seen": [
+    "NORMAL",
+    "UNCLASSIFIED"
+   ],
+   "reached": true,
+   "time_to_state_s": 0.45,
+   "opcua_at_state": {
+    "State": "UNCLASSIFIED",
+    "AlarmId": "",
+    "Acked": false,
+    "Fault": "",
+    "Cylinder": 0
+   },
+   "back_to_normal_s": 0.96
+  }
+ ],
+ "checks": [
+  {
+   "check": "healthy start is NORMAL",
+   "ok": true,
+   "detail": "NORMAL"
+  },
+  {
+   "check": "misfire: ALARM in 1.1 s",
+   "ok": true,
+   "detail": "fault=misfire cyl=3"
+  },
+  {
+   "check": "misfire: ADVISORY came first",
+   "ok": true,
+   "detail": [
+    "ADVISORY",
+    "ALARM",
+    "NORMAL"
+   ]
+  },
+  {
+   "check": "misfire: alarm names misfire cyl 3",
+   "ok": true,
+   "detail": "misfire cyl 3"
+  },
+  {
+   "check": "misfire: OPC UA shows acked, same AlarmId",
+   "ok": true,
+   "detail": "a_0001 -> a_0001"
+  },
+  {
+   "check": "misfire: dashboard shows the same AlarmId",
+   "ok": true,
+   "detail": "a_0001"
+  },
+  {
+   "check": "misfire: back to NORMAL after clear",
+   "ok": true,
+   "detail": 31.15
+  },
+  {
+   "check": "knock: ALARM in 0.6 s",
+   "ok": true,
+   "detail": "fault=knock cyl=2"
+  },
+  {
+   "check": "knock: ADVISORY came first",
+   "ok": true,
+   "detail": [
+    "ADVISORY",
+    "ALARM",
+    "NORMAL"
+   ]
+  },
+  {
+   "check": "knock: alarm names knock cyl 2",
+   "ok": true,
+   "detail": "knock cyl 2"
+  },
+  {
+   "check": "knock: OPC UA shows acked, same AlarmId",
+   "ok": true,
+   "detail": "a_0002 -> a_0002"
+  },
+  {
+   "check": "knock: dashboard shows the same AlarmId",
+   "ok": true,
+   "detail": "a_0002"
+  },
+  {
+   "check": "knock: back to NORMAL after clear",
+   "ok": true,
+   "detail": 0.43
+  },
+  {
+   "check": "injector_clog: ALARM in 22.2 s",
+   "ok": true,
+   "detail": "fault=injector_clog cyl=1"
+  },
+  {
+   "check": "injector_clog: ADVISORY came first",
+   "ok": true,
+   "detail": [
+    "ADVISORY",
+    "ALARM",
+    "NORMAL",
+    "UNCLASSIFIED"
+   ]
+  },
+  {
+   "check": "injector_clog: alarm names injector_clog cyl 1",
+   "ok": true,
+   "detail": "injector_clog cyl 1"
+  },
+  {
+   "check": "injector_clog: OPC UA shows acked, same AlarmId",
+   "ok": true,
+   "detail": "a_0003 -> a_0003"
+  },
+  {
+   "check": "injector_clog: dashboard shows the same AlarmId",
+   "ok": true,
+   "detail": "a_0003"
+  },
+  {
+   "check": "injector_clog: back to NORMAL after clear",
+   "ok": true,
+   "detail": 31.5
+  },
+  {
+   "check": "valve_tick: UNCLASSIFIED in 0.5 s",
+   "ok": true,
+   "detail": "fault= cyl=0"
+  },
+  {
+   "check": "valve_tick: never a named fault (no ALARM, no ADVISORY)",
+   "ok": true,
+   "detail": [
+    "NORMAL",
+    "UNCLASSIFIED"
+   ]
+  },
+  {
+   "check": "valve_tick: back to NORMAL after clear",
+   "ok": true,
+   "detail": 0.96
+  }
+ ],
+ "video_s": 148.6,
+ "screenshots": 980
+}

@@ -1,10 +1,17 @@
 """The live simulator source (L1) through the real runtime ticks, on a fake clock."""
 
 import numpy as np
+import pytest
 
 from backend import messages
 from backend.signal_frame import decode_frame
 from backend.tests.test_scenarios import Run
+
+
+@pytest.fixture
+def l1(monkeypatch):
+    """L1 behaviour: no classifier checkpoint, so physics only (ADVISORY at most, anomaly.score null)."""
+    monkeypatch.setenv("S720_CLASSIFIER", "0")
 
 
 def _run_with_misfire(healthy_s=4.0, faulty_s=6.0, severity=0.5):
@@ -15,7 +22,7 @@ def _run_with_misfire(healthy_s=4.0, faulty_s=6.0, severity=0.5):
     return r, n_healthy
 
 
-def test_sim_misfire_gives_advisory_on_cyl3_never_alarm():
+def test_sim_misfire_gives_advisory_on_cyl3_never_alarm(l1):
     r, n_healthy = _run_with_misfire()
     healthy, faulty = r.states[:n_healthy], r.states[n_healthy:]
     assert healthy and all(m["decision"]["state"] == "NORMAL" for m in healthy)
@@ -29,7 +36,7 @@ def test_sim_misfire_gives_advisory_on_cyl3_never_alarm():
     assert all(m["anomaly"]["per_location"][2] > m["anomaly"]["threshold"] for m in on3)
 
 
-def test_continuous_misfire_collapses_fingerprint_lobe_and_lights_one_bar():
+def test_continuous_misfire_collapses_fingerprint_lobe_and_lights_one_bar(l1):
     r, n_healthy = _run_with_misfire(severity=1.0)
     adv = [m for m in r.states[n_healthy:] if m["decision"]["state"] == "ADVISORY"]
     assert adv and all(m["decision"]["location"] == 3 for m in adv)
@@ -51,7 +58,7 @@ def test_rule_layer_steps_once_per_window():
     assert np.allclose(np.diff(fresh_t), 0.3, atol=0.03)
 
 
-def test_every_sim_message_validates():
+def test_every_sim_message_validates(l1):
     r, _ = _run_with_misfire(3.0, 3.0)
     assert r.states and r.out["obd"] and r.out["signal"]
     for m in r.states:
@@ -115,3 +122,34 @@ def test_knock_and_clog_reach_obd_through_the_backend():
     stft = [m["channels"]["stft_pct"]["v"][0] + m["channels"]["ltft_pct"]["v"][0] for m in r.out["obd"]]
     assert stft[1] < 2.0 and stft[-1] > 7.0                            # trim heads for s/(4-s) = 11 %
     assert r.states[-1]["injection"]["fault"] == "injector_clog"
+
+
+# ---------------------------------------------------------------- L2: the real classifier as second witness
+
+def _classifier_available():
+    from models.classifier import CHECKPOINT
+    return CHECKPOINT.exists()
+
+
+@pytest.mark.skipif(not _classifier_available(), reason="run python -m models.classifier")
+def test_two_witness_alarm_ack_and_clear_with_the_real_classifier():
+    r = Run("sim").advance(32.0)                                              # a full 30 s of OBD first, as live
+    assert all(m["decision"]["state"] == "NORMAL" for m in r.states[-10:])
+    assert all(m["anomaly"]["score"] is not None for m in r.states[-10:])    # the healthy model is live
+    r.rt.inject("misfire", 3, 1.0)
+    r.advance(8.0)
+    states = [m["decision"]["state"] for m in r.states]
+    assert "ALARM" in states
+    first = states.index("ALARM")
+    assert "ADVISORY" in states[:first]
+    alarm = r.states[first]["decision"]
+    assert alarm["fault"] == "misfire" and alarm["location"] == 3 and alarm["witnesses"] == ["physics", "classifier"]
+    assert r.states[first]["models"][0]["label"] == "misfire"
+    assert r.rt.ack(alarm["alarm_id"], "test", "test").ok
+    r.rt.clear_faults()
+    # misfire reads lean on the O2 sensor, so the ECU enriched the trims; the 30 s OBD window holds that
+    # for ~30 s after the clear (the classifier calls it injector_clog meanwhile), then two healthy windows
+    r.advance(40.0)
+    last = r.states[-1]["decision"]
+    assert last["state"] == "NORMAL", last
+    assert all(messages.errors("state", m) == [] for m in r.states)

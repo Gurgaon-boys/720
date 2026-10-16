@@ -20,6 +20,7 @@ yarn-error.log*
 # Data (never committed; split lists in data/splits/ stay tracked)
 data/raw/
 data/audio/
+data/generated/
 *.wav
 *.flac
 *.mp3

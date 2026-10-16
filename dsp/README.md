@@ -64,3 +64,17 @@ python -m eval.robustness_v2        # ~15 min
 python -m pytest dsp/tests
 ```
 
+
+## L2 physics rules (D66–D68)
+
+| Rule | Basis | Feature | Threshold (calibration) |
+|---|---|---|---|
+| `misfire_half_order` | crank angle | half-order energy, **quadratic crank-speed trend removed first** | per rpm band 0.00553 / 0.00564 / 0.00739, healthy sim calibration engines, val 0 FP |
+| `knock_band_energy` | crank angle | 5–15 kHz accel *ringing* energy in TDC + retard + 0…30° vs the sensor's quiet TDC+90…150°, minus the cylinder's healthy baseline | +5.59 / +5.62 / +6.12 dB per band, healthy sim calibration engines |
+| `trim_drift` | **obd** | 30 s mean of (1+STFT)(1+LTFT) − 1; not while the ECU pulls spark | 9.71 % from 90 carOBD calibration files (6,094 windows); sim healthy check 0/360 |
+
+`obd_window.py` builds the 30 s OBD windows (simulator rows or carOBD rows, same code). `rules.all_rules()` returns the three witnesses for one window.
+
+```bash
+python -m dsp.calibrate_misfire && python -m dsp.calibrate_knock && python -m dsp.calibrate_trim
+```

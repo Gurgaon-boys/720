@@ -30,3 +30,5 @@ The split lists live in `splits/` and are written at H0, **with a timestamp, bef
 **AudioSet source:** the Hugging Face mirror `agkphysics/AudioSet` (March 2023 snapshot). `hf_parquet.py` range-reads only the parquet pages that hold our clips. Clips the mirror lacks are logged as `missing_on_hf`; `--youtube-fallback` tries yt-dlp for them.
 
 **Vetting rules:** don't look at the other rater's CSV until both are done. Labels are hidden in the tool on purpose. Use "unsure" freely: only clips both raters mark yes / yes / no (plus detonation = yes for knock clips) survive.
+
+**Generated (Dipen):** `data/generated/` (git-ignored) holds the simulator dataset (`python -m models.make_dataset`) and soak caches. Its manifest, split by engine seed, is committed as `data/splits/sim_v2_dataset.json`. carOBD calibration code (`sim/calibrate_ecu.py`, `dsp/calibrate_trim.py`) reads only the `calibration` list (tested in `models/tests`).

@@ -3,7 +3,8 @@
 Every window is first assessed on its own (assess), then fed through the latch (RuleLayer.step).
 
 Per-window assessment, in order of precedence:
-  match         the classifier names a fault and the physics rule for that same fault fired
+  match         the classifier names a fault and the physics rule for that same fault fired (and,
+                when both name a cylinder, the same cylinder; a bank-wide rule names none)
   conflict      the classifier names a fault, but only physics rules for other faults fired
   unclassified  the anomaly score is over threshold and the classifier names no fault;
                 a physics rule that fired (e.g. valve_tick) is passed along as a hint
@@ -43,6 +44,7 @@ class Evidence:
     anomaly_score: float | None  # None (schema 1.5): no healthy model, so no anomaly witness
     anomaly_threshold: float
     severity: float | None = None
+    classifier_location: int | None = None  # the classifier's cylinder (not in the contract's models[] entry)
 
 
 @dataclass
@@ -93,9 +95,11 @@ def assess(ev: Evidence) -> Assessment:
     anomaly_high = ev.anomaly_score is not None and ev.anomaly_score > ev.anomaly_threshold
 
     if cls_fault:
-        same = [r for r in fired if r["rule"] == cls]
+        cl = ev.classifier_location
+        same = [r for r in fired if r["rule"] == cls and (cl is None or r["location"] is None or r["location"] == cl)]
         if same:
-            return Assessment("match", cls, same[0]["location"], ["physics", "classifier"])
+            loc = same[0]["location"] if same[0]["location"] is not None else cl
+            return Assessment("match", cls, loc, ["physics", "classifier"])
         if fired:
             return Assessment("conflict", None, None, ["physics", "classifier"])
     if anomaly_high and not cls_fault:

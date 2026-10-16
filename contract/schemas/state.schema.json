@@ -72,7 +72,7 @@
           "rule": { "$ref": "#/$defs/fault" },
           "fired": { "type": "boolean" },
           "location": { "$ref": "#/$defs/cylinder" },
-          "rule_basis": { "enum": ["crank_angle", "firing_event"] }
+          "rule_basis": { "enum": ["crank_angle", "firing_event", "obd"] }
         }
       }
     },

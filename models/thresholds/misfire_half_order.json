@@ -3,8 +3,8 @@
   "version": 2,
   "feature": "half_order_energy",
   "rule_basis": "crank_angle",
-  "created_at": "2026-10-16T01:04:26+00:00",
-  "sim_version": "2.0.0",
+  "created_at": "2026-10-16T04:52:29+00:00",
+  "sim_version": "2.1.0",
   "source": "simulated (healthy runs only)",
   "window": {
     "n_cycles": 4,
@@ -45,25 +45,25 @@
         1000.0
       ],
       "half_order_energy": {
-        "threshold": 0.008985,
-        "healthy_quantile": 0.007188,
-        "healthy_max_calibration": 0.009117
+        "threshold": 0.005527,
+        "healthy_quantile": 0.004421,
+        "healthy_max_calibration": 0.006128
       },
       "v1_half_order_ratio_for_comparison": {
-        "healthy_quantile": 0.4166,
-        "healthy_max": 0.5582
+        "healthy_quantile": 0.4465,
+        "healthy_max": 0.6158
       },
       "roughness": {
-        "threshold": 0.023468,
-        "healthy_quantile": 0.018775,
-        "healthy_max_calibration": 0.021771
+        "threshold": 0.025464,
+        "healthy_quantile": 0.020372,
+        "healthy_max_calibration": 0.026238
       },
-      "calibration_windows": 11267,
+      "calibration_windows": 11264,
       "validation": {
-        "windows": 3614,
+        "windows": 3611,
         "false_positives": 0,
         "fpr": 0.0,
-        "fpr_upper_95": 0.0008301051466519093
+        "fpr_upper_95": 0.0008307947936859596
       }
     },
     {
@@ -76,25 +76,25 @@
         1850.0
       ],
       "half_order_energy": {
-        "threshold": 0.010292,
-        "healthy_quantile": 0.008234,
-        "healthy_max_calibration": 0.010427
+        "threshold": 0.005645,
+        "healthy_quantile": 0.004516,
+        "healthy_max_calibration": 0.005597
       },
       "v1_half_order_ratio_for_comparison": {
-        "healthy_quantile": 6.4932,
-        "healthy_max": 38.3132
+        "healthy_quantile": 6.0118,
+        "healthy_max": 36.6082
       },
       "roughness": {
-        "threshold": 0.009433,
-        "healthy_quantile": 0.007547,
-        "healthy_max_calibration": 0.008542
+        "threshold": 0.00952,
+        "healthy_quantile": 0.007616,
+        "healthy_max_calibration": 0.010443
       },
-      "calibration_windows": 20263,
+      "calibration_windows": 20264,
       "validation": {
-        "windows": 6514,
+        "windows": 6512,
         "false_positives": 0,
         "fpr": 0.0,
-        "fpr_upper_95": 0.000460546515198035
+        "fpr_upper_95": 0.0004606879606879607
       }
     },
     {
@@ -107,25 +107,25 @@
         2900.0
       ],
       "half_order_energy": {
-        "threshold": 0.011307,
-        "healthy_quantile": 0.009045,
-        "healthy_max_calibration": 0.012826
+        "threshold": 0.007395,
+        "healthy_quantile": 0.005916,
+        "healthy_max_calibration": 0.007632
       },
       "v1_half_order_ratio_for_comparison": {
-        "healthy_quantile": 9.6325,
-        "healthy_max": 108.3722
+        "healthy_quantile": 12.3428,
+        "healthy_max": 341.2946
       },
       "roughness": {
-        "threshold": 0.011336,
-        "healthy_quantile": 0.009069,
-        "healthy_max_calibration": 0.01132
+        "threshold": 0.011379,
+        "healthy_quantile": 0.009103,
+        "healthy_max_calibration": 0.011467
       },
-      "calibration_windows": 33521,
+      "calibration_windows": 33515,
       "validation": {
-        "windows": 10788,
-        "false_positives": 1,
-        "fpr": 9.269558769002595e-05,
-        "fpr_upper_95": 0.0005249349753852476
+        "windows": 10791,
+        "false_positives": 0,
+        "fpr": 0.0,
+        "fpr_upper_95": 0.00027800945232137893
       }
     }
   ],
@@ -153,7 +153,7 @@
     ],
     "warmup_s": 3.0,
     "record_s_per_run": 30.0,
-    "n_windows": 65051
+    "n_windows": 65043
   },
   "validation": {
     "engine_seeds": [
@@ -164,7 +164,7 @@
     ],
     "run_seed_offset": 2000,
     "param_region": "train",
-    "n_windows": 20916
+    "n_windows": 20914
   },
   "held_out_never_used": {
     "faults": [

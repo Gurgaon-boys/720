@@ -27,6 +27,10 @@ SEEDS = {
     "soak": (list(range(200, 240)), 3000),
     "robustness": (list(range(400, 440)), 5000),
     "held_out_region": (list(range(600, 640)), 7000),
+    # classifier dataset (models/make_dataset.py), split by engine
+    "dataset_train": (list(range(700, 760)), 10000),
+    "dataset_val": (list(range(760, 775)), 20000),
+    "dataset_test": (list(range(775, 790)), 30000),
 }
 _used = [e for k, (es, _) in SEEDS.items() for e in es]
 assert len(_used) == len(set(_used)), "seed ranges overlap"

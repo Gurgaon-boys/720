@@ -84,7 +84,11 @@ def test_obd_at_1hz_with_all_channels_and_sources():
     assert set(obd[0]) == {"t", *OBD_CHANNELS}
     last = obd[-1]
     assert abs(last["rpm"] - 800) < 20 and 20 < last["map_kpa"] < 50 and 0 < last["throttle_pct"] < 40
-    assert abs(last["stft_pct"]) < 2 and abs(last["lambda"] - 1) < 0.02 and 80 < last["coolant_c"] < 95
+    assert abs(last["stft_pct"]) < 6 and abs(last["lambda"] - 1) < 0.03 and 80 < last["coolant_c"] < 95
+    # carOBD-like: STFT in 100/128 % steps, and each PID only refreshes every ~1.8 s (0.55 Hz)
+    assert all(abs(o["stft_pct"] / (100 / 128) - round(o["stft_pct"] / (100 / 128))) < 1e-9 for o in obd)
+    rpm = [o["rpm"] for o in obd]
+    assert sum(a != b for a, b in zip(rpm, rpm[1:])) <= 6
     meta = cs[-1]["meta"]
     assert meta["sources"]["ecu_fast"] == "sim_internal" and "simulator only" in meta["sources"]["lambda"]
     assert len(cs[-1]["ecu_fast"]["t"]) > 5                          # sim-internal, once per firing
@@ -125,7 +129,7 @@ def test_knock_band_energy_and_spark_retard():
     adv = [o["spark_adv_deg"] for c in cs for o in c["obd"]]
     assert adv[2] - min(adv[8:]) >= 2.0                              # the ECU pulled timing
     sim.clear_faults()
-    later = [o["spark_adv_deg"] for _ in range(20) for o in sim.step(0.5)["obd"]]
+    later = [o["spark_adv_deg"] for _ in range(30) for o in sim.step(0.5)["obd"]]
     assert later[-1] > min(adv[8:]) + 1.0                            # and recovers slowly afterwards
 
 
@@ -190,3 +194,13 @@ def test_torsional_flex_size_and_rpm_scaling():
     e900, e2500 = angle_error_rms(900), angle_error_rms(2500)
     assert e2500 == pytest.approx(0.02 * 2.5 ** 1.5, rel=0.35)
     assert e2500 / e900 == pytest.approx((2500 / 900) ** 1.5, rel=0.35)
+
+
+def test_accel_does_not_depend_on_chunk_size():
+    """The live source steps 50 ms chunks, the dataset 0.5 s: the accelerometer must be the same stream
+    (its noise level follows a running RMS kept across chunks, from its own random streams)."""
+    out = {}
+    for step in (0.5, 0.05):
+        sim = EngineSim(P, seed=0)
+        out[step] = _cat([sim.step(step) for _ in range(int(round(3.0 / step)))], "accel")
+    np.testing.assert_array_equal(out[0.5], out[0.05])

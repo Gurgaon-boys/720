@@ -92,7 +92,7 @@ def in_band(rows, lo, hi):
 
 def main():
     t0 = time.perf_counter()
-    with Pool() as pool:
+    with Pool(int(__import__('os').environ.get('S720_WORKERS', 10))) as pool:
         cal = collect(CAL_ENGINES, CAL_RUN_OFFSET, pool)
         val = collect(VAL_ENGINES, VAL_RUN_OFFSET, pool)
 

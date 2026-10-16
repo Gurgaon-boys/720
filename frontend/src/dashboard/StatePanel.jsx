@@ -3,7 +3,7 @@ import SourceBadge from './SourceBadge.jsx';
 // Plain readout of the rest of the schema-1.3 `state` message: anomaly, physics rules, features
 // and stream metadata. Health chips live in the header. Later tasks restyle or absorb these pieces.
 
-const BASIS = { crank_angle: 'crank angle', firing_event: 'firing event' };
+const BASIS = { crank_angle: 'crank angle', firing_event: 'firing event', obd: 'OBD trims' };
 const clock = (unixS) => new Date(unixS * 1000).toLocaleTimeString();
 
 export default function StatePanel({ state }) {

@@ -1,7 +1,7 @@
 import { decisionColor, decisionText, fault } from '../lib/faults.js';
 import SourceBadge from './SourceBadge.jsx';
 
-const BASIS = { crank_angle: 'crank angle', firing_event: 'firing event' };
+const BASIS = { crank_angle: 'crank angle', firing_event: 'firing event', obd: 'OBD trims' };
 const clock = (unixS) => (unixS == null ? '—' : new Date(unixS * 1000).toLocaleTimeString());
 
 // Read-only decision details. Acknowledging happens in the alarm banner.
