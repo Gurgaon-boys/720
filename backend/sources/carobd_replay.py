@@ -315,15 +315,21 @@ class CarObdReplay:
             st[on] += total - l
         return st, lt
 
-    def _values(self, name: str, idx: np.ndarray, loop: int) -> np.ndarray:
+    INJECTED_CHANNELS = ("stft_pct", "ltft_pct")   # what lean_drift modifies (carOBD has no lambda)
+
+    def _values(self, name: str, idx: np.ndarray, loop: int, with_flag: bool = False):
+        """Channel values at rows idx; with_flag: also whether any of them carries an injected addition."""
         col = CHANNELS[name][0]
         v = self.df[col].to_numpy(float)[idx]
-        if name in ("stft_pct", "ltft_pct") and self._segments:
+        added = False
+        if name in self.INJECTED_CHANNELS and self._segments:
             # the added trim at each value's own refresh time keeps the ~0.55 Hz staircase
             tau = loop * self.duration + self.t[self._run_start[name][idx]]
             st, lt = self._added_trim(tau)
-            v = v + (st if name == "stft_pct" else lt)
-        return v
+            add = st if name == "stft_pct" else lt
+            added = bool(np.any(add != 0))
+            v = v + add
+        return (v, added) if with_flag else v
 
     def _frame(self, lo: int, hi: int, loop: int) -> pd.DataFrame:
         win = self.df.iloc[lo:hi].copy()
@@ -468,9 +474,13 @@ class CarObdReplay:
                 sel = idx if first else idx[fresh[idx]]
                 if not len(sel):
                     continue
-                v = self._values(name, sel, loop)
+                v, added = self._values(name, sel, loop, with_flag=True)
+                base = "real_upload" if self.uploaded else "real_replay"
                 ch = out.setdefault(name, {"t": [], "v": [], "unit": CHANNELS[name][1],
-                                           "source": "real_upload" if self.uploaded else "real_carobd"})
+                                           "source": "real_upload" if self.uploaded else "real_carobd",
+                                           "source_label": base})
+                if added:                              # 1.6: this channel's values carry the injection
+                    ch["source_label"] = f"{base}_injected"
                 ch["t"] += [round(float(x), 2) for x in self.t[sel]]
                 ch["v"] += [round(float(x), 3) for x in v]
         return out if any_rows else None

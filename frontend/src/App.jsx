@@ -30,6 +30,7 @@ function appendObd(prev, msg) {
     next[name] = {
       unit: ch.unit,
       source: ch.source,
+      source_label: ch.source_label, // 1.6: latest message's label for this channel
       t: [...(old?.t ?? []), ...ch.t].slice(-OBD_KEEP),
       v: [...(old?.v ?? []), ...ch.v].slice(-OBD_KEEP),
     };

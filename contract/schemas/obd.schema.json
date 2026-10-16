@@ -24,6 +24,10 @@
           "v": { "type": "array", "items": { "type": "number" } },
           "unit": { "type": "string" },
           "source": { "enum": ["real_carobd", "real_upload", "simulator"], "description": "1.6 adds real_upload: a user-uploaded carOBD-format log, unverified" },
+          "source_label": {
+            "enum": ["simulated", "real_replay", "real_replay_injected", "real_upload", "real_upload_injected"],
+            "description": "1.6 (optional): per channel. *_injected only on channels an injection modified in this message (lean_drift: STFT, LTFT); untouched channels keep the plain REAL label"
+          },
           "calibration": {
             "enum": ["real_calibrated", "sim_only"],
             "description": "1.5 (optional): for simulator channels, real_calibrated = constants measured on carOBD calibration files, sim_only = no carOBD counterpart"

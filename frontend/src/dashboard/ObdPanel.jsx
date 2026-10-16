@@ -7,6 +7,9 @@ import { fmtNum } from '../lib/format.js';
 // Grey by ISA-101: OBD values carry no alarm meaning here. Hover shows a sample in place.
 
 const SOURCE = { real_carobd: 'REAL · carOBD', real_upload: 'REAL · UPLOAD', simulator: 'SIMULATOR' };
+// 1.6: a channel an injection modified (lean drift on a REAL replay: STFT, LTFT) says so; the rest stay REAL
+const injected = (ch) => ch.source_label?.endsWith('_injected');
+const tag = (ch) => (injected(ch) ? 'REAL + INJECTED' : SOURCE[ch.source] ?? ch.source);
 const WINDOW_S = 60; // default; a REAL replay passes a longer window (file time)
 const W = 200;
 const H = 56;
@@ -81,7 +84,7 @@ function Cell({ name, ch, windowS }) {
     <div className="obd-cell">
       <div className="obd-cell-head">
         <span className="eyebrow">{name}</span>
-        <span className={`obd-src ${ch.source}`}>{SOURCE[ch.source] ?? ch.source}</span>
+        <span className={`obd-src ${ch.source}${injected(ch) ? ' injected' : ''}`}>{tag(ch)}</span>
       </div>
       <div className="tile-val mono">{fmtNum(shown)}<span> {ch.unit}</span></div>
       <Spark a={a} unit={ch.unit} hover={hover} setHover={setHover} WINDOW_S={windowS} />
@@ -128,7 +131,7 @@ export default function ObdPanel({ obd, source, hasObd, silentFor, windowS = WIN
                   return (
                     <tr key={name}>
                       <th scope="row">{name}</th><td>{fmtNum(a.last)}</td><td>{fmtNum(a.min)}</td><td>{fmtNum(a.max)}</td>
-                      <td>{ch.unit}</td><td>{a.dt ? `${fmtNum(1 / a.dt)} Hz` : '—'}</td><td>{a.t.length}</td><td>{SOURCE[ch.source] ?? ch.source}</td>
+                      <td>{ch.unit}</td><td>{a.dt ? `${fmtNum(1 / a.dt)} Hz` : '—'}</td><td>{a.t.length}</td><td>{tag(ch)}</td>
                     </tr>
                   );
                 })}

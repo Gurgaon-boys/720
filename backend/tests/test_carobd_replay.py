@@ -290,3 +290,26 @@ def test_http_replay_inject_upload(server):
         m = json.loads(ws.recv(timeout=3))
         assert messages.errors("obd", m) == [] and m["source_label"] == "real_upload"
         assert {c["source"] for c in m["channels"].values()} == {"real_upload"}
+
+
+def test_only_channels_the_injection_modifies_are_labelled_injected():
+    s = src(10)
+    for i in range(30):
+        s.obd_channels(i)
+    s.window(300)
+    s.inject("lean_drift", None, 0.5)
+    seen = {}
+    for i in range(31, 60):
+        for name, c in (s.obd_channels(i) or {}).items():
+            seen.setdefault(name, set()).add(c["source_label"])
+            assert messages.errors("obd", messages.obd_message(sent_at=0, channels={name: c})) == []
+    assert seen["stft_pct"] == {"real_replay_injected"} and seen["ltft_pct"] == {"real_replay_injected"}
+    assert all(v == {"real_replay"} for k, v in seen.items() if k not in ("stft_pct", "ltft_pct"))
+    s.window(600)
+    s.clear_faults()                                   # at file time 600 s
+    s.obd_channels(60)                                 # (590, 600]: rows logged before the clear
+    later = {}
+    for i in range(61, 75):
+        for name, c in (s.obd_channels(i) or {}).items():
+            later.setdefault(name, set()).add(c["source_label"])
+    assert all(v == {"real_replay"} for v in later.values())        # nothing injected after clear
