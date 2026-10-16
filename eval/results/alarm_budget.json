@@ -1,5 +1,5 @@
 {
- "created_at": "2026-10-16T14:58:38+00:00",
+ "created_at": "2026-10-16T18:31:29+00:00",
  "sim_version": "2.1.1",
  "healthy": {
   "sim": {
@@ -32,17 +32,17 @@
      "bound_method": "poisson_exact_one_sided_95"
     },
     "unclassified": {
-     "events": 20,
+     "events": 19,
      "exposure_hours": 20.0,
-     "per_hour": 1.0,
-     "upper_95_per_hour": 1.4531009420217007,
+     "per_hour": 0.95,
+     "upper_95_per_hour": 1.3939619819721758,
      "bound_method": "poisson_exact_one_sided_95"
     },
     "advisory": {
-     "events": 221,
+     "events": 222,
      "exposure_hours": 20.0,
-     "per_hour": 11.05,
-     "upper_95_per_hour": 12.353148895095355,
+     "per_hour": 11.1,
+     "upper_95_per_hour": 12.405907185547775,
      "bound_method": "poisson_exact_one_sided_95"
     }
    }
@@ -158,28 +158,28 @@
   "engines": 50,
   "main": "sim_20h",
   "per_engine_operator_notifications": {
-   "events": 20,
+   "events": 19,
    "exposure_hours": 20.0,
-   "per_hour": 1.0,
-   "upper_95_per_hour": 1.4531009420217007,
+   "per_hour": 0.95,
+   "upper_95_per_hour": 1.3939619819721758,
    "bound_method": "poisson_exact_one_sided_95"
   },
-  "fleet_per_hour": 50.0,
-  "fleet_upper_95_per_hour": 72.65504710108503,
+  "fleet_per_hour": 47.5,
+  "fleet_upper_95_per_hour": 69.6980990986088,
   "by_source": {
    "sim_20h": {
     "label": "SIM 2.1",
     "split": "soak_long engines 1300-1399 (unseen)",
     "hours": 20.0,
     "per_engine_operator_notifications": {
-     "events": 20,
+     "events": 19,
      "exposure_hours": 20.0,
-     "per_hour": 1.0,
-     "upper_95_per_hour": 1.4531009420217007,
+     "per_hour": 0.95,
+     "upper_95_per_hour": 1.3939619819721758,
      "bound_method": "poisson_exact_one_sided_95"
     },
-    "fleet_per_hour": 50.0,
-    "fleet_upper_95_per_hour": 72.65504710108503
+    "fleet_per_hour": 47.5,
+    "fleet_upper_95_per_hour": 69.6980990986088
    },
    "sim_2h": {
     "label": "SIM 2.1",
@@ -266,15 +266,15 @@
     },
     "unclassified": {
      "kind": "proportion",
-     "successes": 3,
+     "successes": 2,
      "n": 20,
-     "value": 0.15,
+     "value": 0.1,
      "ci_95": [
-      0.05236779195949584,
-      0.36042329588695743
+      0.027865893984153206,
+      0.30103820641179335
      ],
      "ci_method": "wilson_95",
-     "latency_s_median": 0.2992708333333347
+     "latency_s_median": 0.5347500000000007
     }
    },
    "knock 0.5": {
@@ -316,15 +316,15 @@
     },
     "unclassified": {
      "kind": "proportion",
-     "successes": 17,
+     "successes": 20,
      "n": 20,
-     "value": 0.85,
+     "value": 1.0,
      "ci_95": [
-      0.6395767041130426,
-      0.9476322080405041
+      0.8388698745050667,
+      1.0
      ],
      "ci_method": "wilson_95",
-     "latency_s_median": 1.8057499999999997
+     "latency_s_median": 1.3728750000000005
     }
    },
    "injector_clog 0.5": {
@@ -354,18 +354,6 @@
     },
     "alarm": {
      "kind": "proportion",
-     "successes": 14,
-     "n": 20,
-     "value": 0.7,
-     "ci_95": [
-      0.4810232237710206,
-      0.854524726031006
-     ],
-     "ci_method": "wilson_95",
-     "latency_s_median": 22.68490625
-    },
-    "unclassified": {
-     "kind": "proportion",
      "successes": 17,
      "n": 20,
      "value": 0.85,
@@ -374,7 +362,19 @@
       0.9476322080405041
      ],
      "ci_method": "wilson_95",
-     "latency_s_median": 0.48397916666666774
+     "latency_s_median": 23.296374999999998
+    },
+    "unclassified": {
+     "kind": "proportion",
+     "successes": 1,
+     "n": 20,
+     "value": 0.05,
+     "ci_95": [
+      0.008881219432873136,
+      0.23613589351256675
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": 0.757833333333334
     }
    },
    "valve_tick 0.3": {
