@@ -1,4 +1,4 @@
-"""How much do the features depend on the simulator's chunk size with the hard regimes on? (D99 follow-up)
+"""How much do the features depend on the simulator's chunk size with the hard regimes on? (D103 follow-up)
 
 The live source steps 0.05 s chunks, the dataset and every evaluation 0.5 s. With regimes off the stream is
 identical (tested); with regimes on, per-chunk regime draws differ. Same engine, seed and operating point,

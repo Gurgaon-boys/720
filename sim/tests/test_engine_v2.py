@@ -245,7 +245,7 @@ def test_cam_and_slow_sensors_do_not_depend_on_chunk_size():
 
 
 def test_regimes_on_stream_does_not_depend_on_step_size():
-    """With hard regimes on, smaller steps are slices of the same 0.5 s blocks (D103): identical stream,
+    """With hard regimes on, smaller steps are slices of the same 0.5 s blocks (D107): identical stream,
     including an injection at a block boundary and sensor dropouts."""
     out = {}
     for step in (0.5, 0.05, 0.1):
