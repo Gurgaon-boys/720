@@ -166,7 +166,7 @@ export default function SabotageLab({
         </aside>
       </div>
 
-      <Outcome result={result} state={state} sensors={sensors} />
+      <Outcome result={result} state={state} sensors={sensors} level={level} />
 
       <Details
         tabs={[
