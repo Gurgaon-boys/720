@@ -1,0 +1,18 @@
+/* Live mic tab (?mic=1): spectrogram + meters, grey by ISA-101 until a meter passes its limit */
+.mic-panel { display: flex; flex-direction: column; gap: 14px; max-width: 980px; margin: 0 auto; }
+.mic-badge strong { font-size: 18px; }
+.mic-controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.mic-spec { position: relative; }
+.mic-spec canvas { width: 100%; height: 160px; background: #05080d; border: 1px solid var(--line); border-radius: 8px; display: block; }
+.mic-band { position: absolute; left: 0; right: 0; border-top: 1px dashed var(--muted); border-bottom: 1px dashed var(--muted); pointer-events: none; }
+.mic-band span { position: absolute; right: 6px; top: 2px; font-size: 10px; color: var(--muted); }
+.mic-meters { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+.mic-meter { display: flex; flex-direction: column; gap: 6px; padding: 10px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; }
+.mic-meter-head { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; }
+.mic-over { color: var(--text); font-weight: 700; }
+.mic-track { position: relative; height: 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 3px; }
+.mic-fill { position: absolute; left: 0; top: 0; bottom: 0; background: #c3cbd6; border-radius: 2px; transition: width .2s; }
+.mic-fill.over { background: #ffd43b; }
+.mic-limit { position: absolute; top: -4px; bottom: -4px; width: 2px; margin-left: -1px; background: var(--text-2); }
+.mic-noverdict { border: 1px dashed var(--line-2); border-radius: 8px; padding: 10px 12px; }
+@media (max-width: 600px) { .mic-spec canvas { height: 120px; } }

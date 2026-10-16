@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import './engine3d.css';
+import { isMicMode } from '../lib/micMode.js';
 
 // Switches between the 2D dashboard, the lazy-loaded 3D engine view, the Results tab and the
 // Sabotage Lab. The choice lives in the URL hash (#3d, #results, #sabotage), so a rehearsal or demo can open straight on a
@@ -9,8 +10,10 @@ export const VIEWS = [
   { id: '3d', name: '3D engine' },
   { id: 'results', name: 'Results' },
   { id: 'sabotage', name: 'SABOTAGE LAB' }, // src/lab/ (D137)
+  // optional live microphone: only with ?mic=1 (src/dashboard/LiveMic.jsx)
+  ...(isMicMode() ? [{ id: 'mic', name: 'Live mic' }] : []),
 ];
-const HASH = { '2d': '', '3d': '#3d', results: '#results', sabotage: '#sabotage' };
+const HASH = { '2d': '', '3d': '#3d', results: '#results', sabotage: '#sabotage', mic: '#mic' };
 const fromHash = () => VIEWS.find((v) => HASH[v.id] && HASH[v.id] === window.location.hash)?.id ?? '2d';
 
 export function useViewTab() {
