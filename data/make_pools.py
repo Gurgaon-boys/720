@@ -1,7 +1,11 @@
 """Assign vetted AudioSet clips to pools P1 / P2 / P3 BY VIDEO ID -> data/splits/audioset_pools.json.
 
+    python data/make_pools.py --prereg         # now: every downloaded clip -> audioset_pools_prereg.json
     python data/make_pools.py                  # after vetting (reads data/vetting/vetted_clips.csv)
-    python data/make_pools.py --unvetted       # dev only: every downloaded clip -> audioset_pools_unvetted.json
+
+--prereg fixes the pool of every downloaded clip BEFORE vetting and training (plan section 4: pools
+timestamped at H0). The vetted file is that assignment filtered by vetting; the vetted run checks
+that every surviving clip keeps its pre-registered pool.
 
 Pools (plan section 4), for Idling / Engine clips:
     P1  simulator background texture only            ~40%
@@ -17,6 +21,7 @@ no training pool shares a video with the knock check.
 from __future__ import annotations
 
 import argparse
+import json
 import csv
 import sys
 from collections import Counter, defaultdict
@@ -43,6 +48,9 @@ def pool_for(video_id: str, seed: int) -> str:
         if u < edge:
             return name
     return POOLS[-1][0]
+
+
+PREREG = SPLITS / "audioset_pools_prereg.json"
 
 
 def read_clips(unvetted: bool) -> list[dict]:
@@ -88,12 +96,19 @@ def check_disjoint(pools: dict[str, list[dict]]) -> None:
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--seed", type=int, default=720)
-    ap.add_argument("--unvetted", action="store_true", help="dev only: pool every downloaded clip")
+    ap.add_argument("--prereg", action="store_true", help="pre-register: pool every downloaded clip")
     args = ap.parse_args()
 
-    clips = read_clips(args.unvetted)
+    clips = read_clips(args.prereg)
     pools, forced = assign(clips, args.seed)
     check_disjoint(pools)
+    if not args.prereg and PREREG.exists():
+        pre = json.loads(PREREG.read_text())
+        where = {e["clip_id"]: n for n, es in pre["pools"].items() for e in es}
+        moved = [(e["clip_id"], where.get(e["clip_id"]), n) for n, es in pools.items() for e in es
+                 if where.get(e["clip_id"]) != n]
+        if moved:
+            raise SystemExit(f"{len(moved)} clips differ from the pre-registered pools, e.g. {moved[:3]}")
 
     names = [p for p, _ in POOLS] + ["knock_check"]
     counts = {n: {"clips": len(pools[n]), "videos": len({e["video_id"] for e in pools[n]}),
@@ -103,9 +118,11 @@ def main() -> None:
         "git_commit": git_commit(),
         "seed": args.seed,
         "produced_by": "data/make_pools.py",
-        "input": "eval/audioset_manifest.csv (status ok, UNVETTED: dev only)" if args.unvetted
+        "input": "eval/audioset_manifest.csv (every downloaded clip, before vetting)" if args.prereg
                  else "data/vetting/vetted_clips.csv",
-        "vetted": not args.unvetted,
+        "vetted": not args.prereg,
+        "note": "pre-registration: pools fixed before vetting and training; use the vetted file for results"
+                if args.prereg else "vetted subset of audioset_pools_prereg.json",
         "method": "pool = sha256(seed:video_id) mapped to [0,1) with cut points 0.40 / 0.70; "
                   "videos that also have a knock clip forced to P3",
         "fractions": dict(POOLS),
@@ -114,13 +131,13 @@ def main() -> None:
         "counts": counts,
         "pools": {n: pools[n] for n in names},
     }
-    path = SPLITS / ("audioset_pools_unvetted.json" if args.unvetted else "audioset_pools.json")
+    path = PREREG if args.prereg else SPLITS / "audioset_pools.json"
     write_json(path, out)
     print(f"{'pool':12} {'clips':>6} {'videos':>6}  by tag")
     for n in names:
         print(f"{n:12} {counts[n]['clips']:6d} {counts[n]['videos']:6d}  {counts[n]['by_engine_tag']}")
-    if args.unvetted:
-        print("UNVETTED: development only, do not report numbers from these pools.")
+    if args.prereg:
+        print("PRE-REGISTRATION: unvetted; report results only on the vetted pools file.")
     print(f"Wrote {path.relative_to(REPO)}")
 
 

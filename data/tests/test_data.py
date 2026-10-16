@@ -129,3 +129,43 @@ def test_pools_by_video_id():
     assert [e["clip_id"] for e in out["knock_check"]] == ["vid00007_90"]
     with pytest.raises(SystemExit):
         make_pools.check_disjoint({"P1": [{"video_id": "x"}], "knock_check": [{"video_id": "x"}]})
+
+
+def _write_rater(path, rows):
+    import csv as _csv
+    from vet import FIELDS
+    with open(path, "w", newline="") as fh:
+        w = _csv.DictWriter(fh, FIELDS)
+        w.writeheader()
+        for clip, cls, ans in rows:
+            w.writerow({"clip_id": clip, "video_id": clip.split("_")[0], "start": "0", "target_class": cls,
+                        "rater": path.stem, "is_passenger_car": ans[0], "plausibly_4cyl": ans[1],
+                        "speech_or_music": ans[2], "is_detonation_knock": ans[3] if cls == "knock" else "",
+                        "note": "", "rated_at": "x"})
+
+
+def test_vet_merge_modes(tmp_path, monkeypatch):
+    import json as _json
+
+    import vet_merge
+    monkeypatch.setattr(vet_merge, "VET_DIR", tmp_path)
+    monkeypatch.setattr(vet_merge, "OUT_CLIPS", tmp_path / "vetted_clips.csv")
+    monkeypatch.setattr(vet_merge, "EVAL", tmp_path)
+    good, bad = ("y", "y", "n", "y"), ("y", "n", "n", "n")
+    _write_rater(tmp_path / "a.csv", [("v1_0", "idling", good), ("v2_0", "engine", good), ("v3_0", "knock", good),
+                                      ("v4_0", "idling", bad)])
+    _write_rater(tmp_path / "b.csv", [("v1_0", "idling", good), ("v2_0", "engine", bad)])
+
+    def run(*argv):
+        monkeypatch.setattr(sys, "argv", ["vet_merge.py", *argv])
+        vet_merge.main()
+        kept = (tmp_path / "vetted_clips.csv").read_text().splitlines()[1:]
+        return sorted(r.split(",")[0] for r in kept), _json.loads((tmp_path / "vetting_agreement.json").read_text())
+
+    kept, rep = run("--raters", "a")
+    assert kept == ["v1_0", "v2_0", "v3_0"] and rep["mode"] == "single_rater" and rep["agreement"] is None
+    kept, rep = run("--raters", "a", "b")
+    assert kept == ["v1_0"] and rep["mode"] == "two_raters"
+    kept, rep = run("--raters", "a", "--audit", "b")
+    assert kept == ["v1_0", "v2_0", "v3_0"]  # the audit rater never removes clips
+    assert rep["agreement"]["_audit"] == {"rater": "b", "overlap_clips": 2, "survival_agreement": 0.5}
