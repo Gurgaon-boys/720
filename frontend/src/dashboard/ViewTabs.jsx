@@ -1,16 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import './engine3d.css';
 
-// Switches between the 2D dashboard, the lazy-loaded 3D engine view, the Results tab and the
-// Sabotage Lab. The choice lives in the URL hash (#3d, #results, #sabotage), so a rehearsal or demo can open straight on a
+// Switches between the 2D dashboard, the lazy-loaded 3D engine view and the
+// Sabotage Lab. The choice lives in the URL hash (#3d, #sabotage), so a rehearsal or demo can open straight on a
 // view and Back works.
 export const VIEWS = [
   { id: '2d', name: '2D dashboard' },
   { id: '3d', name: '3D engine' },
-  { id: 'results', name: 'Results' },
   { id: 'sabotage', name: 'SABOTAGE LAB' }, // src/lab/ (D140)
 ];
-const HASH = { '2d': '', '3d': '#3d', results: '#results', sabotage: '#sabotage' };
+const HASH = { '2d': '', '3d': '#3d', sabotage: '#sabotage' };
 const fromHash = () => VIEWS.find((v) => HASH[v.id] && HASH[v.id] === window.location.hash)?.id ?? '2d';
 
 export function useViewTab() {

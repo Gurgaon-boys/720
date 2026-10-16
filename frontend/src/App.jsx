@@ -4,7 +4,6 @@ import ScrollIntro from './intro/ScrollIntro.jsx';
 import Dashboard from './dashboard/Dashboard.jsx';
 import PanelBoundary from './dashboard/PanelBoundary.jsx';
 import ViewTabs, { panelId, tabId, useViewTab } from './dashboard/ViewTabs.jsx';
-import ResultsView from './dashboard/ResultsView.jsx';
 import { audioContext, createAlarmTone, createEnginePlayer } from './lib/audio.js';
 import { DEMO_SOURCE, isDemoMode } from './lib/demoMode.js';
 import { observeDecision } from './lib/eventLog.js';
@@ -88,8 +87,6 @@ export default function App() {
   const [view, setView] = useViewTab();
   const [opened3d, setOpened3d] = useState(view === '3d'); // keep it mounted (paused) once opened
   useEffect(() => { if (view === '3d') setOpened3d(true); }, [view]);
-  const [openedResults, setOpenedResults] = useState(view === 'results'); // load the files once
-  useEffect(() => { if (view === 'results') setOpenedResults(true); }, [view]);
   const [openedLab, setOpenedLab] = useState(view === 'sabotage'); // stays mounted: its record survives tab switches
   useEffect(() => { if (view === 'sabotage') setOpenedLab(true); }, [view]);
   if (!playerRef.current) playerRef.current = createEnginePlayer();
@@ -339,13 +336,6 @@ export default function App() {
                   onSelectScenario={selectScenario}
                 />
               </Suspense>
-            </PanelBoundary>
-          </div>
-        )}
-        {openedResults && (
-          <div role="tabpanel" id={panelId('results')} aria-labelledby={tabId('results')} hidden={view !== 'results'}>
-            <PanelBoundary name="Results">
-              <ResultsView />
             </PanelBoundary>
           </div>
         )}
