@@ -1,0 +1,1520 @@
+{
+  "created_at": "2026-10-16T04:49:23Z",
+  "git_commit": "c3741170991912ed54f376939c6aeddc2017d803",
+  "seed": 720,
+  "produced_by": "python -m models.obd.run_carobd",
+  "what": "OBD branch false positives on real healthy carOBD (plan 10.1, 13). Every flag is a false positive.",
+  "data": "carOBD (2014 Toyota Etios), split by file: data/splits/carobd_split.json",
+  "thresholds": "models/thresholds/obd_branch.json (fit + validation files only)",
+  "stats": "rates: exact Poisson one-sided 95% upper bound (k = 0 -> ~3/T); window proportions: Wilson 95%",
+  "episode_definition": "a run of consecutive windows (30 s, 15 s hop) in the same state within one file",
+  "heldout": {
+    "files": 39,
+    "hours": 12.545,
+    "windows": 2960,
+    "levels": {
+      "1_anomaly_flags": {
+        "windows": {
+          "k": 33,
+          "n": 2960,
+          "rate": 0.01115,
+          "wilson95": [
+            0.00795,
+            0.01562
+          ]
+        },
+        "episodes": {
+          "count": 29,
+          "hours": 12.545,
+          "per_hour": 2.3117,
+          "upper95_per_hour": 3.152
+        }
+      },
+      "2_unclassified": {
+        "windows": {
+          "k": 33,
+          "n": 2960,
+          "rate": 0.01115,
+          "wilson95": [
+            0.00795,
+            0.01562
+          ]
+        },
+        "episodes": {
+          "count": 29,
+          "hours": 12.545,
+          "per_hour": 2.3117,
+          "upper95_per_hour": 3.152
+        }
+      },
+      "3_advisories": {
+        "windows": {
+          "k": 8,
+          "n": 2960,
+          "rate": 0.0027,
+          "wilson95": [
+            0.00137,
+            0.00532
+          ]
+        },
+        "episodes": {
+          "count": 4,
+          "hours": 12.545,
+          "per_hour": 0.3189,
+          "upper95_per_hour": 0.7297
+        },
+        "trim_drift_rule_episodes": {
+          "count": 2,
+          "hours": 12.545,
+          "per_hour": 0.1594,
+          "upper95_per_hour": 0.5019
+        },
+        "timing_retard_rule_episodes": {
+          "count": 4,
+          "hours": 12.545,
+          "per_hour": 0.3189,
+          "upper95_per_hour": 0.7297
+        }
+      },
+      "4_classifier_false_faults": "not available: the OBD classifier is trained on simulator OBD channels, which sim v1 does not produce yet",
+      "5_alarms": {
+        "count": 0,
+        "hours": 12.545,
+        "per_hour": 0.0,
+        "upper95_per_hour": 0.2388,
+        "note": "structurally limited: ALARM needs a classifier witness, and there is none yet"
+      }
+    },
+    "anomaly_flags_by_regime": {
+      "warmup": {
+        "k": 6,
+        "n": 374,
+        "rate": 0.01604,
+        "wilson95": [
+          0.00737,
+          0.03455
+        ]
+      },
+      "idle": {
+        "k": 8,
+        "n": 930,
+        "rate": 0.0086,
+        "wilson95": [
+          0.00437,
+          0.01688
+        ]
+      },
+      "mid": {
+        "k": 19,
+        "n": 1331,
+        "rate": 0.01427,
+        "wilson95": [
+          0.00916,
+          0.02219
+        ]
+      },
+      "high": {
+        "k": 0,
+        "n": 325,
+        "rate": 0.0,
+        "wilson95": [
+          0.0,
+          0.01168
+        ]
+      }
+    },
+    "anomaly_flags_by_type": {
+      "drive": {
+        "k": 11,
+        "n": 419,
+        "rate": 0.02625,
+        "wilson95": [
+          0.01472,
+          0.04639
+        ]
+      },
+      "idle": {
+        "k": 3,
+        "n": 701,
+        "rate": 0.00428,
+        "wilson95": [
+          0.00146,
+          0.01251
+        ]
+      },
+      "live": {
+        "k": 11,
+        "n": 942,
+        "rate": 0.01168,
+        "wilson95": [
+          0.00653,
+          0.02079
+        ]
+      },
+      "long": {
+        "k": 5,
+        "n": 571,
+        "rate": 0.00876,
+        "wilson95": [
+          0.00375,
+          0.02033
+        ]
+      },
+      "ufpe": {
+        "k": 3,
+        "n": 327,
+        "rate": 0.00917,
+        "wilson95": [
+          0.00312,
+          0.02662
+        ]
+      }
+    },
+    "rpm_transients_non_idle_files": {
+      "transient": {
+        "k": 16,
+        "n": 1206,
+        "rate": 0.01327,
+        "wilson95": [
+          0.00818,
+          0.02144
+        ]
+      },
+      "steady": {
+        "k": 14,
+        "n": 1053,
+        "rate": 0.0133,
+        "wilson95": [
+          0.00794,
+          0.02219
+        ]
+      }
+    },
+    "per_file": [
+      {
+        "file": "drive2.csv",
+        "type": "drive",
+        "hours": 0.317,
+        "windows": 75,
+        "flags": 1,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 1,
+        "flags_episodes": 1,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 1,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "drive3.csv",
+        "type": "drive",
+        "hours": 0.399,
+        "windows": 94,
+        "flags": 0,
+        "trim": 0,
+        "retard": 1,
+        "advisory": 1,
+        "unclassified": 0,
+        "flags_episodes": 0,
+        "trim_episodes": 0,
+        "retard_episodes": 1,
+        "advisory_episodes": 1,
+        "unclassified_episodes": 0,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "drive5.csv",
+        "type": "drive",
+        "hours": 0.084,
+        "windows": 19,
+        "flags": 1,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 1,
+        "flags_episodes": 1,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 1,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "drive7.csv",
+        "type": "drive",
+        "hours": 0.075,
+        "windows": 17,
+        "flags": 0,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 0,
+        "flags_episodes": 0,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 0,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "drive9.csv",
+        "type": "drive",
+        "hours": 0.454,
+        "windows": 108,
+        "flags": 0,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 0,
+        "flags_episodes": 0,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 0,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "drive11.csv",
+        "type": "drive",
+        "hours": 0.446,
+        "windows": 106,
+        "flags": 9,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 9,
+        "flags_episodes": 6,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 6,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "idle7.csv",
+        "type": "idle",
+        "hours": 0.263,
+        "windows": 62,
+        "flags": 0,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 0,
+        "flags_episodes": 0,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 0,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "idle8.csv",
+        "type": "idle",
+        "hours": 0.107,
+        "windows": 24,
+        "flags": 0,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 0,
+        "flags_episodes": 0,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 0,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "idle10.csv",
+        "type": "idle",
+        "hours": 0.199,
+        "windows": 46,
+        "flags": 0,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 0,
+        "flags_episodes": 0,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 0,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "idle13.csv",
+        "type": "idle",
+        "hours": 0.172,
+        "windows": 40,
+        "flags": 0,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 0,
+        "flags_episodes": 0,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 0,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "idle15.csv",
+        "type": "idle",
+        "hours": 0.164,
+        "windows": 38,
+        "flags": 1,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 1,
+        "flags_episodes": 1,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 1,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "idle19.csv",
+        "type": "idle",
+        "hours": 0.19,
+        "windows": 44,
+        "flags": 1,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 1,
+        "flags_episodes": 1,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 1,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "idle21.csv",
+        "type": "idle",
+        "hours": 0.105,
+        "windows": 24,
+        "flags": 0,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 0,
+        "flags_episodes": 0,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 0,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "idle26.csv",
+        "type": "idle",
+        "hours": 0.197,
+        "windows": 46,
+        "flags": 0,
+        "trim": 4,
+        "retard": 0,
+        "advisory": 4,
+        "unclassified": 0,
+        "flags_episodes": 0,
+        "trim_episodes": 1,
+        "retard_episodes": 0,
+        "advisory_episodes": 1,
+        "unclassified_episodes": 0,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "idle28.csv",
+        "type": "idle",
+        "hours": 0.316,
+        "windows": 74,
+        "flags": 0,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 0,
+        "flags_episodes": 0,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 0,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "idle29.csv",
+        "type": "idle",
+        "hours": 0.384,
+        "windows": 91,
+        "flags": 0,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 0,
+        "flags_episodes": 0,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 0,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "idle31.csv",
+        "type": "idle",
+        "hours": 0.185,
+        "windows": 43,
+        "flags": 0,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 0,
+        "flags_episodes": 0,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 0,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "idle42.csv",
+        "type": "idle",
+        "hours": 0.192,
+        "windows": 45,
+        "flags": 1,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 1,
+        "flags_episodes": 1,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 1,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "idle45.csv",
+        "type": "idle",
+        "hours": 0.188,
+        "windows": 44,
+        "flags": 0,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 0,
+        "flags_episodes": 0,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 0,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "idle46.csv",
+        "type": "idle",
+        "hours": 0.338,
+        "windows": 80,
+        "flags": 0,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 0,
+        "flags_episodes": 0,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 0,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "live1.csv",
+        "type": "live",
+        "hours": 0.526,
+        "windows": 125,
+        "flags": 0,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 0,
+        "flags_episodes": 0,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 0,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "live7.csv",
+        "type": "live",
+        "hours": 0.363,
+        "windows": 86,
+        "flags": 1,
+        "trim": 0,
+        "retard": 1,
+        "advisory": 0,
+        "unclassified": 1,
+        "flags_episodes": 1,
+        "trim_episodes": 0,
+        "retard_episodes": 1,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 1,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "live14.csv",
+        "type": "live",
+        "hours": 0.175,
+        "windows": 41,
+        "flags": 1,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 1,
+        "flags_episodes": 1,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 1,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "live15.csv",
+        "type": "live",
+        "hours": 0.314,
+        "windows": 74,
+        "flags": 2,
+        "trim": 0,
+        "retard": 1,
+        "advisory": 0,
+        "unclassified": 2,
+        "flags_episodes": 1,
+        "trim_episodes": 0,
+        "retard_episodes": 1,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 1,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "live19.csv",
+        "type": "live",
+        "hours": 0.363,
+        "windows": 86,
+        "flags": 1,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 1,
+        "flags_episodes": 1,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 1,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "live20.csv",
+        "type": "live",
+        "hours": 0.328,
+        "windows": 77,
+        "flags": 3,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 3,
+        "flags_episodes": 3,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 3,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "live23.csv",
+        "type": "live",
+        "hours": 0.42,
+        "windows": 99,
+        "flags": 0,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 0,
+        "flags_episodes": 0,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 0,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "live25.csv",
+        "type": "live",
+        "hours": 0.519,
+        "windows": 123,
+        "flags": 2,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 2,
+        "flags_episodes": 2,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 2,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "live26.csv",
+        "type": "live",
+        "hours": 0.251,
+        "windows": 59,
+        "flags": 0,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 0,
+        "flags_episodes": 0,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 0,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "live32.csv",
+        "type": "live",
+        "hours": 0.429,
+        "windows": 102,
+        "flags": 1,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 1,
+        "flags_episodes": 1,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 1,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "live34.csv",
+        "type": "live",
+        "hours": 0.298,
+        "windows": 70,
+        "flags": 0,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 0,
+        "flags_episodes": 0,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 0,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "long2.csv",
+        "type": "long",
+        "hours": 1.027,
+        "windows": 245,
+        "flags": 3,
+        "trim": 0,
+        "retard": 1,
+        "advisory": 1,
+        "unclassified": 3,
+        "flags_episodes": 3,
+        "trim_episodes": 0,
+        "retard_episodes": 1,
+        "advisory_episodes": 1,
+        "unclassified_episodes": 3,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "long4.csv",
+        "type": "long",
+        "hours": 0.801,
+        "windows": 191,
+        "flags": 0,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 0,
+        "flags_episodes": 0,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 0,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "long8.csv",
+        "type": "long",
+        "hours": 0.567,
+        "windows": 135,
+        "flags": 2,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 2,
+        "flags_episodes": 2,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 2,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "ufpe6.csv",
+        "type": "ufpe",
+        "hours": 0.15,
+        "windows": 35,
+        "flags": 1,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 1,
+        "flags_episodes": 1,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 1,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "ufpe8.csv",
+        "type": "ufpe",
+        "hours": 0.364,
+        "windows": 86,
+        "flags": 1,
+        "trim": 2,
+        "retard": 0,
+        "advisory": 2,
+        "unclassified": 1,
+        "flags_episodes": 1,
+        "trim_episodes": 1,
+        "retard_episodes": 0,
+        "advisory_episodes": 1,
+        "unclassified_episodes": 1,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "ufpe9.csv",
+        "type": "ufpe",
+        "hours": 0.258,
+        "windows": 61,
+        "flags": 0,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 0,
+        "flags_episodes": 0,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 0,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "ufpe14.csv",
+        "type": "ufpe",
+        "hours": 0.363,
+        "windows": 86,
+        "flags": 0,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 0,
+        "flags_episodes": 0,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 0,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "ufpe16.csv",
+        "type": "ufpe",
+        "hours": 0.254,
+        "windows": 59,
+        "flags": 1,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 1,
+        "flags_episodes": 1,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 1,
+        "alarms_episodes": 0
+      }
+    ]
+  },
+  "validation": {
+    "files": 28,
+    "hours": 9.188,
+    "windows": 2164,
+    "levels": {
+      "1_anomaly_flags": {
+        "windows": {
+          "k": 12,
+          "n": 2164,
+          "rate": 0.00555,
+          "wilson95": [
+            0.00318,
+            0.00967
+          ]
+        },
+        "episodes": {
+          "count": 11,
+          "hours": 9.188,
+          "per_hour": 1.1973,
+          "upper95_per_hour": 1.9818
+        }
+      },
+      "2_unclassified": {
+        "windows": {
+          "k": 12,
+          "n": 2164,
+          "rate": 0.00555,
+          "wilson95": [
+            0.00318,
+            0.00967
+          ]
+        },
+        "episodes": {
+          "count": 11,
+          "hours": 9.188,
+          "per_hour": 1.1973,
+          "upper95_per_hour": 1.9818
+        }
+      },
+      "3_advisories": {
+        "windows": {
+          "k": 0,
+          "n": 2164,
+          "rate": 0.0,
+          "wilson95": [
+            0.0,
+            0.00177
+          ]
+        },
+        "episodes": {
+          "count": 0,
+          "hours": 9.188,
+          "per_hour": 0.0,
+          "upper95_per_hour": 0.3261
+        },
+        "trim_drift_rule_episodes": {
+          "count": 0,
+          "hours": 9.188,
+          "per_hour": 0.0,
+          "upper95_per_hour": 0.3261
+        },
+        "timing_retard_rule_episodes": {
+          "count": 0,
+          "hours": 9.188,
+          "per_hour": 0.0,
+          "upper95_per_hour": 0.3261
+        }
+      },
+      "4_classifier_false_faults": "not available: the OBD classifier is trained on simulator OBD channels, which sim v1 does not produce yet",
+      "5_alarms": {
+        "count": 0,
+        "hours": 9.188,
+        "per_hour": 0.0,
+        "upper95_per_hour": 0.3261,
+        "note": "structurally limited: ALARM needs a classifier witness, and there is none yet"
+      }
+    },
+    "anomaly_flags_by_regime": {
+      "warmup": {
+        "k": 2,
+        "n": 333,
+        "rate": 0.00601,
+        "wilson95": [
+          0.00165,
+          0.02163
+        ]
+      },
+      "idle": {
+        "k": 4,
+        "n": 658,
+        "rate": 0.00608,
+        "wilson95": [
+          0.00237,
+          0.01553
+        ]
+      },
+      "mid": {
+        "k": 5,
+        "n": 973,
+        "rate": 0.00514,
+        "wilson95": [
+          0.0022,
+          0.01197
+        ]
+      },
+      "high": {
+        "k": 1,
+        "n": 200,
+        "rate": 0.005,
+        "wilson95": [
+          0.00088,
+          0.02777
+        ]
+      }
+    },
+    "anomaly_flags_by_type": {
+      "drive": {
+        "k": 1,
+        "n": 236,
+        "rate": 0.00424,
+        "wilson95": [
+          0.00075,
+          0.02361
+        ]
+      },
+      "idle": {
+        "k": 1,
+        "n": 468,
+        "rate": 0.00214,
+        "wilson95": [
+          0.00038,
+          0.012
+        ]
+      },
+      "live": {
+        "k": 6,
+        "n": 735,
+        "rate": 0.00816,
+        "wilson95": [
+          0.00375,
+          0.01769
+        ]
+      },
+      "long": {
+        "k": 3,
+        "n": 489,
+        "rate": 0.00613,
+        "wilson95": [
+          0.00209,
+          0.01788
+        ]
+      },
+      "ufpe": {
+        "k": 1,
+        "n": 236,
+        "rate": 0.00424,
+        "wilson95": [
+          0.00075,
+          0.02361
+        ]
+      }
+    },
+    "rpm_transients_non_idle_files": {
+      "transient": {
+        "k": 8,
+        "n": 926,
+        "rate": 0.00864,
+        "wilson95": [
+          0.00438,
+          0.01695
+        ]
+      },
+      "steady": {
+        "k": 3,
+        "n": 770,
+        "rate": 0.0039,
+        "wilson95": [
+          0.00133,
+          0.01139
+        ]
+      }
+    },
+    "per_file": [
+      {
+        "file": "drive6.csv",
+        "type": "drive",
+        "hours": 0.473,
+        "windows": 112,
+        "flags": 0,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 0,
+        "flags_episodes": 0,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 0,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "drive12.csv",
+        "type": "drive",
+        "hours": 0.523,
+        "windows": 124,
+        "flags": 1,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 1,
+        "flags_episodes": 1,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 1,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "idle5.csv",
+        "type": "idle",
+        "hours": 0.191,
+        "windows": 44,
+        "flags": 0,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 0,
+        "flags_episodes": 0,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 0,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "idle6.csv",
+        "type": "idle",
+        "hours": 0.146,
+        "windows": 33,
+        "flags": 0,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 0,
+        "flags_episodes": 0,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 0,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "idle20.csv",
+        "type": "idle",
+        "hours": 0.201,
+        "windows": 47,
+        "flags": 0,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 0,
+        "flags_episodes": 0,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 0,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "idle23.csv",
+        "type": "idle",
+        "hours": 0.217,
+        "windows": 51,
+        "flags": 0,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 0,
+        "flags_episodes": 0,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 0,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "idle24.csv",
+        "type": "idle",
+        "hours": 0.242,
+        "windows": 57,
+        "flags": 0,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 0,
+        "flags_episodes": 0,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 0,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "idle34.csv",
+        "type": "idle",
+        "hours": 0.245,
+        "windows": 57,
+        "flags": 0,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 0,
+        "flags_episodes": 0,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 0,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "idle38.csv",
+        "type": "idle",
+        "hours": 0.175,
+        "windows": 41,
+        "flags": 1,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 1,
+        "flags_episodes": 1,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 1,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "idle44.csv",
+        "type": "idle",
+        "hours": 0.332,
+        "windows": 78,
+        "flags": 0,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 0,
+        "flags_episodes": 0,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 0,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "idle47.csv",
+        "type": "idle",
+        "hours": 0.256,
+        "windows": 60,
+        "flags": 0,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 0,
+        "flags_episodes": 0,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 0,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "live3.csv",
+        "type": "live",
+        "hours": 0.412,
+        "windows": 97,
+        "flags": 1,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 1,
+        "flags_episodes": 1,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 1,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "live6.csv",
+        "type": "live",
+        "hours": 0.346,
+        "windows": 82,
+        "flags": 0,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 0,
+        "flags_episodes": 0,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 0,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "live8.csv",
+        "type": "live",
+        "hours": 0.354,
+        "windows": 84,
+        "flags": 2,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 2,
+        "flags_episodes": 1,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 1,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "live9.csv",
+        "type": "live",
+        "hours": 0.327,
+        "windows": 77,
+        "flags": 0,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 0,
+        "flags_episodes": 0,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 0,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "live10.csv",
+        "type": "live",
+        "hours": 0.173,
+        "windows": 40,
+        "flags": 0,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 0,
+        "flags_episodes": 0,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 0,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "live17.csv",
+        "type": "live",
+        "hours": 0.516,
+        "windows": 122,
+        "flags": 0,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 0,
+        "flags_episodes": 0,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 0,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "live21.csv",
+        "type": "live",
+        "hours": 0.417,
+        "windows": 99,
+        "flags": 0,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 0,
+        "flags_episodes": 0,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 0,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "live27.csv",
+        "type": "live",
+        "hours": 0.324,
+        "windows": 76,
+        "flags": 1,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 1,
+        "flags_episodes": 1,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 1,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "live37.csv",
+        "type": "live",
+        "hours": 0.247,
+        "windows": 58,
+        "flags": 2,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 2,
+        "flags_episodes": 2,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 2,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "long5.csv",
+        "type": "long",
+        "hours": 0.635,
+        "windows": 151,
+        "flags": 1,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 1,
+        "flags_episodes": 1,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 1,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "long6.csv",
+        "type": "long",
+        "hours": 0.593,
+        "windows": 141,
+        "flags": 0,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 0,
+        "flags_episodes": 0,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 0,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "long7.csv",
+        "type": "long",
+        "hours": 0.828,
+        "windows": 197,
+        "flags": 2,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 2,
+        "flags_episodes": 2,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 2,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "ufpe2.csv",
+        "type": "ufpe",
+        "hours": 0.187,
+        "windows": 43,
+        "flags": 0,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 0,
+        "flags_episodes": 0,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 0,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "ufpe5.csv",
+        "type": "ufpe",
+        "hours": 0.184,
+        "windows": 43,
+        "flags": 1,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 1,
+        "flags_episodes": 1,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 1,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "ufpe7.csv",
+        "type": "ufpe",
+        "hours": 0.322,
+        "windows": 76,
+        "flags": 0,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 0,
+        "flags_episodes": 0,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 0,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "ufpe11.csv",
+        "type": "ufpe",
+        "hours": 0.189,
+        "windows": 44,
+        "flags": 0,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 0,
+        "flags_episodes": 0,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 0,
+        "alarms_episodes": 0
+      },
+      {
+        "file": "ufpe17.csv",
+        "type": "ufpe",
+        "hours": 0.129,
+        "windows": 30,
+        "flags": 0,
+        "trim": 0,
+        "retard": 0,
+        "advisory": 0,
+        "unclassified": 0,
+        "flags_episodes": 0,
+        "trim_episodes": 0,
+        "retard_episodes": 0,
+        "advisory_episodes": 0,
+        "unclassified_episodes": 0,
+        "alarms_episodes": 0
+      }
+    ]
+  }
+}
