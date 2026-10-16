@@ -1,0 +1,232 @@
+{
+ "created_at": "2026-10-16T07:24:03+00:00",
+ "engines": [
+  700,
+  729
+ ],
+ "valve_tick_4s_windows": {
+  "short_history": 2744,
+  "full_history": 1067
+ },
+ "runs_per_variant": 120,
+ "test_windows": 16006,
+ "valve_tick_windows": 3810,
+ "variants": {
+  "4s_C1": {
+   "warmup_s": 4.0,
+   "svm_C": 1.0,
+   "windows": 30002,
+   "share_short_obd_history_by_class": {
+    "healthy": 0.7282043879907621,
+    "misfire": 0.7179758908464697,
+    "knock": 0.7267311988086373,
+    "injector_clog": 0.7033360904328646
+   },
+   "macro_f1": {
+    "mean": 0.8534650251877837,
+    "sd": 0.0036610706572867864
+   },
+   "knock_recall": {
+    "mean": 0.9620853080568721,
+    "sd": 0.001579778830963663
+   },
+   "valve_tick_called_knock": {
+    "mean": 0.0,
+    "sd": 0.0
+   },
+   "valve_tick_called_knock_short_history": {
+    "mean": 0.0,
+    "sd": 0.0
+   },
+   "valve_tick_called_knock_full_history_4s_runs": {
+    "mean": 0.0,
+    "sd": 0.0
+   },
+   "per_seed": [
+    {
+     "macro_f1": 0.8513517267879318,
+     "knock_recall": 0.9636650868878357,
+     "valve_tick_called_knock": 0.0,
+     "valve_tick_called_knock_short_history": 0.0,
+     "valve_tick_called_knock_full_history_4s_runs": 0.0
+    },
+    {
+     "macro_f1": 0.8513508833566678,
+     "knock_recall": 0.9620853080568721,
+     "valve_tick_called_knock": 0.0,
+     "valve_tick_called_knock_short_history": 0.0,
+     "valve_tick_called_knock_full_history_4s_runs": 0.0
+    },
+    {
+     "macro_f1": 0.8576924654187511,
+     "knock_recall": 0.9605055292259084,
+     "valve_tick_called_knock": 0.0,
+     "valve_tick_called_knock_short_history": 0.0,
+     "valve_tick_called_knock_full_history_4s_runs": 0.0
+    }
+   ]
+  },
+  "4s_C10": {
+   "warmup_s": 4.0,
+   "svm_C": 10.0,
+   "windows": 30002,
+   "share_short_obd_history_by_class": {
+    "healthy": 0.7282043879907621,
+    "misfire": 0.7179758908464697,
+    "knock": 0.7267311988086373,
+    "injector_clog": 0.7033360904328646
+   },
+   "macro_f1": {
+    "mean": 0.8277429572857927,
+    "sd": 0.006126642067907626
+   },
+   "knock_recall": {
+    "mean": 0.9568193786203265,
+    "sd": 0.0024131520247265867
+   },
+   "valve_tick_called_knock": {
+    "mean": 0.0,
+    "sd": 0.0
+   },
+   "valve_tick_called_knock_short_history": {
+    "mean": 0.0,
+    "sd": 0.0
+   },
+   "valve_tick_called_knock_full_history_4s_runs": {
+    "mean": 0.0,
+    "sd": 0.0
+   },
+   "per_seed": [
+    {
+     "macro_f1": 0.8207135612784634,
+     "knock_recall": 0.957345971563981,
+     "valve_tick_called_knock": 0.0,
+     "valve_tick_called_knock_short_history": 0.0,
+     "valve_tick_called_knock_full_history_4s_runs": 0.0
+    },
+    {
+     "macro_f1": 0.8305674112330814,
+     "knock_recall": 0.9589257503949447,
+     "valve_tick_called_knock": 0.0,
+     "valve_tick_called_knock_short_history": 0.0,
+     "valve_tick_called_knock_full_history_4s_runs": 0.0
+    },
+    {
+     "macro_f1": 0.8319478993458334,
+     "knock_recall": 0.9541864139020537,
+     "valve_tick_called_knock": 0.0,
+     "valve_tick_called_knock_short_history": 0.0,
+     "valve_tick_called_knock_full_history_4s_runs": 0.0
+    }
+   ]
+  },
+  "30s_C1": {
+   "warmup_s": 30.0,
+   "svm_C": 1.0,
+   "windows": 30010,
+   "share_short_obd_history_by_class": {
+    "healthy": 0.0,
+    "misfire": 0.0,
+    "knock": 0.0,
+    "injector_clog": 0.0
+   },
+   "macro_f1": {
+    "mean": 0.8225286767068555,
+    "sd": 0.003320391564017115
+   },
+   "knock_recall": {
+    "mean": 0.9747235387045814,
+    "sd": 0.008359403826428394
+   },
+   "valve_tick_called_knock": {
+    "mean": 0.0,
+    "sd": 0.0
+   },
+   "valve_tick_called_knock_short_history": {
+    "mean": 0.0,
+    "sd": 0.0
+   },
+   "valve_tick_called_knock_full_history_4s_runs": {
+    "mean": 0.0,
+    "sd": 0.0
+   },
+   "per_seed": [
+    {
+     "macro_f1": 0.824468208693601,
+     "knock_recall": 0.9684044233807267,
+     "valve_tick_called_knock": 0.0,
+     "valve_tick_called_knock_short_history": 0.0,
+     "valve_tick_called_knock_full_history_4s_runs": 0.0
+    },
+    {
+     "macro_f1": 0.818694707177997,
+     "knock_recall": 0.9715639810426541,
+     "valve_tick_called_knock": 0.0,
+     "valve_tick_called_knock_short_history": 0.0,
+     "valve_tick_called_knock_full_history_4s_runs": 0.0
+    },
+    {
+     "macro_f1": 0.8244231142489685,
+     "knock_recall": 0.9842022116903634,
+     "valve_tick_called_knock": 0.0,
+     "valve_tick_called_knock_short_history": 0.0,
+     "valve_tick_called_knock_full_history_4s_runs": 0.0
+    }
+   ]
+  },
+  "30s_C10": {
+   "warmup_s": 30.0,
+   "svm_C": 10.0,
+   "windows": 30010,
+   "share_short_obd_history_by_class": {
+    "healthy": 0.0,
+    "misfire": 0.0,
+    "knock": 0.0,
+    "injector_clog": 0.0
+   },
+   "macro_f1": {
+    "mean": 0.8089127593507189,
+    "sd": 0.008520250620292243
+   },
+   "knock_recall": {
+    "mean": 0.9678778304370722,
+    "sd": 0.007123617303037766
+   },
+   "valve_tick_called_knock": {
+    "mean": 0.0,
+    "sd": 0.0
+   },
+   "valve_tick_called_knock_short_history": {
+    "mean": 0.0,
+    "sd": 0.0
+   },
+   "valve_tick_called_knock_full_history_4s_runs": {
+    "mean": 0.0,
+    "sd": 0.0
+   },
+   "per_seed": [
+    {
+     "macro_f1": 0.7991498931891046,
+     "knock_recall": 0.9605055292259084,
+     "valve_tick_called_knock": 0.0,
+     "valve_tick_called_knock_short_history": 0.0,
+     "valve_tick_called_knock_full_history_4s_runs": 0.0
+    },
+    {
+     "macro_f1": 0.8127408625376207,
+     "knock_recall": 0.9684044233807267,
+     "valve_tick_called_knock": 0.0,
+     "valve_tick_called_knock_short_history": 0.0,
+     "valve_tick_called_knock_full_history_4s_runs": 0.0
+    },
+    {
+     "macro_f1": 0.8148475223254315,
+     "knock_recall": 0.9747235387045814,
+     "valve_tick_called_knock": 0.0,
+     "valve_tick_called_knock_short_history": 0.0,
+     "valve_tick_called_knock_full_history_4s_runs": 0.0
+    }
+   ]
+  }
+ }
+}
