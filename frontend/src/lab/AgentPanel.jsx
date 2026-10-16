@@ -54,7 +54,7 @@ export default function AgentPanel({ api, events, active }) {
   return (
     <section className="lab-card agent" aria-label="720 Reliability Agent">
       <div className="lab-card-head">
-        <h3>720 Reliability Agent</h3>
+        <h3>Reliability Agent</h3>
         <button type="button" className="lab-btn ghost" disabled={!api || busy} onClick={() => run('operator request')}>
           {busy ? 'Investigating…' : 'Investigate now'}
         </button>

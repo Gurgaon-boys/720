@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 // EXPORT PDF REPORT (D143): downloads GET /report.pdf (built on the backend from recorded data only).
 // If the backend can't make a PDF (reportlab missing → 503) or the request fails, it opens the printable
@@ -7,6 +7,11 @@ import { useState } from 'react';
 export default function ExportButton({ api, className = 'lab-btn primary', label = 'Export PDF report' }) {
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState(null);
+  useEffect(() => {
+    if (!note) return undefined;
+    const id = setTimeout(() => setNote(null), 6000); // the confirmation fades; the file is in Downloads
+    return () => clearTimeout(id);
+  }, [note]);
   if (!api) return null;
   const go = async () => {
     setBusy(true);

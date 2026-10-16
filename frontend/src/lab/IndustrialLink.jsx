@@ -19,7 +19,7 @@ export default function IndustrialLink({ data, error }) {
   return (
     <section className="lab-card link" aria-label="Industrial link">
       <div className="lab-card-head">
-        <h3>Industrial link · OPC UA</h3>
+        <h3>OPC UA link</h3>
         <span className={`lab-tag mono${data?.running ? '' : ' warn'}`}>{data ? (data.running ? 'SERVER UP' : 'SERVER DOWN') : '…'}</span>
       </div>
       {error && <p className="lab-note err">{error}</p>}

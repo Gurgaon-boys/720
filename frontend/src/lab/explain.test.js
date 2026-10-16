@@ -23,7 +23,7 @@ test('MIC + ACCEL cut during a knock alarm: what happened, what it means, what t
     sensors: sensors({ mic: { commanded: true, health: 'FAILURE' }, accel: { commanded: true, health: 'FAILURE' } }),
     level: 'PARTIAL',
   });
-  assert.equal(e.headline, 'ACCEL and MIC are offline. The alarm stays on, but 720 can no longer confirm new faults.');
+  assert.equal(e.headline, 'ACCEL and MIC are offline. The alarm stays on, but new faults can no longer be confirmed.');
   assert.match(e.happened[0].text, /^The vibration sensor \(accelerometer\) stopped sending data \(confirmed/);
   assert.ok(e.means.some((m) => /Knock can no longer be detected/.test(m.text)));
   assert.ok(e.means.some((m) => /Only the sound picture/.test(m.text)));

@@ -23,7 +23,7 @@ export const PLAIN = {
   cam: {
     name: 'camshaft sensor', what: 'tells which stroke each cylinder is on',
     check: 'Check the camshaft sensor on the cylinder head', rank: 3,
-    impact: 'Little changes for now: 720 keeps the cycle timing from the last cam signal.',
+    impact: 'Little changes for now: the cycle timing is kept from the last cam signal.',
   },
 };
 
@@ -65,40 +65,40 @@ export function explain({ state, sensors, level }) {
       means.push({
         tone: 'red',
         text: unacked
-          ? `The alarm for ${faultPlain(d.fault)}${where} (${d.alarm_id}) stays on. Losing a sensor never hides a problem 720 already confirmed.`
+          ? `The alarm for ${faultPlain(d.fault)}${where} (${d.alarm_id}) stays on. Losing a sensor never hides a problem that was already confirmed.`
           : `The alarm for ${faultPlain(d.fault)}${where} (${d.alarm_id}) was acknowledged; it clears once its evidence is gone.`,
       });
     } else if (d.state === 'ADVISORY' && d.fault) {
-      means.push({ tone: 'amber', text: `720 still sees signs of ${faultPlain(d.fault)}${where}, from one check only, so it shows WATCH, not ALARM.` });
+      means.push({ tone: 'amber', text: `Signs of ${faultPlain(d.fault)}${where} are still visible to one check only, so it shows WATCH, not ALARM.` });
     }
     removed.forEach((ch) => todo.push({ kind: 'sensor', urgent: PLAIN[ch].rank <= 2, text: `${PLAIN[ch].check}, then press Enable ${SENSOR_INFO[ch].short}.` }));
     if (unacked) todo.push({ kind: 'ack', text: `Acknowledge alarm ${d.alarm_id} so the record shows an operator saw it.` });
     if (guidance && d.state !== 'NORMAL') todo.push({ kind: 'engine', text: `For the engine itself: ${guidance}` });
     const names = join(removed.map((ch) => SENSOR_INFO[ch].short));
     const headline = `${names} ${removed.length > 1 ? 'are' : 'is'} offline. `
-      + (canConfirm ? 'Diagnosis is unaffected.' : alarm ? 'The alarm stays on, but 720 can no longer confirm new faults.' : '720 can no longer confirm new faults.');
+      + (canConfirm ? 'Diagnosis is unaffected.' : alarm ? 'The alarm stays on, but new faults can no longer be confirmed.' : 'New faults can no longer be confirmed.');
     return { headline, tone: canConfirm ? 'neutral' : alarm ? 'red' : 'amber', happened, means, todo, removed };
   }
 
   if (alarm) {
-    happened.push({ tone: 'red', text: `720 detected ${faultPlain(d.fault)}${where}.` });
+    happened.push({ tone: 'red', text: `Detected ${faultPlain(d.fault)}${where}.` });
     means.push({ tone: 'red', text: `Two independent checks agreed (${join((d.witnesses ?? []).map((w) => WITNESS[w] ?? w))}), so the rule layer raised a confirmed ALARM.` });
     if (unacked) todo.push({ kind: 'ack', text: `Acknowledge alarm ${d.alarm_id}.` });
     if (guidance) todo.push({ kind: 'engine', text: guidance });
-    todo.push({ kind: 'demo', text: 'Now take a sensor away to see what 720 does when it loses evidence.' });
+    todo.push({ kind: 'demo', text: 'Now take a sensor away to see what happens when evidence is lost.' });
     return { headline: `ALARM: ${faultPlain(d.fault)}${where}`, tone: 'red', happened, means, todo, removed };
   }
   if (d.state === 'ADVISORY') {
-    happened.push({ tone: 'amber', text: d.fault ? `720 sees early signs of ${faultPlain(d.fault)}${where}.` : 'One check sees something unusual.' });
+    happened.push({ tone: 'amber', text: d.fault ? `Early signs of ${faultPlain(d.fault)}${where}.` : 'One check sees something unusual.' });
     means.push({ tone: 'amber', text: 'Only one check sees it, so it is a WATCH, not an alarm. The rule layer waits for a second, matching check.' });
     if (guidance) todo.push({ kind: 'engine', text: guidance });
     return { headline: `WATCH${d.fault ? `: ${faultPlain(d.fault)}${where}` : ''}`, tone: 'amber', happened, means, todo, removed };
   }
   if (d.state === 'UNCLASSIFIED') {
-    happened.push({ tone: 'amber', text: 'The engine is behaving differently from normal, in a way 720 was not trained to name.' });
-    means.push({ tone: 'amber', text: 'Instead of guessing a fault, 720 says it does not know.' });
+    happened.push({ tone: 'amber', text: 'The engine is behaving differently from normal, in a way the system was not trained to name.' });
+    means.push({ tone: 'amber', text: 'Instead of guessing a fault, it says it does not know.' });
     todo.push({ kind: 'engine', text: guidance ?? 'Inspect the engine; do not clear the alarm.' });
-    return { headline: 'Abnormal, but 720 cannot name it', tone: 'amber', happened, means, todo, removed };
+    return { headline: 'Abnormal, but it cannot be named', tone: 'amber', happened, means, todo, removed };
   }
   happened.push({ tone: 'ok', text: 'The engine is healthy and all four sensors are sending data.' });
   means.push({ tone: 'ok', text: 'Both independent checks are working, so any fault can be confirmed.' });

@@ -218,7 +218,7 @@ function Rig({ sensors, classifier, physics, decision, industrial, frozen }) {
       })}
       <Edge decision={decision} physicsTone={physicsTone} mlTone={mlTone} frozen={frozen} />
       <Tag
-        position={[EDGE.x, EDGE.y + EDGE_SIZE[1] / 2 + 0.55, EDGE.z]} title="720 EDGE · RULE LAYER" wide
+        position={[EDGE.x, EDGE.y + EDGE_SIZE[1] / 2 + 0.55, EDGE.z]} title="EDGE · RULE LAYER" wide
         tone={{ NORMAL: 'ok', ADVISORY: 'amber', UNCLASSIFIED: 'amber', ALARM: 'red' }[decision.state] ?? 'idle'}
         rows={[
           { k: 'PHYSICS', v: fired.length ? `fired · ${fired.map((r) => r.rule.replace('_', ' ')).join(', ')}` : physicsTone === 'red' ? 'no input' : 'quiet', tone: physicsTone },
@@ -251,6 +251,8 @@ export default function LabScene({ state, sensors, classifier, physics, industri
   const [key, setKey] = useState(0);
   const visible = usePageVisible();
   const live = useRef({});
+  const remountUntil = useRef(0); // a deliberate remount disposes the old context: not a crash
+  const remount = () => { remountUntil.current = performance.now() + 2000; setLost(false); setKey((k) => k + 1); };
   const d = state.decision;
   const s3 = state3d(d.state);
   const geometry = state.localisation === 'cylinder';
@@ -268,7 +270,7 @@ export default function LabScene({ state, sensors, classifier, physics, industri
       {lost ? (
         <div className="s3-fallback" role="alert">
           <p>3D view stopped: the graphics context was lost.</p>
-          <button type="button" className="lab-btn" onClick={() => { setLost(false); setKey((k) => k + 1); }}>Restart 3D view</button>
+          <button type="button" className="lab-btn" onClick={remount}>Restart 3D view</button>
         </div>
       ) : (
         <PanelBoundary name="Resilience Lab 3D" resetKey={key}>
@@ -278,7 +280,10 @@ export default function LabScene({ state, sensors, classifier, physics, industri
             dpr={dpr}
             camera={{ position: [3.9, 3.4, 6.7], fov: 38, near: 0.1, far: 60 }}
             gl={{ antialias: true, powerPreference: 'high-performance' }}
-            onCreated={({ gl }) => gl.domElement.addEventListener('webglcontextlost', (e) => { e.preventDefault(); setLost(true); })}
+            onCreated={({ gl }) => gl.domElement.addEventListener('webglcontextlost', (e) => {
+              e.preventDefault();
+              if (performance.now() > remountUntil.current) setLost(true);
+            })}
           >
             <PerformanceMonitor onDecline={() => setDpr(1)} onIncline={() => setDpr(1.5)} />
             <fog attach="fog" args={['#0a0e15', 10, 24]} />
@@ -303,6 +308,8 @@ export default function LabScene({ state, sensors, classifier, physics, industri
         <span><i className="dot red" />confirmed failure</span>
         <span className="s3-hint">Drag to orbit · scroll to zoom · engine motion slowed {SLOW_FACTOR}×</span>
       </div>
+      {/* a stray scroll over the stage zooms the camera: one click puts the default view back (fresh canvas) */}
+      <button type="button" className="lab-btn ghost s3-reset" onClick={remount}>Reset view</button>
     </div>
   );
 }

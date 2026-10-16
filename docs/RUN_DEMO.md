@@ -172,11 +172,12 @@ API: `GET /sensors`, `POST /sensor/{mic|accel|crank|cam}/off|on`, `POST /sensors
 
 ## 8. Industrial Resilience Lab (the SABOTAGE LAB tab, 60–90 s judge script)
 
-The tab is now **720 — INDUSTRIAL RESILIENCE LAB** (D141), laid out to present top to bottom: a **1-2-3 guide**
-(Inject a fault → Take a sensor away → Bring it back; the current step lights up from backend state), one big
-**Inject misfire · cylinder 3** button and the four sensor switches, the large **3D stage** (the engine with its four
-sensors cabled to a "720 EDGE" unit and an OPC UA mast), the rule-layer decision with ACK, the **What just
-happened** panel, and one tabbed **Details** area (Reliability Agent · Incident timeline with Export incident report ·
+The tab is now the **INDUSTRIAL RESILIENCE LAB** (D141), laid out to present top to bottom: the title with **Export PDF
+report** on the right, a **1-2-3 guide** (Inject a fault → Take a sensor away → Bring it back; the current step lights
+up from backend state), then the controls on the left (one big **Inject misfire · cylinder 3** button and four sensor
+tiles) next to the **rule-layer decision bar** (state, witnesses, evidence, guidance, **Acknowledge**) above the large
+**3D stage** (the engine with its four sensors cabled to an EDGE unit and an OPC UA mast; **Reset view** if a scroll
+zoomed it), the **What just happened** panel, and one tabbed **Details** area (Reliability Agent · Incident timeline ·
 OPC UA link · Live signals). Start the backend 30 s
 before (classifier warm-up). Measured on this laptop, browser click → first broadcast showing the change:
 

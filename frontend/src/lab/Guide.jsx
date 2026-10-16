@@ -5,7 +5,7 @@
 
 const STEPS = [
   { n: 1, title: 'Inject a fault', sub: 'Two witnesses confirm an ALARM' },
-  { n: 2, title: 'Take a sensor away', sub: 'Watch 720 lose evidence, not its honesty' },
+  { n: 2, title: 'Take a sensor away', sub: 'Evidence drops; honesty stays' },
   { n: 3, title: 'Bring it back', sub: 'Evidence returns only with real data' },
 ];
 
