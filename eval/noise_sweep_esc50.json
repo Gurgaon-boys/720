@@ -1,0 +1,213 @@
+{
+  "created_at": "2026-10-16T17:47:07Z",
+  "git_commit": "e2d0154b8552139754374c01cf59027c7611cc19",
+  "produced_by": "python -m models.real_audio.noise_sweep",
+  "column": "C (real engine audio + real ambient noise)",
+  "engine_audio": "vetted P3, 56 clips, 9.2 min (single rater, D60)",
+  "noise": {
+    "source": "ESC-50 noise_test (data/splits/esc50_split.json), engine category excluded",
+    "files_available": 978,
+    "files_per_clip": 2,
+    "paired": "the same noise files at every SNR"
+  },
+  "detector": "models/thresholds/audio_healthy.json (P3 result, not refitted); backend/rule_layer.py at this commit",
+  "snr_db": [
+    30.0,
+    20.0,
+    10.0,
+    5.0,
+    0.0
+  ],
+  "headline_snr_db": 10.0,
+  "levels": {
+    "clean": {
+      "anomaly_flag_windows": {
+        "k": 2,
+        "n": 1042,
+        "rate": 0.00192,
+        "wilson95": [
+          0.00053,
+          0.00697
+        ]
+      },
+      "anomaly_flag_episodes": {
+        "count": 1,
+        "hours": 0.154,
+        "per_hour": 6.504,
+        "upper95_per_hour": 30.8542
+      },
+      "unclassified_episodes": {
+        "count": 1,
+        "hours": 0.154,
+        "per_hour": 6.504,
+        "upper95_per_hour": 30.8542
+      }
+    },
+    "30": {
+      "anomaly_flag_windows": {
+        "k": 0,
+        "n": 1044,
+        "rate": 0.0,
+        "wilson95": [
+          0.0,
+          0.00367
+        ]
+      },
+      "anomaly_flag_episodes": {
+        "count": 0,
+        "hours": 0.154,
+        "per_hour": 0.0,
+        "upper95_per_hour": 19.4843
+      },
+      "unclassified_episodes": {
+        "count": 0,
+        "hours": 0.154,
+        "per_hour": 0.0,
+        "upper95_per_hour": 19.4843
+      }
+    },
+    "20": {
+      "anomaly_flag_windows": {
+        "k": 0,
+        "n": 1044,
+        "rate": 0.0,
+        "wilson95": [
+          0.0,
+          0.00367
+        ]
+      },
+      "anomaly_flag_episodes": {
+        "count": 0,
+        "hours": 0.154,
+        "per_hour": 0.0,
+        "upper95_per_hour": 19.4843
+      },
+      "unclassified_episodes": {
+        "count": 0,
+        "hours": 0.154,
+        "per_hour": 0.0,
+        "upper95_per_hour": 19.4843
+      }
+    },
+    "10": {
+      "anomaly_flag_windows": {
+        "k": 2,
+        "n": 1044,
+        "rate": 0.00192,
+        "wilson95": [
+          0.00053,
+          0.00696
+        ]
+      },
+      "anomaly_flag_episodes": {
+        "count": 1,
+        "hours": 0.154,
+        "per_hour": 6.504,
+        "upper95_per_hour": 30.8542
+      },
+      "unclassified_episodes": {
+        "count": 1,
+        "hours": 0.154,
+        "per_hour": 6.504,
+        "upper95_per_hour": 30.8542
+      }
+    },
+    "5": {
+      "anomaly_flag_windows": {
+        "k": 7,
+        "n": 1044,
+        "rate": 0.0067,
+        "wilson95": [
+          0.00325,
+          0.01378
+        ]
+      },
+      "anomaly_flag_episodes": {
+        "count": 3,
+        "hours": 0.154,
+        "per_hour": 19.5121,
+        "upper95_per_hour": 50.43
+      },
+      "unclassified_episodes": {
+        "count": 3,
+        "hours": 0.154,
+        "per_hour": 19.5121,
+        "upper95_per_hour": 50.43
+      }
+    },
+    "0": {
+      "anomaly_flag_windows": {
+        "k": 13,
+        "n": 1044,
+        "rate": 0.01245,
+        "wilson95": [
+          0.00729,
+          0.02119
+        ]
+      },
+      "anomaly_flag_episodes": {
+        "count": 7,
+        "hours": 0.154,
+        "per_hour": 45.5282,
+        "upper95_per_hour": 85.5156
+      },
+      "unclassified_episodes": {
+        "count": 4,
+        "hours": 0.154,
+        "per_hour": 26.0161,
+        "upper95_per_hour": 59.5347
+      }
+    }
+  },
+  "flags_by_noise_group_at_headline": {
+    "animals": {
+      "k": 0,
+      "n": 95,
+      "rate": 0.0,
+      "wilson95": [
+        0.0,
+        0.03886
+      ]
+    },
+    "natural soundscapes & water": {
+      "k": 2,
+      "n": 335,
+      "rate": 0.00597,
+      "wilson95": [
+        0.00164,
+        0.0215
+      ]
+    },
+    "human non-speech": {
+      "k": 0,
+      "n": 294,
+      "rate": 0.0,
+      "wilson95": [
+        0.0,
+        0.0129
+      ]
+    },
+    "interior / domestic": {
+      "k": 0,
+      "n": 188,
+      "rate": 0.0,
+      "wilson95": [
+        0.0,
+        0.02002
+      ]
+    },
+    "exterior / urban (engine excluded)": {
+      "k": 0,
+      "n": 132,
+      "rate": 0.0,
+      "wilson95": [
+        0.0,
+        0.02828
+      ]
+    }
+  },
+  "window": {
+    "seconds": 1.0,
+    "hop_seconds": 0.5
+  }
+}

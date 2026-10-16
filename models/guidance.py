@@ -4,7 +4,7 @@ guidance(decision, health, capability) is a pure function of the contract's `dec
 (one line, the most urgent): a latched ALARM, then UNCLASSIFIED, then any sensor in FAILURE (diagnostics
 from the remaining sensors can't be trusted), then a single-witness ADVISORY. NORMAL gives None.
 
-capability names what the SOURCE can do (D132), e.g. "single_witness_real_obd" for a REAL carOBD replay with no
+capability names what the SOURCE can do (D135), e.g. "single_witness_real_obd" for a REAL carOBD replay with no
 OBD classifier: there, ALARM is impossible, so its ADVISORY line must not say "watch for ALARM". A capability
 line replaces the generic line with the same key; keys it doesn't define fall back to the generic ones.
 """

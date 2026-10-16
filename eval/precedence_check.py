@@ -1,9 +1,9 @@
-"""D131 check: does the corroboration rule (an anomaly flag within 3 windows of a trained-fault physics rule
+"""D134 check: does the corroboration rule (an anomaly flag within 3 windows of a trained-fault physics rule
 is that fault's ADVISORY, not UNCLASSIFIED) change any simulator number?
 
 Replays every recorded L3 run (eval/record_runs.py: val_thr, soak_fresh2, soak_fresh3, soak_long, and the
 robustness fault runs) through the real rule layer twice, with the L3 thresholds (models/thresholds/
-healthy_model.json, 2-window UNCLASSIFIED): corroborate_windows = 0 (before D131) and 3 (now). Reports the
+healthy_model.json, 2-window UNCLASSIFIED): corroborate_windows = 0 (before D134) and 3 (now). Reports the
 level totals of both and every window whose decision state or fault differs. Nothing is re-thresholded.
 SIM 2.1, column A. Writes eval/results/precedence_check.json.
 

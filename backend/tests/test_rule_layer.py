@@ -107,7 +107,7 @@ def test_reset_only_after_ack_plus_two_windows_without_its_fault_matching():
 
 def test_acked_alarm_resets_while_an_anomaly_remains_and_shows_it():
     """D124: after ACK, an alarm whose own fault no longer matches resets even if the engine isn't
-    healthy yet (e.g. the ECU still recovering). D131: while the misfire rule fired in the last 3 windows the
+    healthy yet (e.g. the ECU still recovering). D134: while the misfire rule fired in the last 3 windows the
     remaining anomaly corroborates a misfire ADVISORY; after that hold it shows as UNCLASSIFIED."""
     anomalous = Evidence(models("healthy", 0.45), [rule("misfire", False)], 0.9, 0.6)
     layer = RuleLayer()
@@ -117,7 +117,7 @@ def test_acked_alarm_resets_while_an_anomaly_remains_and_shows_it():
     assert [d["state"] for d in ds] == ["ALARM", "ADVISORY", "UNCLASSIFIED", "UNCLASSIFIED"]
     assert ds[1]["fault"] == "misfire" and ds[1]["witnesses"] == ["physics"]
 
-    old = RuleLayer(corroborate_windows=0)               # before D131
+    old = RuleLayer(corroborate_windows=0)               # before D134
     run(old, MISFIRE, MISFIRE)
     old.ack("a_0001", "judge", 1.0)
     assert [d["state"] for d in run(old, anomalous, anomalous, anomalous)] == ["ALARM", "UNCLASSIFIED", "UNCLASSIFIED"]
@@ -253,7 +253,7 @@ def test_bank_wide_rule_takes_the_classifier_cylinder():
     assert d["state"] == "ALARM" and d["location"] == 2
 
 
-# ---------------------------------------------------------------- D131: anomaly corroborates a named fault
+# ---------------------------------------------------------------- D134: anomaly corroborates a named fault
 
 TRIM = Evidence([], [rule("injector_clog", location=None)], 0.9, 0.5)          # trim rule + anomaly, no classifier
 TRIM_QUIET = Evidence([], [rule("injector_clog", False, location=None)], 0.9, 0.5)
@@ -263,7 +263,7 @@ ANOMALY_ONLY = Evidence([], [rule("injector_clog", False, location=None)], 0.9, 
 def test_anomaly_with_a_named_physics_fault_is_its_advisory_not_unclassified():
     ds = run(RuleLayer(), TRIM, TRIM, TRIM, TRIM)
     assert all(d["state"] == "ADVISORY" and d["fault"] == "injector_clog" and d["witnesses"] == ["physics"] for d in ds)
-    # before D131 the same evidence went UNCLASSIFIED from the 2nd window
+    # before D134 the same evidence went UNCLASSIFIED from the 2nd window
     assert [d["state"] for d in run(RuleLayer(corroborate_windows=0), TRIM, TRIM, TRIM)] ==         ["ADVISORY", "UNCLASSIFIED", "UNCLASSIFIED"]
 
 

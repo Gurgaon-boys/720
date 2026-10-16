@@ -2,7 +2,7 @@
  "created_at": "2026-10-16T17:59:54+00:00",
  "label": "SIM 2.1",
  "column": "A",
- "what": "D131 check: does the corroboration rule (an anomaly flag within 3 windows of a trained-fault physics rule\nis that fault's ADVISORY, not UNCLASSIFIED) change any simulator number?",
+ "what": "D134 check: does the corroboration rule (an anomaly flag within 3 windows of a trained-fault physics rule\nis that fault's ADVISORY, not UNCLASSIFIED) change any simulator number?",
  "ranges": {
   "val_thr": {
    "runs": 160,

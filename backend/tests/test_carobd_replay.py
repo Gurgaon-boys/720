@@ -179,7 +179,7 @@ def test_with_an_obd_classifier_alarm_follows_the_two_witness_rule():
 
 
 def test_obd_classifier_is_disabled_by_default(monkeypatch, tmp_path):
-    """D133: the plug-in point exists, but Diljit's classifier failed sim-to-real (D126) and is not deployed."""
+    """D136: the plug-in point exists, but Diljit's classifier failed sim-to-real (D126) and is not deployed."""
     from models import obd_classifier as oc
 
     monkeypatch.delenv(oc.ENV, raising=False)

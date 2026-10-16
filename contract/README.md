@@ -1,6 +1,6 @@
 # contract/
 
-**Owner:** Nishant · **schema_version: `1.6`** · Source: plan section 12 (1.4 = 1.3 + `state.injection`, D46; 1.5 = 1.4 + nullable `anomaly.score`, `rule_basis: "obd"` and the optional obd `calibration` tag, D66, proposed by Dipen; 1.6 = 1.5 + optional `source_label` and `replay`, `injection` `lean_drift` with `cylinder: null`, obd `real_upload`, D128)
+**Owner:** Nishant · **schema_version: `1.6`** · Source: plan section 12 (1.4 = 1.3 + `state.injection`, D46; 1.5 = 1.4 + nullable `anomaly.score`, `rule_basis: "obd"` and the optional obd `calibration` tag, D66, proposed by Dipen; 1.6 = 1.5 + optional `source_label` and `replay`, `injection` `lean_drift` with `cylinder: null`, obd `real_upload`, D131)
 
 This contract is the only interface between the simulator/DSP/models, the backend and the dashboard. **It is locked.** Any change bumps `schema_version` in every schema and example, gets a line in `docs/DECISIONS.md`, and must pass `python contract/validate.py`.
 

@@ -1,6 +1,6 @@
 """Plug-in point for witness 2 of the OBD branch: Diljit's OBD-only classifier (D125, models/obd/sim_classifier.py).
 
-DISABLED BY DEFAULT (D133). The classifier was trained on simulator OBD and failed sim-to-real on the
+DISABLED BY DEFAULT (D136). The classifier was trained on simulator OBD and failed sim-to-real on the
 held-out carOBD files (D126: names a fault in 73 % of windows, 28.5 false faults/h, 2 two-witness ALARMs in
 12.54 h), so it is NOT deployed: the REAL carOBD replay runs single-witness (ADVISORY / UNCLASSIFIED at most)
 and says so in `state.replay`.
@@ -31,7 +31,7 @@ def enabled() -> bool:
 
 def load_witness(path: Path = CHECKPOINT):
     if not enabled():
-        return None                      # D133: not deployed (sim-to-real failed, D126)
+        return None                      # D136: not deployed (sim-to-real failed, D126)
     if not path.exists():
         log.warning("%s=1 but no OBD classifier checkpoint at %s; running single-witness", ENV, path)
         return None

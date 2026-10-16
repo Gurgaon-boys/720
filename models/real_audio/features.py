@@ -78,10 +78,14 @@ def window_features(w: np.ndarray) -> list[float]:
 SILENCE_RMS = 1e-5  # digital silence (some YouTube clips have muted stretches): not engine audio
 
 
-def clip_features(path) -> np.ndarray:
-    """(n_windows, len(FEATURES)) for one clip; windows of digital silence are skipped."""
-    ws = [w for w in frames(load(path)) if np.sqrt(np.mean(w ** 2)) > SILENCE_RMS]
+def array_features(x: np.ndarray) -> np.ndarray:
+    """(n_windows, len(FEATURES)) for an audio array; windows of digital silence are skipped."""
+    ws = [w for w in frames(x) if np.sqrt(np.mean(w ** 2)) > SILENCE_RMS]
     return np.array([window_features(w) for w in ws]).reshape(len(ws), len(FEATURES))
+
+
+def clip_features(path) -> np.ndarray:
+    return array_features(load(path))
 
 
 # ---- high-frequency features for column B (injected knock / valve tick), clips >= 8 kHz bandwidth

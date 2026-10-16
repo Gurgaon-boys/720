@@ -15,7 +15,7 @@ UNCLASSIFIED persistence: like ALARM, UNCLASSIFIED needs UNCLASSIFIED_WINDOWS (2
 `unclassified` windows. The first one is assessed as if there were no anomaly witness (ADVISORY when a
 physics rule fired, else NORMAL), so one stray anomalous window raises nothing.
 
-Corroboration (D131): an anomaly flag does not override a physics rule that recently named a trained
+Corroboration (D134): an anomaly flag does not override a physics rule that recently named a trained
 fault. If a physics rule for misfire, knock or injector_clog fired in any of the last CORROBORATE_WINDOWS
 (3) windows, this one included, an `unclassified` window becomes an `advisory` for that fault (the anomaly
 corroborates it; the classifier still hasn't named it, so it is one witness, not ALARM). UNCLASSIFIED
@@ -137,7 +137,7 @@ class RuleLayer:
     def __init__(self, first_alarm_id: int = 1, unclassified_windows: int = UNCLASSIFIED_WINDOWS,
                  corroborate_windows: int = CORROBORATE_WINDOWS) -> None:
         self.unclassified_windows = unclassified_windows
-        self.corroborate_windows = corroborate_windows    # 0 = no corroboration (the behaviour before D131)
+        self.corroborate_windows = corroborate_windows    # 0 = no corroboration (the behaviour before D134)
         self._named: list[dict | None] = []                # newest last: a fired trained-fault physics rule per window
         self.alarm: ActiveAlarm | None = None
         self._streak_fault: str | None = None

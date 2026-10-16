@@ -195,7 +195,7 @@ def save_upload(name: str, data: bytes, now: float) -> dict:
 # ---------------------------------------------------------------- witness 2 (Diljit's OBD classifier)
 
 def load_obd_classifier():
-    """Witness 2 for the OBD branch: Diljit's OBD classifier, DISABLED by default (D133: it failed
+    """Witness 2 for the OBD branch: Diljit's OBD classifier, DISABLED by default (D136: it failed
     sim-to-real, D126). `models.obd_classifier.load_witness()` returns a callable only with
     S720_OBD_CLASSIFIER=1 and a checkpoint, else None. The callable takes one
     OBD branch v1 window (the dict from models.obd.features.window_features, with map_resid_* and regime)
@@ -342,7 +342,7 @@ class CarObdReplay:
 
     @property
     def guidance_capability(self) -> str | None:
-        """Operator guidance keyed by what this source can do (models/guidance.json "capability", D132)."""
+        """Operator guidance keyed by what this source can do (models/guidance.json "capability", D135)."""
         return "single_witness_real_obd" if self.classifier is None else None
 
     @property

@@ -122,7 +122,7 @@ The source picker under the header (kept in demo mode) switches between **Simula
 | # | Do | Expect |
 |---|---|---|
 | 1 | **Real car replay**, file **drive2.csv**, speed **10×** | REAL · REPLAY badge; the OBD panel and the OBD-branch trend lead (11 carOBD channels at their own ~0.5 Hz refresh); cylinder, fingerprint and audio panels hidden ("no crank signal in this data"); NORMAL |
-| 2 | Injection console: **Lean drift, 0.50**, Inject | REAL + INJECTED badge; total trim climbs over the 7.4 % limit; **Watch · Injector clog** (trim rule, physics witness) about 7–8 s later at 10×; the healthy model flagging the rising trims corroborates it (D131), so it stays a Watch. Never ALARM: there is no OBD classifier yet (the replay note says so) |
+| 2 | Injection console: **Lean drift, 0.50**, Inject | REAL + INJECTED badge; total trim climbs over the 7.4 % limit; **Watch · Injector clog** (trim rule, physics witness) about 7–8 s later at 10×; the healthy model flagging the rising trims corroborates it (D134), so it stays a Watch. Never ALARM: there is no OBD classifier yet (the replay note says so) |
 | 3 | **Stop injection** | REAL · REPLAY again at once; NORMAL about 3 s later at 10× (2 windows) |
 | 4 | **Upload log**, pick a carOBD CSV (≤ 5 MB) | REAL · UPLOAD badge; it streams like a held-out file. A file without the carOBD columns is refused with the reason |
 
