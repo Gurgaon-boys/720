@@ -18,6 +18,10 @@ export default function SourcePicker({ state, transport, onSelectSim }) {
   const [speed, setSpeed] = useState(10);
   const [busy, setBusy] = useState(null); // what we're waiting for, in words
   const [error, setError] = useState(null);
+  // the replay file list is fetched at start; a failure is logged at once but shown only once someone
+  // asks for a REAL source, so a laptop without the carOBD files doesn't open on a red line
+  const [listError, setListError] = useState(null);
+  const [askedReal, setAskedReal] = useState(false);
   const inputRef = useRef(null);
 
   const replay = state?.replay ?? null;
@@ -32,7 +36,11 @@ export default function SourcePicker({ state, transport, onSelectSim }) {
         setSpeed(r.current.speed);
       }
     })
-    .catch((e) => setError(`Replay file list unavailable: ${e.message}`));
+    .then(() => setListError(null))
+    .catch((e) => {
+      console.error('[720] replay file list unavailable', e);
+      setListError(`Replay file list unavailable: ${e.message}`);
+    });
   useEffect(() => { loadFiles(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // the stream's own speed wins (another tab may have changed it)
@@ -67,9 +75,9 @@ export default function SourcePicker({ state, transport, onSelectSim }) {
         <button type="button" className={`run-pill${mode === 'sim' ? ' on' : ''}`} aria-pressed={mode === 'sim'} disabled={busy != null}
           onClick={() => onSelectSim(SIM)} title="Physics-informed engine simulator, live">Simulator</button>
         <button type="button" className={`run-pill${mode === 'replay' ? ' on' : ''}`} aria-pressed={mode === 'replay'} disabled={busy != null}
-          onClick={() => play(file.startsWith('heldout:') ? file : DEFAULT_FILE)} title="A held-out carOBD log from a real car (2014 Toyota Etios), replayed">Real car replay</button>
+          onClick={() => { setAskedReal(true); play(file.startsWith('heldout:') ? file : DEFAULT_FILE); }} title="A held-out carOBD log from a real car (2014 Toyota Etios), replayed">Real car replay</button>
         <button type="button" className={`run-pill${mode === 'upload' ? ' on' : ''}`} aria-pressed={mode === 'upload'} disabled={busy != null}
-          onClick={() => inputRef.current?.click()} title="Upload a carOBD-format CSV (max 5 MB); it replays as REAL, unverified">Upload log</button>
+          onClick={() => { setAskedReal(true); inputRef.current?.click(); }} title="Upload a carOBD-format CSV (max 5 MB); it replays as REAL, unverified">Upload log</button>
         <input ref={inputRef} type="file" accept=".csv,text/csv" hidden onChange={upload} aria-label="carOBD CSV to upload" />
       </div>
       {(mode === 'replay' || mode === 'upload') && (
@@ -95,6 +103,7 @@ export default function SourcePicker({ state, transport, onSelectSim }) {
         </div>
       )}
       {busy && <p className="panel-note" role="status">{busy}</p>}
+      {listError && (askedReal || mode === 'replay' || mode === 'upload') && <p className="scenario-error" role="alert">{listError}</p>}
       {error && <p className="scenario-error" role="alert">{error}</p>}
     </div>
   );
