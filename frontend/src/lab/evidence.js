@@ -1,4 +1,4 @@
-// Sabotage Lab: evidence AVAILABILITY from the broadcast, never a diagnosis (D137).
+// Sabotage Lab: evidence AVAILABILITY from the broadcast, never a diagnosis (D140).
 // Everything here reads fields the backend already sends (state.models, state.physics_rules,
 // state.decision, state.health.sensors) plus which sensors the backend says are switched off
 // (GET /sensors). It never derives a fault label, a confidence or a decision state.
@@ -136,7 +136,7 @@ export function integrityNotes(state, level, classifier) {
   return notes;
 }
 
-// ------------------------------------------------------------ outcome: what removing sensors did (D138)
+// ------------------------------------------------------------ outcome: what removing sensors did (D141)
 // Static facts about what each sensor feeds (same table as backend/investigator.py), combined with the
 // backend's broadcast. It says what was lost and what still works; the verdict lines quote the rule layer.
 export const CAPABILITIES = [

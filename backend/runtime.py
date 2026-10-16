@@ -70,7 +70,7 @@ class Runtime:
         self._tasks: list[asyncio.Task] = []
         self._listeners: list = []
         self.maintenance_mode = False  # explicit maintenance/test mode (asset health CHECK_FUNCTION)
-        self.events = EventLog(clock)  # incident record: requested / accepted / confirmed (D138)
+        self.events = EventLog(clock)  # incident record: requested / accepted / confirmed (D141)
         self.select(scenario)
 
     def set_maintenance(self, on: bool) -> None:
@@ -107,7 +107,7 @@ class Runtime:
                            source=name)
 
     def _command(self, kind: str, text: str, via: str, fn, **data):
-        """Run one operator command with its requested -> accepted / refused record (D138)."""
+        """Run one operator command with its requested -> accepted / refused record (D141)."""
         st = getattr(self.scenario, "stream_t", None)
         self.events.record(kind, "requested", text, via=via, stream_t=st, **data)
         try:
@@ -131,10 +131,10 @@ class Runtime:
         return self.injection
 
     def clear_faults(self, via: str = "api") -> None:
-        self._command("clear", "Clear faults", via, self.scenario.clear_faults)   # disabled sensors stay disabled (D137)
+        self._command("clear", "Clear faults", via, self.scenario.clear_faults)   # disabled sensors stay disabled (D140)
         self.injection = None
 
-    # ------------------------------------------------------------ sensor sabotage (D137)
+    # ------------------------------------------------------------ sensor sabotage (D140)
 
     def _sabotage_source(self):
         """The current source if it can switch sensors off (the live simulator), else SensorControlError.

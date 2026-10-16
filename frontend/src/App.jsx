@@ -21,7 +21,7 @@ const LIST_RETRY_MS = 5000; // scenario list: retry interval after a failed load
 
 // 3D engine view: its own chunk (three.js), fetched the first time its tab opens
 const Engine3D = lazy(() => import('./dashboard/Engine3D.jsx'));
-// Sabotage Lab (D137): its own chunk too (it reuses the 3D scene)
+// Sabotage Lab (D140): its own chunk too (it reuses the 3D scene)
 const SabotageLab = lazy(() => import('./lab/SabotageLab.jsx'));
 
 // obd messages carry new samples; keep a short history per channel

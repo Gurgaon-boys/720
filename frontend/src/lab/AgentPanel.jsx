@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { reducedMotion } from '../lib/motion.js';
 
-// 720 RELIABILITY AGENT (D138): an engineering investigator over the backend's own state.
+// 720 RELIABILITY AGENT (D141): an engineering investigator over the backend's own state.
 // GET /investigate runs six read-only tools and two deterministic checks on the backend and returns each
 // completed step with its duration. The steps are then revealed in order (a replay of calls that already
 // finished; the panel says so). No language model: the answers are generated from the facts, and each
@@ -54,7 +54,7 @@ export default function AgentPanel({ api, events, active }) {
   return (
     <section className="lab-card agent" aria-label="720 Reliability Agent">
       <div className="lab-card-head">
-        <h3>720 Reliability Agent</h3>
+        <h3>Reliability Agent</h3>
         <button type="button" className="lab-btn ghost" disabled={!api || busy} onClick={() => run('operator request')}>
           {busy ? 'Investigating…' : 'Investigate now'}
         </button>

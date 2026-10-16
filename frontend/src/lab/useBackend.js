@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-// Polling hooks for the Resilience Lab's backend reads (D138). Only while the tab is open.
+// Polling hooks for the Resilience Lab's backend reads (D141). Only while the tab is open.
 
 const KEEP = 300;
 

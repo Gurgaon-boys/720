@@ -1,4 +1,4 @@
-/* SABOTAGE LAB (D137). Control-room hierarchy (ISA-101): neutral greys while healthy, amber for
+/* SABOTAGE LAB (D140). Control-room hierarchy (ISA-101): neutral greys while healthy, amber for
    degraded evidence, red only for genuine failures. All motion stops under prefers-reduced-motion. */
 
 .view-lab { max-width: 1680px; margin: 0 auto; padding: 18px 16px 48px; min-height: 100vh; }

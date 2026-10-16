@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { usePoll } from './useBackend.js';
 
-// INDUSTRIAL LINK (D138): the OPC UA server as it actually runs, from GET /industrial. No client count:
+// INDUSTRIAL LINK (D141): the OPC UA server as it actually runs, from GET /industrial. No client count:
 // the backend does not expose OPC UA sessions, so none is shown.
 
 const ago = (t, now) => (t == null ? 'never' : `${Math.max(0, now - t).toFixed(1)} s ago`);
@@ -19,7 +19,7 @@ export default function IndustrialLink({ data, error }) {
   return (
     <section className="lab-card link" aria-label="Industrial link">
       <div className="lab-card-head">
-        <h3>Industrial link · OPC UA</h3>
+        <h3>OPC UA link</h3>
         <span className={`lab-tag mono${data?.running ? '' : ' warn'}`}>{data ? (data.running ? 'SERVER UP' : 'SERVER DOWN') : '…'}</span>
       </div>
       {error && <p className="lab-note err">{error}</p>}

@@ -23,12 +23,13 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Request, WebSocket
 from fastapi.concurrency import run_in_threadpool
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from backend import investigator
 from backend import report as incident_report
+from backend import report_pdf as incident_pdf
 from backend.messages import SCHEMA_VERSION
 from backend.opcua_bridge import OpcuaBridge, endpoint_from_env
 from backend.runtime import Hub, Runtime, SensorControlError, put_latest
@@ -68,7 +69,8 @@ def create_app(scenario: str | None = None, validate: bool | None = None, opcua:
     app.state.opcua = bridge
     # the Vite dev server on any local port (5173 by default) may call the HTTP helpers
     app.add_middleware(CORSMiddleware, allow_origin_regex=r"http://(localhost|127\.0\.0\.1)(:\d+)?",
-                       allow_methods=["*"], allow_headers=["*"])
+                       allow_methods=["*"], allow_headers=["*"],
+                       expose_headers=["Content-Disposition"])  # PDF report file name (D143)
 
     @app.get("/health")
     def health():
@@ -198,7 +200,7 @@ def create_app(scenario: str | None = None, validate: bool | None = None, opcua:
         runtime.clear_faults(via="http")  # state.injection -> null
         return {"cleared": True, "t": round(src.stream_t, 3)}
 
-    # ------------------------------------------------------------ Sabotage Lab sensor controls (D137)
+    # ------------------------------------------------------------ Sabotage Lab sensor controls (D140)
 
     def _sensor_reply(disabled: list[str] | None) -> dict:
         """What was commanded. Sensor health itself is only ever confirmed by state.health.sensors."""
@@ -232,7 +234,7 @@ def create_app(scenario: str | None = None, validate: bool | None = None, opcua:
     async def sensors_restore():
         return _sensor_command(runtime.restore_sensors)
 
-    # ------------------------------------------------------------ Resilience Lab (D138): record, agent, link, report
+    # ------------------------------------------------------------ Resilience Lab (D141): record, agent, link, report
 
     @app.get("/events")
     def events(after: int = 0):
@@ -262,6 +264,15 @@ def create_app(scenario: str | None = None, validate: bool | None = None, opcua:
     def report():
         """Printable incident report from recorded data only."""
         return incident_report.build(runtime)
+
+    @app.get("/report.pdf")
+    def report_pdf():
+        """The same incident report as a downloadable PDF (D143). 503 without reportlab: use GET /report."""
+        pdf = incident_pdf.build_pdf(runtime)
+        if pdf is None:
+            raise HTTPException(503, "PDF export needs reportlab (pip install -r requirements.txt); use GET /report and print")
+        return Response(pdf, media_type="application/pdf",
+                        headers={"Content-Disposition": f'attachment; filename="{incident_pdf.filename(runtime)}"'})
 
     @app.websocket("/ws/state")
     async def ws_state(ws: WebSocket):

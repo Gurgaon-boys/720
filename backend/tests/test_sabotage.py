@@ -1,4 +1,4 @@
-"""Sabotage Lab sensor controls (D137): switching simulator sensors off and on, through the real runtime
+"""Sabotage Lab sensor controls (D140): switching simulator sensors off and on, through the real runtime
 ticks on a fake clock, the HTTP routes and the OPC UA methods."""
 
 import pytest

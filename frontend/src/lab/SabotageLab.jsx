@@ -14,10 +14,11 @@ import Incident from './Incident.jsx';
 import LabSignals from './LabSignals.jsx';
 import Guide, { currentStep } from './Guide.jsx';
 import Details from './Details.jsx';
+import ExportButton from './ExportButton.jsx';
 import './sabotage.css';
 import './resilience.css';
 
-// SABOTAGE LAB = 720 INDUSTRIAL RESILIENCE LAB (D137, D138): a judge switches simulator sensors off and on
+// SABOTAGE LAB = 720 INDUSTRIAL RESILIENCE LAB (D140, D141): a judge switches simulator sensors off and on
 // and watches what 720 can still prove across the whole chain: sensors, evidence, rule layer, OPC UA. Everything shown comes from the backend: sensor state from GET /sensors and the watchdog's
 // state.health.sensors, evidence from state.models / state.physics_rules, the decision from the rule
 // layer. This view never derives a fault, a confidence or a decision, and never clears an alarm.
@@ -130,7 +131,7 @@ export default function SabotageLab({
   if (!state) {
     return (
       <section className="lab rl lab-empty">
-        <LabHeader level={null} scripted={false} />
+        <LabHeader scripted={false} api={null} />
         <p className="panel-note">Waiting for the first state message…</p>
       </section>
     );
@@ -139,7 +140,7 @@ export default function SabotageLab({
 
   return (
     <section className={`lab rl${offline ? ' lab-offline' : ''}`} aria-label="720 Industrial Resilience Lab">
-      <LabHeader level={level} scripted={String(state.run_id).startsWith('fake_')} />
+      <LabHeader scripted={String(state.run_id).startsWith('fake_')} api={api} />
       <Guide step={currentStep(state, sensors)} />
 
       <div className="rl-grid">
@@ -155,15 +156,13 @@ export default function SabotageLab({
         </aside>
 
         <div className="rl-center">
+          <DecisionCard decision={state.decision} onAck={onAck} ackError={ackError} level={level} />
           <LabScene
             state={state} sensors={sensors} classifier={classifier} physics={physics}
             industrial={industrial} offline={offline} active={active}
           />
         </div>
 
-        <aside className="lab-col rl-right" aria-label="Decision">
-          <DecisionCard decision={state.decision} onAck={onAck} ackError={ackError} />
-        </aside>
       </div>
 
       <Outcome result={result} state={state} sensors={sensors} level={level} />
@@ -173,7 +172,7 @@ export default function SabotageLab({
           { id: 'agent', label: 'Reliability Agent', body: <AgentPanel api={api} events={events} active={active} /> },
           {
             id: 'timeline', label: 'Incident timeline', badge: events.length ? String(events.filter((e) => e.kind !== 'opcua_event').length) : null,
-            body: <Incident events={events} error={evError} reportUrl={api?.reportUrl} showOpc={false} />,
+            body: <Incident events={events} error={evError} api={api} showOpc={false} />,
           },
           {
             id: 'opcua', label: 'OPC UA link', badge: industrial ? (industrial.running ? 'UP' : 'DOWN') : null, badgeTone: industrial?.running ? 'ok' : 'red',
@@ -189,25 +188,20 @@ export default function SabotageLab({
 
 // ------------------------------------------------------------ header
 
-function LabHeader({ level, scripted }) {
-  const lv = level ? LEVEL_TEXT[level] : null;
+// title on the left, the report export on the right; a scripted (fake L0) source still says so
+function LabHeader({ scripted, api }) {
   return (
     <header className="lab-head rl-head">
       <div className="lab-title">
-        <h2>720 — INDUSTRIAL RESILIENCE LAB</h2>
+        <h2>Industrial Resilience Lab</h2>
         <span className="rl-sub">Challenge the sensors. Test the evidence. Trust the decision.</span>
       </div>
-      {scripted ? (
-        <span className="lab-simbadge mono scripted" title="A fixed L0 test script, not the engine simulator">SCRIPTED L0 SCENARIO · NOT THE SIMULATOR</span>
-      ) : (
-        <span className="lab-simbadge mono" title="Everything in this tab runs on the engine simulator">SIMULATED TEST ENVIRONMENT</span>
-      )}
-      {lv && (
-        <div className={`lab-level lv-${level.toLowerCase()}`} role="status" aria-live="polite">
-          <span className="lab-level-title">{lv.title}</span>
-          <span className="lab-level-sub">{lv.sub}</span>
-        </div>
-      )}
+      <div className="rl-head-right">
+        {scripted && (
+          <span className="lab-simbadge mono scripted" title="A fixed L0 test script, not the engine simulator">SCRIPTED L0 SCENARIO · NOT THE SIMULATOR</span>
+        )}
+        <ExportButton api={api} className="lab-btn primary rl-export" />
+      </div>
     </header>
   );
 }
@@ -329,39 +323,39 @@ function InjectPanel({ state, enabled, onStart, onStop }) {
 
 // ------------------------------------------------------------ decision
 
-function DecisionCard({ decision: d, onAck, ackError }) {
+function DecisionCard({ decision: d, onAck, ackError, level }) {
   const s = state3d(d.state);
   const text = decisionText(d);
   const [waiting, setWaiting] = useState(null);
   useEffect(() => { if (d.acked || d.alarm_id !== waiting) setWaiting(null); }, [d.acked, d.alarm_id, waiting]);
   const canAck = d.state === 'ALARM' && d.alarm_id && !d.acked;
   const guidance = typeof d.guidance === 'string' && d.guidance.trim() ? d.guidance.trim() : null;
+  const lv = level ? LEVEL_TEXT[level] : null;
   return (
-    <section className={`lab-card lab-decision ds-${d.state.toLowerCase()}`} style={{ '--state': s.color }} aria-label="Rule layer decision">
-      <div className="lab-card-head">
-        <h3>Rule layer decision</h3>
-        <span className="lab-tag mono">AUTHORITATIVE</span>
+    <section className={`dbar ds-${d.state.toLowerCase()}`} style={{ '--state': s.color }} aria-label="Rule layer decision">
+      <div className="dbar-state" role="status" aria-live="polite">
+        <span className="dbar-kicker">RULE LAYER DECISION</span>
+        <span className="dbar-name">{s.label}</span>
+        <span className="dbar-title">{text.title}</span>
       </div>
-      <div className="lab-decision-state" role="status" aria-live="polite">
-        <span className="lab-decision-name">{s.label}</span>
-        <span className="lab-decision-title">{text.title}</span>
-      </div>
-      <dl className="lab-facts mono">
-        {/* on ALARM the rule layer reports the witnesses that confirmed it, not the current window's */}
+      <dl className="dbar-facts mono">
         <div><dt>{d.state === 'ALARM' ? 'Confirmed by' : 'Witnesses'}</dt><dd>{d.witnesses?.length ? d.witnesses.join(' + ') : '—'}</dd></div>
-        <div><dt>Windows</dt><dd>{d.consecutive_windows ?? '—'}</dd></div>
-        {d.alarm_id && <div><dt>Alarm</dt><dd>{d.alarm_id} · {d.latched ? 'latched' : 'not latched'} · {d.acked ? `ACK ${d.acked_by ?? ''}` : 'unacknowledged'}</dd></div>}
+        {d.alarm_id && <div><dt>Alarm</dt><dd>{d.alarm_id} · {d.acked ? `ACK ${d.acked_by ?? ''}` : 'unacknowledged'}</dd></div>}
+        {lv && <div><dt>Evidence</dt><dd className={`lv-${level.toLowerCase()}`}>{level === 'FULL' ? 'full · new alarms possible' : `${level.toLowerCase()} · no new alarm`}</dd></div>}
       </dl>
-      {canAck && (
+      <div className="dbar-guidance">
+        <span className="dbar-kicker">OPERATOR GUIDANCE</span>
+        <span>{guidance ?? 'No action needed.'}</span>
+        {ackError && <span className="lab-note err">ACK refused: {ackError.reason}</span>}
+      </div>
+      {canAck ? (
         <button
-          type="button" className="lab-btn ack" disabled={waiting === d.alarm_id}
+          type="button" className="lab-btn ack dbar-ack" disabled={waiting === d.alarm_id}
           onClick={() => { setWaiting(d.alarm_id); onAck(d.alarm_id); }}
         >
-          {waiting === d.alarm_id ? 'Waiting for the rule layer…' : 'Acknowledge alarm'}
+          {waiting === d.alarm_id ? 'Waiting…' : 'Acknowledge'}
         </button>
-      )}
-      {ackError && <p className="lab-note err">ACK refused: {ackError.reason}</p>}
-      {guidance && <p className="lab-guidance"><span className="eyebrow">Operator guidance</span>{guidance}</p>}
+      ) : <span className="dbar-ack-gap" aria-hidden="true" />}
     </section>
   );
 }

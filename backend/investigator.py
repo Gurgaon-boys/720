@@ -1,4 +1,4 @@
-"""720 Reliability Agent (D138): a read-only investigator over the backend's own state.
+"""720 Reliability Agent (D141): a read-only investigator over the backend's own state.
 
 Six typed tools read what the runtime already holds (the last state broadcast, the sensor controls and the
 incident event log). `investigate()` calls them in order, times each call, runs two deterministic checks
@@ -7,7 +7,7 @@ facts it used. Nothing here can change an alarm, acknowledge, inject or switch a
 fault label or a confidence: those come only from the rule layer's broadcast.
 
 No language model is involved; the explanation text is generated deterministically from the facts. A model
-could later rephrase `answers` but must not add facts (see D138).
+could later rephrase `answers` but must not add facts (see D141).
 """
 
 from __future__ import annotations
