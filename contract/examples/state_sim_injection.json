@@ -57,13 +57,15 @@
     "latched": false,
     "acked": false,
     "acked_by": null,
-    "acked_at": null
+    "acked_at": null,
+    "guidance": "One witness only (misfire): keep running, watch for ALARM"
   },
   "health": {
     "asset_ne107": "NORMAL",
     "sensors": {
       "mic": "NORMAL",
-      "obd": "NORMAL"
+      "obd": "NORMAL",
+      "cam": "NORMAL"
     }
   },
   "latency_ms": 12,

@@ -25,6 +25,7 @@ from backend.scenarios import OBD_S, SIGNAL_S, WINDOW_S
 from backend.sources import make_source
 from backend.signal_frame import encode_frame
 from backend.watchdog import Watchdog
+from models.guidance import guidance
 
 log = logging.getLogger("backend")
 
@@ -165,6 +166,7 @@ class Runtime:
         w = self.last_window
         now = self.clock()
         health = {"asset_ne107": asset_ne107(decision, self.maintenance_mode), "sensors": self.watchdog.status(now)}
+        decision = {**decision, "guidance": guidance(decision, health)}
         latency = round((time.perf_counter() - start) * 1000, 2)
         msg = messages.state_message(sent_at=now, decision=decision, health=health, latency_ms=latency,
                                      injection=self.injection, **w.fields)
