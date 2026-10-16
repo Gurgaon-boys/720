@@ -14,10 +14,11 @@ const M = { l: 58, r: 150, t: 18, b: 58 };
 const ZERO_W = 46; // the "0 /h" column
 const GAP = 26;
 const DOMAIN = [1, 200]; // log x-domain for non-zero rates (validation episodes /h)
+// one blue ramp, darker = milder fault (ordinal; validated: monotone, distinct steps, visible on the panel)
 const SEVERITIES = [
-  { key: '0.3', label: 'severity 0.3', color: '#6f86a6', shape: 'circle' },
-  { key: '0.6', label: 'severity 0.6', color: '#a6b8d0', shape: 'square' },
-  { key: '1', label: 'severity 1.0', color: '#e3eaf3', shape: 'diamond' },
+  { key: '0.3', label: 'severity 0.3', color: '#3f74c9', shape: 'circle' },
+  { key: '0.6', label: 'severity 0.6', color: '#8fb7f0', shape: 'square' },
+  { key: '1', label: 'severity 1.0', color: '#d6e5fb', shape: 'diamond' },
 ];
 
 const zeroX = M.l + ZERO_W / 2;
@@ -73,11 +74,18 @@ export default function Tradeoff({ loaded }) {
 
   return (
     <ChartFrame
-      title="The operating point: catching the unknown vs false alerts"
-      lede="Each point is one threshold setting. Lower thresholds catch more held-out valve-tick faults but raise more false Unclassified alerts on healthy engines. The committed setting was chosen on validation data only and not moved after seeing results."
+      title="The operating point"
+      lede="Each point is one threshold. Further left = fewer false alerts; higher = more unknown faults (valve tick) caught. Ours is circled: chosen on validation data, not moved after seeing results."
       file="valve_tick_cost.json"
       loaded={loaded}
-      context={contextLine([d && `${d.label}`, d && columnName(d.column), d?.split, d && `${d.runs_per_severity} runs per severity, ${d.fault_s} s of fault`, d && `sim ${d.sim_version}`])}
+      column={d?.column}
+      tagNote={d ? `${d.runs_per_severity} runs per severity` : null}
+      about={(
+        <>
+          <p>{contextLine([d && `${d.label}`, d && columnName(d.column), d?.split, d && `${d.runs_per_severity} runs per severity, ${d.fault_s} s of fault`, d && `sim ${d.sim_version}`])}</p>
+          <p>Committed setting = the file's "after" configuration (DECISIONS D106). 0 /h is drawn in its own column because a log axis can't show 0. The validation exposure hours behind each false-alert rate are not in this file, so no bound is drawn on x.</p>
+        </>
+      )}
       table={table}
     >
       <div className="rs-legend" aria-hidden="true">
@@ -87,7 +95,7 @@ export default function Tradeoff({ loaded }) {
             valve tick {s.label}
           </span>
         ))}
-        <span className="rs-key"><svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" fill="none" stroke="var(--text)" strokeWidth="1.5" strokeDasharray="3 2" /></svg>committed setting</span>
+        <span className="rs-key"><svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" fill="none" stroke="var(--text)" strokeWidth="1.5" strokeDasharray="3 2" /></svg>our setting</span>
       </div>
       <div className="rs-svgwrap" onMouseLeave={() => setTip(null)}>
         <svg viewBox={`0 0 ${W} ${H}`} className="rs-svg" role="img"
@@ -109,7 +117,7 @@ export default function Tradeoff({ loaded }) {
             </g>
           ))}
           <text x={(M.l + logX1) / 2} y={H - 12} className="rs-axis-title" textAnchor="middle">
-            false Unclassified episodes per hour on healthy validation engines (log scale; 0 shown in its own column)
+            false alerts per hour on healthy engines (log scale)
           </text>
           <text x={14} y={(M.t + H - M.b) / 2} className="rs-axis-title" textAnchor="middle" transform={`rotate(-90 14 ${(M.t + H - M.b) / 2})`}>
             valve-tick runs caught
@@ -130,7 +138,7 @@ export default function Tradeoff({ loaded }) {
             return p && <circle key={sev.key} cx={p.x} cy={p.y} r="9" fill="none" stroke="var(--text)" strokeWidth="1.5" strokeDasharray="3 2" />;
           })}
           {committed && (
-            <text x={zeroX + ZERO_W / 2 + 8} y={yOf(1) + 22} className="rs-direct">committed: chosen on validation (D106)</text>
+            <text x={zeroX + ZERO_W / 2 + 8} y={yOf(1) + 22} className="rs-direct rs-strong">our setting (chosen on validation)</text>
           )}
 
           {/* hover targets, larger than the marks */}
@@ -149,7 +157,6 @@ export default function Tradeoff({ loaded }) {
           </div>
         )}
       </div>
-      <p className="rs-note">The validation exposure hours behind each false-alert rate are not in this file, so no bound is drawn on x. Valve tick counts are out of {d?.runs_per_severity} runs per severity.</p>
     </ChartFrame>
   );
 }

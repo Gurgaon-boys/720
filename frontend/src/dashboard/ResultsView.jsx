@@ -32,25 +32,21 @@ export default function ResultsView() {
       <header className="rs-head">
         <h2 className="panel-label">RESULTS</h2>
         <p className="rs-head-note">
-          From the team's committed result files (eval/results). Column A = simulated, C = real; they are never mixed on one axis.
-          Every rate carries its counts and a 95% bound.
+          The team's committed results. Real and simulated data are never mixed in one chart; every rate has its counts and a 95% bound (hover, or open the table).
         </p>
+        <div className="rs-key-row" aria-label="Colour key">
+          <span><i className="rs-dot" style={{ background: 'var(--rs-real)' }} />real data</span>
+          <span><i className="rs-dot" />simulated</span>
+          <span><i className="rs-dot" style={{ background: 'var(--rs-watch)' }} />watch</span>
+          <span><i className="rs-dot alarm" />ALARM</span>
+          <span><i className="rs-dot unclass" />unclassified</span>
+        </div>
       </header>
-
-      <h3 className="ev-h">1 · False alarms on healthy engines</h3>
       <FalseAlarms loaded={files['alarm_budget.json']} />
       <Projection loaded={files['alarm_budget.json']} />
-
-      <h3 className="ev-h">2 · Detection on the simulator</h3>
       <DetectionTable loaded={files['alarm_budget.json']} />
-
-      <h3 className="ev-h">3 · The operating point</h3>
       <Tradeoff loaded={files['valve_tick_cost.json']} />
-
-      <h3 className="ev-h">4 · Models and the split</h3>
       <Models comparison={files['model_comparison.json']} columnA={files['column_a.json']} />
-
-      <h3 className="ev-h">5 · How small a fault is caught</h3>
       <MisfireSweep loaded={files['robustness_v2.json']} />
       <ClogSweep loaded={files['clog_sweep.json']} />
     </section>

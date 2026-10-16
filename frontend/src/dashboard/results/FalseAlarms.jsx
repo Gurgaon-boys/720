@@ -1,41 +1,40 @@
 import { fmtSig } from '../../lib/format.js';
-import ChartFrame, { columnName, contextLine } from './ChartFrame.jsx';
+import ChartFrame, { SourceTag, columnName, contextLine } from './ChartFrame.jsx';
 
 // Section 1: notifications per hour on HEALTHY data, at every level of the decision chain.
-// One panel per source (never mixed), all on one x-scale so they compare. Bar = rate, whisker =
-// the file's exact Poisson 95 % upper bound; the counts behind each rate are printed beside it.
+// One panel per source (never mixed), all on one x-scale. Bar = rate, whisker = the file's exact
+// Poisson 95 % upper bound. Bars are coloured by source (teal real, blue simulated); the counts
+// behind each rate are in the hover, the table view and the panel header (hours).
 
 const LEVELS = [
   ['physics_alone', 'Physics rule alone'],
   ['classifier_alone', 'Classifier alone'],
   ['alarm', 'Two-witness ALARM'],
-  ['unclassified', 'Unclassified (abnormal, no name)'],
-  ['advisory', 'Advisory (watch)'],
+  ['unclassified', 'Unclassified'],
+  ['advisory', 'Watch (advisory)'],
 ];
 const SOURCES = ['real', 'sim', 'sim_2h']; // real data first: it is the headline
 
 const pct = (v, max) => `${Math.max(0, Math.min(100, (v / max) * 100))}%`;
+const kindOf = (col) => (String(col).startsWith('C') ? 'real' : 'sim');
 
-function Row({ label, r, max }) {
+function Row({ label, r, max, kind }) {
   if (!r) {
     return (
       <div className="rs-row">
         <span className="rs-row-label">{label}</span>
-        <span className="rs-row-na mono">not measured</span>
+        <span className="rs-row-na">not measured</span>
       </div>
     );
   }
   return (
-    <div className="rs-row">
+    <div className="rs-row" title={`${r.events} events in ${fmtSig(r.exposure_hours)} h · ${fmtSig(r.per_hour)} /h · 95% upper ${fmtSig(r.upper_95_per_hour)} /h`}>
       <span className="rs-row-label">{label}</span>
       <span className="rs-track" aria-hidden="true">
-        <span className="rs-bar" style={{ width: pct(r.per_hour, max) }} />
+        <span className={`rs-bar ${kind}`} style={{ width: pct(r.per_hour, max) }} />
         <span className="rs-whisker" style={{ left: pct(r.per_hour, max), width: `calc(${pct(r.upper_95_per_hour, max)} - ${pct(r.per_hour, max)})` }} />
       </span>
-      <span className="rs-row-val mono">
-        {fmtSig(r.per_hour)} /h <span className="rs-dim">(≤ {fmtSig(r.upper_95_per_hour)})</span>
-        <span className="rs-dim"> · {r.events} in {fmtSig(r.exposure_hours)} h</span>
-      </span>
+      <span className="rs-row-val mono">{fmtSig(r.per_hour)}<span className="rs-dim"> /h · ≤ {fmtSig(r.upper_95_per_hour)}</span></span>
     </div>
   );
 }
@@ -66,25 +65,38 @@ export default function FalseAlarms({ loaded }) {
     </table>
   );
 
+  const about = (
+    <>
+      <p>{contextLine([d && `sim ${d.sim_version}`, d && `built ${d.created_at?.slice(0, 10)}`, 'episodes per engine-hour', 'whisker = exact Poisson 95% upper bound'])}</p>
+      <ul>
+        {sources.map((k) => (
+          <li key={k}>{healthy[k].label}: {columnName(healthy[k].column)} · {healthy[k].split}{healthy[k].note ? ` · ${healthy[k].note}` : ''}</li>
+        ))}
+      </ul>
+      <p>Only the two-witness ALARM and Unclassified reach the operator; watches are logged.</p>
+    </>
+  );
+
   return (
     <ChartFrame
-      title="False alarms on healthy engines, at every level"
-      lede="How often each witness fires on engines with no fault. Only the two-witness ALARM and Unclassified reach the operator; advisories are logged."
+      title="False alarms on healthy engines"
+      lede="How often each witness fires when nothing is wrong. Lower is better; the whisker is the worst case we can't rule out (95%)."
       file="alarm_budget.json"
       loaded={loaded}
-      context={contextLine([d && `sim ${d.sim_version}`, d && `built ${d.created_at?.slice(0, 10)}`, 'episodes per engine-hour', 'whisker = exact Poisson 95% upper bound'])}
+      about={about}
       table={table}
     >
       <div className="rs-multiples">
         {sources.map((k) => {
           const s = healthy[k];
+          const kind = kindOf(s.column);
           return (
-            <div key={k} className="rs-multiple">
+            <div key={k} className={`rs-multiple rs-card ${kind}`}>
               <p className="rs-mtitle">
-                <strong>{s.label}</strong> <span className="rs-dim mono">{columnName(s.column)} · {s.split} · {fmtSig(s.hours)} h{s.files ? ` · ${s.files} files` : ''}</span>
+                <SourceTag column={s.column} /> <strong>{s.label}</strong>
+                <span className="rs-dim mono"> {fmtSig(s.hours)} h{s.files ? ` · ${s.files} files` : ''}</span>
               </p>
-              {LEVELS.map(([lv, name]) => <Row key={lv} label={name} r={s.levels?.[lv]} max={max} />)}
-              {s.note && <p className="rs-note">{s.note}</p>}
+              {LEVELS.map(([lv, name]) => <Row key={lv} label={name} r={s.levels?.[lv]} max={max} kind={kind} />)}
             </div>
           );
         })}

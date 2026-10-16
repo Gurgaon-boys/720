@@ -66,9 +66,9 @@ export default function LineChart({
         {series.map((s) => (
           <g key={s.key}>
             {s.points.map((p) => (Array.isArray(p.ci) ? (
-              <line key={`ci-${p.x}`} x1={xOf(p.x)} x2={xOf(p.x)} y1={yOf(p.ci[0])} y2={yOf(p.ci[1])} stroke={s.color} strokeOpacity="0.55" strokeWidth="1.5" />
+              <line key={`ci-${p.x}`} x1={xOf(p.x)} x2={xOf(p.x)} y1={yOf(p.ci[0])} y2={yOf(p.ci[1])} stroke={s.color} strokeOpacity="0.35" strokeWidth="1.5" />
             ) : null))}
-            <polyline points={s.points.map((p) => `${xOf(p.x)},${yOf(p.y)}`).join(' ')} fill="none" stroke={s.color} strokeWidth="2" strokeLinejoin="round" />
+            <polyline points={s.points.map((p) => `${xOf(p.x)},${yOf(p.y)}`).join(' ')} fill="none" stroke={s.color} strokeWidth="2" strokeLinejoin="round" strokeDasharray={s.dash} />
             {s.points.map((p) => <Marker key={p.x} shape={s.shape} x={xOf(p.x)} y={yOf(p.y)} color={s.color} r={compact ? 3 : 4} />)}
           </g>
         ))}
