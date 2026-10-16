@@ -1,8 +1,8 @@
 {
   "eval_version": "0.1",
   "placeholder": false,
-  "generated_at": "2026-10-16T15:06:15Z",
-  "source_commit": "21a2cfc",
+  "generated_at": "2026-10-16T16:57:09Z",
+  "source_commit": "f46d953",
   "produced_by": "python -m eval.build_eval_json",
   "false_positives": {
     "headline": {
@@ -35,15 +35,17 @@
       },
       "classifier_false_faults": {
         "kind": "rate",
-        "events": null,
-        "exposure_hours": null,
-        "per_hour": null,
-        "upper_95_per_hour": null,
+        "events": 358,
+        "exposure_hours": 12.545,
+        "per_hour": 28.5379,
+        "upper_95_per_hour": 31.1465,
         "bound_method": "poisson_exact_one_sided_95",
-        "n_files": null,
+        "n_files": 39,
         "column": "C",
         "split": "held-out carOBD files (by file)",
-        "note": "not available: the OBD classifier is trained on simulator OBD channels, which sim v1 does not produce yet"
+        "source": "eval/obd_classifier_carobd.json",
+        "unit": "episodes (runs of consecutive 30 s windows)",
+        "note": "OBD-only classifier trained on SIMULATED OBD (D105, D106), run on real held-out carOBD: a sim-to-real test, NOT part of the deployed OBD branch, whose other levels are shown here. With it in the chain: ADVISORY 28.3785/h, ALARM 0.1594/h."
       },
       "alarms": {
         "kind": "rate",
