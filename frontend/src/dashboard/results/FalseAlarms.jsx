@@ -5,6 +5,9 @@ import ChartFrame, { SourceTag, columnName, contextLine } from './ChartFrame.jsx
 // One panel per source (never mixed), all on one x-scale. Bar = rate, whisker = the file's exact
 // Poisson 95 % upper bound. Bars are coloured by source (teal real, blue simulated); the counts
 // behind each rate are in the hover, the table view and the panel header (hours).
+// A level that cannot occur on a source (ALARM on carOBD: no classifier witness) shows the file's
+// reason instead of a rate, so a structural zero never reads as a measured one. ISA-18.2 wording:
+// these are alerts at each level; only the two-witness ALARM is an alarm.
 
 const LEVELS = [
   ['physics_alone', 'Physics rule alone'],
@@ -19,6 +22,14 @@ const pct = (v, max) => `${Math.max(0, Math.min(100, (v / max) * 100))}%`;
 const kindOf = (col) => (String(col).startsWith('C') ? 'real' : 'sim');
 
 function Row({ label, r, max, kind }) {
+  if (r?.structurally_limited) {
+    return (
+      <div className="rs-row">
+        <span className="rs-row-label">{label}</span>
+        <span className="rs-row-na">cannot occur here · {r.note ?? 'structurally limited'}</span>
+      </div>
+    );
+  }
   if (!r) {
     return (
       <div className="rs-row">
@@ -56,7 +67,7 @@ export default function FalseAlarms({ loaded }) {
           return (
             <tr key={`${k}-${lv}`}>
               <th scope="row">{healthy[k].label} ({fmtSig(healthy[k].hours)} h)</th><td>{name}</td>
-              {r ? (<><td>{r.events}</td><td>{fmtSig(r.exposure_hours)}</td><td>{fmtSig(r.per_hour)}</td><td>{fmtSig(r.upper_95_per_hour)}</td></>) : <td colSpan={4}>not measured</td>}
+              {r?.structurally_limited ? <td colSpan={4}>cannot occur here · {r.note ?? 'structurally limited'}</td> : r ? (<><td>{r.events}</td><td>{fmtSig(r.exposure_hours)}</td><td>{fmtSig(r.per_hour)}</td><td>{fmtSig(r.upper_95_per_hour)}</td></>) : <td colSpan={4}>not measured</td>}
               <td>{healthy[k].column}</td>
             </tr>
           );
@@ -79,8 +90,8 @@ export default function FalseAlarms({ loaded }) {
 
   return (
     <ChartFrame
-      title="False alarms on healthy engines"
-      lede="How often each witness fires when nothing is wrong. Lower is better; the whisker is the worst case we can't rule out (95%)."
+      title="False alerts on healthy engines"
+      lede="How often each level fires when nothing is wrong, in episodes per hour. Lower is better; the whisker is the worst case we can't rule out (95%). Only the two-witness ALARM is an alarm."
       file="alarm_budget.json"
       loaded={loaded}
       about={about}

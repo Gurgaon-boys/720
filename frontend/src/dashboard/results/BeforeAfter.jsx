@@ -19,7 +19,7 @@ function Row({ label, r, max, kind }) {
         <span className={`rs-bar ${kind}`} style={{ width: pct(r.per_hour, max) }} />
         <span className="rs-whisker" style={{ left: pct(r.per_hour, max), width: `calc(${pct(r.upper_95_per_hour, max)} - ${pct(r.per_hour, max)})` }} />
       </span>
-      <span className="rs-row-val mono">{fmtSig(r.per_hour)}<span className="rs-dim"> /h · ≤ {fmtSig(r.upper_95_per_hour)} · {r.events} in {fmtSig(r.exposure_hours)} h</span></span>
+      <span className="rs-row-val mono">{fmtSig(r.per_hour)}<span className="rs-dim"> episodes/h · ≤ {fmtSig(r.upper_95_per_hour)} · {r.events} in {fmtSig(r.exposure_hours)} h</span></span>
     </div>
   );
 }
@@ -70,8 +70,8 @@ export default function BeforeAfter({ real, sim }) {
   const ok = real?.status === 'loaded' || sim?.status === 'loaded';
   return (
     <ChartFrame
-      title="False Unclassified alerts: before and after the fix"
-      lede="On healthy engines every Unclassified alert is false. Real and simulated are measured separately, each on its own scale."
+      title="False Unclassified episodes: before and after the fix"
+      lede="On healthy engines every Unclassified episode is a false alert. These are Unclassified episodes, not ALARMs. Real and simulated are measured separately, each on its own scale."
       srcPath="eval/results/column_c_detail.json, eval/results/soak_l3_long.json"
       loaded={ok ? { status: 'loaded' } : (real ?? sim)}
       about={(
