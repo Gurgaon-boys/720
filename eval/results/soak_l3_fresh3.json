@@ -1,5 +1,5 @@
 {
- "created_at": "2026-10-16T13:58:34+00:00",
+ "created_at": "2026-10-16T18:30:56+00:00",
  "sim_version": "2.1.1",
  "label": "SIM 2.1",
  "column": "A",
@@ -11,6 +11,7 @@
   "before": {
    "healthy_thresholds": "checkpoint (pooled val windows)",
    "unclassified_windows_required": 1,
+   "corroborate_windows": 0,
    "hours": 2.0,
    "windows": 55669,
    "levels": {
@@ -211,6 +212,7 @@
   "persist2": {
    "healthy_thresholds": "checkpoint (pooled val windows)",
    "unclassified_windows_required": 2,
+   "corroborate_windows": 0,
    "hours": 2.0,
    "windows": 55669,
    "levels": {
@@ -415,6 +417,7 @@
     "high": 13.791712034485002
    },
    "unclassified_windows_required": 2,
+   "corroborate_windows": "rule-layer default (3, D134)",
    "hours": 2.0,
    "windows": 55669,
    "levels": {

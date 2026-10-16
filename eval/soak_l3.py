@@ -5,7 +5,9 @@ engines and operating points as eval/soak_l2.py) and the real rule layer is repl
   before    healthy-model thresholds from pooled val windows (models/fast_v1.json), UNCLASSIFIED after 1 window
   persist2  same thresholds, UNCLASSIFIED after 2 consecutive windows (the L3 rule-layer change alone)
   after     thresholds from engine-to-engine spread on validation engines (models/thresholds/healthy_model.json),
-            UNCLASSIFIED after 2 windows: the committed configuration
+            UNCLASSIFIED after 2 windows, and the rule layer's current precedence (D134: an anomaly within 3 windows
+            of a trained-fault physics rule is that fault's ADVISORY): the committed configuration
+  before and persist2 are historical, so they replay without the D134 corroboration (corroborate_windows=0)
 Windows are 4-cycle windows (50 % overlap); an episode is a contiguous run of windows in that state.
 Episode rates carry the exact one-sided 95 % Poisson bound (docs/EVAL_JSON.md); window rates keep the
 Wilson-on-windows bound used by soak_l2 for comparability.
@@ -44,11 +46,11 @@ def poisson(k: int, hours: float) -> dict:
 
 def configs() -> dict:
     after = json.loads(HEALTHY_THRESHOLDS.read_text())["bands"]
-    return {"before": (None, 1), "persist2": (None, 2), "after": (after, 2)}
+    return {"before": (None, 1, 0), "persist2": (None, 2, 0), "after": (after, 2, None)}
 
 
-def summarise(recs: list[dict], th, uw) -> dict:
-    per_run = [levels(replay(r, th, uw)) for r in recs]
+def summarise(recs: list[dict], th, uw, cw=None) -> dict:
+    per_run = [levels(replay(r, th, uw, corroborate_windows=cw)) for r in recs]
     t = total(per_run)
     hours = sum(r["meta"]["run_s"] for r in recs) / 3600
     out = {"hours": hours, "windows": t["counted_windows"], "levels": {}}
@@ -78,9 +80,11 @@ def main():
            "label": "SIM 2.1", "column": "A", "split": f"{args.range} engines {SEEDS[args.range][0][0]}-{SEEDS[args.range][0][-1]} (unseen)",
            "runs": runs, "run_s_counted": RUN_S, "window": "4-cycle windows, 50 % overlap",
            "configs": {}, "runs_detail": [r["meta"] for r in recs]}
-    for name, (th, uw) in configs().items():
+    for name, (th, uw, cw) in configs().items():
         res["configs"][name] = {"healthy_thresholds": th or "checkpoint (pooled val windows)",
-                                "unclassified_windows_required": uw, **summarise(recs, th, uw)}
+                                "unclassified_windows_required": uw,
+                                "corroborate_windows": "rule-layer default (3, D134)" if cw is None else cw,
+                                **summarise(recs, th, uw, cw)}
     old = ROOT / "eval" / "results" / f"soak_l2_{args.range.replace('soak_', '')}.json"
     if old.exists():               # the recording must reproduce the earlier soak exactly
         o = json.loads(old.read_text())
