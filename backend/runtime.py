@@ -32,6 +32,10 @@ log = logging.getLogger("backend")
 QUEUE_SIZE = 64
 
 
+class SensorControlError(RuntimeError):
+    """The current source has no sensor controls (only the live simulator has)."""
+
+
 class Hub:
     """Broadcast to every subscriber. A slow client loses its oldest messages; nobody else waits."""
 
@@ -107,8 +111,41 @@ class Runtime:
         return self.injection
 
     def clear_faults(self) -> None:
-        self.scenario.clear_faults()
+        self.scenario.clear_faults()   # disabled sensors stay disabled (D137)
         self.injection = None
+
+    # ------------------------------------------------------------ sensor sabotage (D137)
+
+    def _sabotage_source(self):
+        """The current source if it can switch sensors off (the live simulator), else SensorControlError.
+        HTTP and OPC UA both come through here, so there is one sensor state: the source's."""
+        if not hasattr(self.scenario, "disable_sensor"):
+            raise SensorControlError(f"source {self.scenario.name!r} has no simulator; switch to sim first")
+        return self.scenario
+
+    def disable_sensor(self, channel: str) -> list[str]:
+        """Raises SensorControlError off the simulator, ValueError for an unknown channel."""
+        src = self._sabotage_source()
+        src.disable_sensor(channel)
+        log.info("SENSOR %s off at t=%.2f s", channel, src.stream_t)
+        return src.disabled_sensors()
+
+    def enable_sensor(self, channel: str) -> list[str]:
+        src = self._sabotage_source()
+        src.enable_sensor(channel)
+        log.info("SENSOR %s on at t=%.2f s", channel, src.stream_t)
+        return src.disabled_sensors()
+
+    def restore_sensors(self) -> list[str]:
+        src = self._sabotage_source()
+        src.restore_sensors()
+        log.info("SENSORS restored at t=%.2f s", src.stream_t)
+        return src.disabled_sensors()
+
+    def disabled_sensors(self) -> list[str] | None:
+        """None when the source has no sensor controls."""
+        fn = getattr(self.scenario, "disabled_sensors", None)
+        return fn() if fn else None
 
     async def start(self) -> None:
         self._tasks = [asyncio.create_task(self._loop(p, f)) for p, f in

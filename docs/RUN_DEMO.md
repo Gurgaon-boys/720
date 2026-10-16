@@ -129,3 +129,43 @@ The source picker under the header (kept in demo mode) switches between **Simula
 Only the carOBD **held-out** files are offered (display only; nothing is fitted on them). Uploads are stored under
 `data/uploads/` (gitignored). API: `GET /replay/files`, `POST /replay {"file", "speed"}`, `POST /replay/speed`,
 `POST /upload_obd?filename=…` (raw CSV body), `POST /inject {"fault": "lean_drift", "severity"}`.
+
+## 7. Sabotage Lab (take a sensor away, live)
+
+Tab **SABOTAGE LAB** (`http://127.0.0.1:5173/?demo=1#sabotage`), labelled **SIMULATED TEST ENVIRONMENT**. A judge
+switches simulator sensors off and on and watches what 720 can still prove. It uses the same backend runtime,
+rule layer and OPC UA server as every other tab; it adds no decision logic (D137).
+
+**Start the backend at least 30 s before this demo.** The classifier abstains until it has 20 s of OBD history,
+and the first ~2 s after start can show a one-window knock Watch or UNCLASSIFIED (start-up transient).
+
+| # | Click | Backend (rule layer, watchdog) | Lab shows |
+|---|---|---|---|
+| 1 | Open **SABOTAGE LAB** | NORMAL, every sensor NORMAL | Four sensor nodes wired to the engine with flowing pulses, **FULL EVIDENCE**, Witness 2 "Healthy, SVM p ≈ 0.9" |
+| 2 | Fault injection: **Misfire, cylinder 3, 1.00**, **Inject** | ADVISORY in 0.45 s, **ALARM misfire cyl 3** (physics + classifier) in 1.30 s | Cylinder 3 red, camera on it; Witness 1 "FIRED · cyl 3", Witness 2 "Misfire · cyl 3, counted by the rule layer" |
+| 3 | **ACCEL → Disable** | Command accepted in ~0.1 s; the classifier's output is gone in **0.40 s** (no valid accelerometer window); the watchdog reports **accel FAILURE at 3.1 s**. The ALARM **stays latched** (unacknowledged alarms never clear) | SENDING → AWAITING WATCHDOG (amber) → **SENSOR OFFLINE**: the ACCEL wire breaks and its pulses stop; ACCEL strip frozen and labelled STALE; **PARTIAL EVIDENCE**; Witness 2 "Classifier witness unavailable: accelerometer offline. New confirmed alarms require two matching witnesses."; "Previously confirmed alarm remains latched. Current diagnostic evidence is degraded."; knock rule "NO INPUT · ACCEL offline" |
+| 4 | **Acknowledge alarm** | The acknowledged alarm resets once its two-witness match is gone (D124): **ADVISORY misfire cyl 3, physics only**, in 0.48 s; guidance "Check sensor wiring (accel); engine state unknown" | Key line: *"You took away a sensor, so 720 stopped claiming what it could no longer prove."* |
+| 5 | **ACCEL → Enable** | Sensor NORMAL again in **0.3–0.4 s**; classifier output back in **0.86 s**; a **new ALARM** (new id) in 1.16 s once both witnesses match for 2 windows | RECOVERING until valid data arrives, then the wire rejoins and pulses resume; Witness 2 returns only when the backend sends model output again; FULL EVIDENCE |
+| 6 | UaExpert (optional) | `EngineAsset/SensorHealth/accel` = 1 (FAILURE) while it is off, 0 after; `Diagnostics/Models` empty while off | Same state as the lab; `DisableSensor` / `EnableSensor` (right-click, Call, Channel = `accel`) do the same as the buttons |
+
+All times above were measured on this laptop in the browser (click → first broadcast showing the change); the lab's
+timeline records them as `+x s` on every run. The watchdog's 3 s is by design (D15): a sensor is called failed only
+after 3 s without data, so the break animation waits for it.
+
+**Which sensor does what** (from the code, shown in the lab): **ACCEL** = knock rule + classifier input; **CRANK** =
+misfire rule + cylinder localisation + classifier input (crank off also blanks the per-cylinder glow); **MIC** =
+acoustic signature display only (evidence stays FULL); **CAM** = 720° phase, held from the last cam pulse while
+lost (evidence stays FULL). Crank and accelerometer both off = **INSUFFICIENT EVIDENCE**.
+
+**Rules the lab keeps:** it never forces a state, never fakes a classifier output, and never shows a sensor live before
+the watchdog says so. Clearing a fault never re-enables a sensor. Switching tabs changes nothing in the backend
+(the lab keeps its record). Selecting a source again (e.g. *Simulator* in the picker) starts a new run with every
+sensor on. **Restore all** re-enables every sensor.
+
+**If the classifier is unavailable** (no `fast_v1.pkl`, section 2): Witness 2 reads NOT LOADED, evidence is PARTIAL
+from the start and the rule layer stops at ADVISORY, so step 2 gives ADVISORY, not ALARM. The sensor topology,
+watchdog, physics witness and recovery still work; skip step 4 and say plainly that the second witness is missing.
+
+API: `GET /sensors`, `POST /sensor/{mic|accel|crank|cam}/off|on`, `POST /sensors/restore` (409 off the simulator,
+422 for any other channel). A reply only means the command was accepted; the sensor's state comes from
+`state.health.sensors`.

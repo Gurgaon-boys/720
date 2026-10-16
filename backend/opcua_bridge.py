@@ -19,6 +19,8 @@ Address space (namespace urn:720:hackhive), under Objects/EngineAsset:
                    after 3 s with no state) and LastStateAgeS give the stream's freshness
   Acknowledge(AlarmId, Operator) -> (Accepted, Reason)
   Inject(Fault, Cylinder, Severity) -> (Accepted, Reason)   live simulator only, same path as POST /inject
+  DisableSensor(Channel) / EnableSensor(Channel) -> (Accepted, Reason)   live simulator only, same path as
+                   POST /sensor/{channel}/off|on (D137); the sensor's state is confirmed by SensorHealth/*
 
 NE 107 values match the OPC UA DI DeviceHealthEnumeration: NORMAL 0, FAILURE 1, CHECK_FUNCTION 2,
 OFF_SPEC 3, MAINTENANCE_REQUIRED 4. It's a custom enum with those values; the DI nodeset isn't loaded.
@@ -52,6 +54,7 @@ from asyncua.common.methods import uamethod
 from asyncua.common.structures104 import new_enum
 
 from backend.messages import SCHEMA_VERSION
+from backend.runtime import SensorControlError
 
 log = logging.getLogger("backend.opcua")
 logging.getLogger("asyncua").setLevel(logging.WARNING)
@@ -314,6 +317,19 @@ class OpcuaBridge:
                               _arg("Severity", ua.ObjectIds.Double)],
                              [_arg("Accepted", ua.ObjectIds.Boolean), _arg("Reason", ua.ObjectIds.String)])
 
+        @uamethod
+        async def disable_sensor(parent, channel):
+            return self._sensor_command(self.runtime.disable_sensor, channel, "DisableSensor")
+
+        @uamethod
+        async def enable_sensor(parent, channel):
+            return self._sensor_command(self.runtime.enable_sensor, channel, "EnableSensor")
+
+        for name, fn in (("DisableSensor", disable_sensor), ("EnableSensor", enable_sensor)):
+            await eng.add_method(self._nid(f"EngineAsset.{name}"), self._qn(name), fn,
+                                 [_arg("Channel", ua.ObjectIds.String)],
+                                 [_arg("Accepted", ua.ObjectIds.Boolean), _arg("Reason", ua.ObjectIds.String)])
+
         etype = await s.create_custom_event_type(self.idx, "EngineFaultEventType", ua.ObjectIds.BaseEventType, EVENT_FIELDS)
         self.event_type = etype
         self._gens = [await s.get_event_generator(etype, eng), await s.get_event_generator(etype, ua.ObjectIds.Server)]
@@ -555,6 +571,17 @@ class OpcuaBridge:
                 reason = str(e)
         log.info("OPC UA Inject(%s, %s, %s) refused: %s", fault, cylinder, severity, reason)
         return self._reply(False, reason)
+
+    def _sensor_command(self, fn, channel, name):
+        """Same Runtime call as the HTTP sensor routes (D137). Accepted only means the command was taken;
+        the sensor's actual state comes from SensorHealth/<channel> (the watchdog, 3 s)."""
+        try:
+            fn(str(channel))
+        except (SensorControlError, ValueError) as e:
+            log.info("OPC UA %s(%s) refused: %s", name, channel, e)
+            return self._reply(False, str(e))
+        log.info("OPC UA %s(%s) accepted", name, channel)
+        return self._reply(True, "")
 
     @staticmethod
     def _reply(ok: bool, reason: str):

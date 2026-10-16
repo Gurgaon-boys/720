@@ -28,8 +28,9 @@ from pydantic import BaseModel
 
 from backend.messages import SCHEMA_VERSION
 from backend.opcua_bridge import OpcuaBridge, endpoint_from_env
-from backend.runtime import Hub, Runtime, put_latest
+from backend.runtime import Hub, Runtime, SensorControlError, put_latest
 from backend.sources import REPLAY, describe, make_source, source_names
+from backend.sources.sim_source import SABOTAGE_CHANNELS
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 log = logging.getLogger("backend")
@@ -181,6 +182,40 @@ def create_app(scenario: str | None = None, validate: bool | None = None, opcua:
             raise HTTPException(409, f"source {src.name!r} takes no injection")
         runtime.clear_faults()  # state.injection -> null
         return {"cleared": True, "t": round(src.stream_t, 3)}
+
+    # ------------------------------------------------------------ Sabotage Lab sensor controls (D137)
+
+    def _sensor_reply(disabled: list[str] | None) -> dict:
+        """What was commanded. Sensor health itself is only ever confirmed by state.health.sensors."""
+        health = (runtime.last_state or {}).get("health", {}).get("sensors")
+        return {"source": runtime.scenario.name, "controllable": disabled is not None,
+                "channels": list(SABOTAGE_CHANNELS), "disabled": disabled or [], "health": health,
+                "t": round(getattr(runtime.scenario, "stream_t", 0.0), 3)}
+
+    def _sensor_command(fn, *args) -> dict:
+        try:
+            return _sensor_reply(fn(*args))
+        except SensorControlError as e:
+            raise HTTPException(409, str(e)) from e
+        except ValueError as e:
+            raise HTTPException(422, str(e)) from e
+
+    @app.get("/sensors")
+    def sensors():
+        return _sensor_reply(runtime.disabled_sensors())
+
+    @app.post("/sensor/{channel}/off")
+    async def sensor_off(channel: str):
+        """Switch a simulator sensor off (mic, accel, crank, cam). 409 off the simulator."""
+        return _sensor_command(runtime.disable_sensor, channel)
+
+    @app.post("/sensor/{channel}/on")
+    async def sensor_on(channel: str):
+        return _sensor_command(runtime.enable_sensor, channel)
+
+    @app.post("/sensors/restore")
+    async def sensors_restore():
+        return _sensor_command(runtime.restore_sensors)
 
     @app.websocket("/ws/state")
     async def ws_state(ws: WebSocket):

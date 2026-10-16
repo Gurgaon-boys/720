@@ -33,7 +33,7 @@ from dsp.features import fingerprint
 from dsp.rules import PER_LOCATION_THRESHOLD, all_rules, load_all, per_location
 from dsp.windows import CycleWindower
 from models.features import StreamFeatures
-from models.witness import ClassifierWitness
+from models.witness import ClassifierWitness, WitnessOut
 from sim import FS, EngineParams, EngineSim
 from sim.engine import CHANNEL_CALIBRATION
 from sim.params import Regimes
@@ -47,6 +47,7 @@ OBD_UNITS = {"rpm": "rev/min", "load_pct": "%", "throttle_pct": "%", "map_kpa": 
              "stft_pct": "%", "ltft_pct": "%", "spark_adv_deg": "deg", "lambda": "1",
              "intake_air_temp_c": "degC", "battery_v": "V", "baro_kpa": "kPa"}
 _RUNNING = Phase()        # the source itself never goes "offline"; sensors drop out individually
+SABOTAGE_CHANNELS = ("mic", "accel", "crank", "cam")   # sensors an operator may switch off (Sabotage Lab, D137)
 
 
 class SimSource:
@@ -80,6 +81,7 @@ class SimSource:
         self._disp_t0 = 0.0                                                       # stream time of index 0
         self._obd: list[dict] = []
         self._drops: list[tuple] = []                                            # (channel, t0, t1)
+        self._disabled: set[str] = set()                                         # operator-disabled sensors
         self._centres, self._baseline = healthy_fingerprint(self.params, self.seed)
 
     @classmethod
@@ -101,7 +103,29 @@ class SimSource:
         self.sim.inject(fault, cylinder=cylinder, severity=severity)
 
     def clear_faults(self) -> None:
-        self.sim.clear_faults()
+        self.sim.clear_faults()   # never restores a disabled sensor (D137)
+
+    # ------------------------------------------------------------ sensor sabotage (D137)
+
+    def disable_sensor(self, channel: str) -> None:
+        """Switch a sensor off from the next simulator chunk on. Uses the simulator's own dropout
+        semantics (mic/accel samples NaN, crank teeth removed) plus cam pulses removed, and records the
+        span like a regime dropout, so live_sensors() drops it and the watchdog reports FAILURE after 3 s.
+        Nothing about the engine or the random streams changes."""
+        if channel not in SABOTAGE_CHANNELS:
+            raise ValueError(f"unknown sensor {channel!r}; allowed: {', '.join(SABOTAGE_CHANNELS)}")
+        self._disabled.add(channel)
+
+    def enable_sensor(self, channel: str) -> None:
+        if channel not in SABOTAGE_CHANNELS:
+            raise ValueError(f"unknown sensor {channel!r}; allowed: {', '.join(SABOTAGE_CHANNELS)}")
+        self._disabled.discard(channel)
+
+    def restore_sensors(self) -> None:
+        self._disabled.clear()
+
+    def disabled_sensors(self) -> list[str]:
+        return [ch for ch in SABOTAGE_CHANNELS if ch in self._disabled]
 
     # ------------------------------------------------------------ source interface
 
@@ -165,6 +189,8 @@ class SimSource:
         while self.stream_t < t - 1e-9:
             chunk = self.sim.step(CHUNK_S)
             t_end = float(chunk["t"][-1]) + 1 / FS
+            if self._disabled:
+                chunk = self._sabotage(chunk, float(chunk["t"][0]), t_end)
             for w in self.features.push(chunk):
                 self._ready.append(self._process(w))
             for ch in DISPLAY_GAIN:
@@ -179,10 +205,30 @@ class SimSource:
             self._drops += [(d["channel"], d["t0"], d["t1"]) for d in chunk["dropouts"]]
             self.stream_t = t_end
 
+    def _sabotage(self, chunk: dict, t0: float, t1: float) -> dict:
+        """Apply the operator-disabled sensors to one chunk (a copy; the simulator's state is untouched)."""
+        chunk = dict(chunk)
+        for ch in self._disabled:
+            if ch in ("mic", "accel"):
+                chunk[ch] = np.full_like(chunk[ch], np.nan)
+            elif ch == "crank":
+                chunk["tooth_times"] = chunk["tooth_times"][:0]
+                chunk["tooth_ids"] = chunk["tooth_ids"][:0]
+            elif ch == "cam":
+                chunk["cam_times"] = chunk["cam_times"][:0]
+            self._drops.append((ch, t0, t1))
+        return chunk
+
     def _process(self, w) -> Window:
         win, f = w.win, w.features
         rules = all_rules(f, w.obd, self.thresholds)
-        wit = self.witness(w.vector, f["rpm_mean"], f["crank_valid"] and f["accel_valid"], w.obd["n"])
+        valid = f["crank_valid"] and f["accel_valid"]
+        if valid:
+            wit = self.witness(w.vector, f["rpm_mean"], True, w.obd["n"])
+        else:
+            # the classifier's inputs include crank and accelerometer features: with either stream missing
+            # the vector is not a measurement, so the witness gives no output at all (D137)
+            wit = WitnessOut([], None, None, 0.0)
         if wit.cpu_ms:
             self.classifier_ms = (self.classifier_ms + [wit.cpu_ms])[-500:]
         _, fp = fingerprint(win)
