@@ -197,7 +197,7 @@ class _Net(torch.nn.Module):
 
 
 class CnnModel:
-    def __init__(self, seed, epochs=6):
+    def __init__(self, seed, epochs=40):          # chosen on VAL (6 / 20 / 40: 0.499 / 0.556 / 0.602)
         self.seed, self.epochs = seed, epochs
 
     def fit(self, d, idx):

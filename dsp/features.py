@@ -117,22 +117,23 @@ def half_order_energy(win) -> float:
     return amplitude_at(o, s, 0.5) * float(np.mean(rpm)) / 1e6
 
 
-def _drops(win):
-    """Relative crank-speed drop after every firing in the window (see roughness), with its cylinder."""
+def _drops(win, with_index: bool = False):
+    """Relative crank-speed drop after every firing in the window (see roughness), with its cylinder
+    (and, with_index, the firing's absolute index: crank angle / 180 deg, the same in overlapping windows)."""
     ang = tooth_angles(win)
     off = SEGMENT_OFFSET_DEG
     j0 = int(np.ceil((ang[0] - off) / 180.0))
     j1 = int(np.floor((ang[-1] - off) / 180.0)) - 1
     js = np.arange(j0, j1 + 1)
     if js.size < 4:
-        return np.zeros(0), np.zeros(0, dtype=int)
+        return (np.zeros(0), np.zeros(0, dtype=int)) + ((np.zeros(0, dtype=int),) if with_index else ())
     t_start = np.interp(180.0 * js + off, ang, win.tooth_times)
     t_end = np.interp(180.0 * js + off + 180.0, ang, win.tooth_times)
     speed = 180.0 / (t_end - t_start)
     drop = -np.diff(speed) / speed.mean()                 # drop[i]: segment js[i] -> js[i + 1]
     rel = drop[1:-1] - 0.5 * (drop[:-2] + drop[2:])
     cyl = np.array([FIRING_ORDER[j % 4] for j in js[1:-2]])
-    return rel, cyl
+    return (rel, cyl, js[1:-2]) if with_index else (rel, cyl)
 
 
 def roughness(win) -> np.ndarray:

@@ -186,6 +186,73 @@
   },
   "CNN": {
    "macro_f1": {
+    "mean": 0.6558450720723928,
+    "sd": 0.04280949339311959
+   },
+   "localisation_accuracy": {
+    "mean": 0.5918357193813323,
+    "sd": 0.02288058172928974
+   },
+   "recall": {
+    "healthy": {
+     "mean": 0.7932562364305021,
+     "sd": 0.043415317165538335
+    },
+    "misfire": {
+     "mean": 0.6829247311827956,
+     "sd": 0.024134666698821382
+    },
+    "knock": {
+     "mean": 0.8846761453396524,
+     "sd": 0.008359403826428394
+    },
+    "injector_clog": {
+     "mean": 0.30859538784067087,
+     "sd": 0.05653235653047889
+    }
+   },
+   "n": 16006,
+   "per_seed": [
+    {
+     "n": 16006,
+     "macro_f1": 0.666485068248023,
+     "recall": {
+      "healthy": 0.7543533164960787,
+      "misfire": 0.6590967741935484,
+      "knock": 0.8751974723538705,
+      "injector_clog": 0.33257861635220126
+     },
+     "localisation_accuracy": 0.5977426636568849,
+     "localisation_n": 4430
+    },
+    {
+     "n": 16006,
+     "macro_f1": 0.692331121221939,
+     "recall": {
+      "healthy": 0.840090389472285,
+      "misfire": 0.6823225806451613,
+      "knock": 0.8909952606635071,
+      "injector_clog": 0.34918238993710693
+     },
+     "localisation_accuracy": 0.61118363794604,
+     "localisation_n": 4596
+    },
+    {
+     "n": 16006,
+     "macro_f1": 0.6087190267472165,
+     "recall": {
+      "healthy": 0.7853250033231424,
+      "misfire": 0.7073548387096774,
+      "knock": 0.8878357030015798,
+      "injector_clog": 0.2440251572327044
+     },
+     "localisation_accuracy": 0.5665808565410718,
+     "localisation_n": 4273
+    }
+   ]
+  },
+  "CNN_6_epochs": {
+   "macro_f1": {
     "mean": 0.5944082862987757,
     "sd": 0.050925299737810244
    },
@@ -432,6 +499,73 @@
   },
   "CNN": {
    "macro_f1": {
+    "mean": 0.36433130358359134,
+    "sd": 0.00979440251355353
+   },
+   "localisation_accuracy": {
+    "mean": 0.4617143206150008,
+    "sd": 0.035285292265519526
+   },
+   "recall": {
+    "healthy": {
+     "mean": 0.09510572582561179,
+     "sd": 0.041780612741742475
+    },
+    "misfire": {
+     "mean": 0.23613535000969557,
+     "sd": 0.03645749522042213
+    },
+    "knock": {
+     "mean": 0.42210306821566873,
+     "sd": 0.043819483296040254
+    },
+    "injector_clog": {
+     "mean": 0.8421209413166517,
+     "sd": 0.0507041513554839
+    }
+   },
+   "n": 28739,
+   "per_seed": [
+    {
+     "n": 28739,
+     "macro_f1": 0.37560789853092413,
+     "recall": {
+      "healthy": 0.14048467569493941,
+      "misfire": 0.19822571262361838,
+      "knock": 0.41465594280607687,
+      "injector_clog": 0.8378016085790885
+     },
+     "localisation_accuracy": 0.4224369296833065,
+     "localisation_n": 7452
+    },
+    {
+     "n": 28739,
+     "macro_f1": 0.35944075298744793,
+     "recall": {
+      "healthy": 0.08660014255167499,
+      "misfire": 0.23923792902850494,
+      "knock": 0.38248436103663985,
+      "injector_clog": 0.8948465892165625
+     },
+     "localisation_accuracy": 0.4719712906818463,
+     "localisation_n": 8081
+    },
+    {
+     "n": 28739,
+     "macro_f1": 0.357945259232402,
+     "recall": {
+      "healthy": 0.05823235923022096,
+      "misfire": 0.2709424083769634,
+      "knock": 0.4691689008042895,
+      "injector_clog": 0.7937146261543044
+     },
+     "localisation_accuracy": 0.4907347414798497,
+     "localisation_n": 7717
+    }
+   ]
+  },
+  "CNN_6_epochs": {
+   "macro_f1": {
     "mean": 0.34874853340464074,
     "sd": 0.0017480143750524355
    },
@@ -593,5 +727,6 @@
    "threshold": "99.9 % quantile of VAL healthy windows (score 1.0 = the anomaly limit)"
   }
  },
- "open_set_note": "Two framings. open_set_healthy_model_vs_healthy: the healthy model as an anomaly detector, unknown vs healthy windows. open_set_valve_tick / open_set_knock_held_out: classifier open-set scores (1 - max p, -max logit), unknown vs ALL known-class test windows; their 'Mahalanobis' rows use known = all test windows, where known faults are (rightly) anomalous too, so they are not an open-set score in that framing."
+ "open_set_note": "Two framings. open_set_healthy_model_vs_healthy: the healthy model as an anomaly detector, unknown vs healthy windows. open_set_valve_tick / open_set_knock_held_out: classifier open-set scores (1 - max p, -max logit), unknown vs ALL known-class test windows; their 'Mahalanobis' rows use known = all test windows, where known faults are (rightly) anomalous too, so they are not an open-set score in that framing.",
+ "cnn_note": "CNN epochs chosen on VAL (6 / 20 / 40 epochs: val macro-F1 0.499 / 0.556 / 0.602); CNN = 40 epochs, CNN_6_epochs = the first run. Input is mic + accel crank-angle spectra only (no crank speed, no OBD), so misfire and clog evidence is mostly absent. The CNN open-set rows come from the 6-epoch nets. CPU only (the installed PyTorch has no CUDA)."
 }

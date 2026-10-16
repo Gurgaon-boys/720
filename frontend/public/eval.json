@@ -1,8 +1,8 @@
 {
  "eval_version": "proposed-0.1",
  "placeholder": false,
- "generated_at": "2026-10-16T07:28:20+00:00",
- "source_commit": "391a541",
+ "generated_at": "2026-10-16T07:33:01+00:00",
+ "source_commit": "60e0091",
  "false_positives": {
   "headline": {
    "dataset": "carOBD held-out files",
@@ -117,6 +117,20 @@
    },
    {
     "model": "CNN",
+    "result": {
+     "kind": "metric",
+     "value": 0.6558,
+     "unit": "macro-F1",
+     "n": 16006,
+     "ci_95": null,
+     "column": "A",
+     "split": "TEST split: engines 775-789, grouped by engine",
+     "note": "localisation 0.592; 3 seeds"
+    },
+    "sd_across_seeds": 0.0428
+   },
+   {
+    "model": "CNN_6_epochs",
     "result": {
      "kind": "metric",
      "value": 0.5944,
