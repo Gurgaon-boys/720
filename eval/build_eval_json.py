@@ -53,7 +53,7 @@ def main():
     cs = json.loads((RES / "clog_sweep.json").read_text())
     demo = json.loads((ROOT / "docs" / "figures" / "l2_demo.json").read_text())
     n_test = mc["test_windows"]
-    grouped = "test engines, grouped by engine"
+    grouped = "TEST split: engines 775-789, grouped by engine"
 
     gap = mc["split_gap_svm_macro_f1"]
     split_gap = {k: metric(round(gap[k]["mean"], 4), gap[k]["n"], f"{k} split" + (" by window" if k == "random" else " by engine"),
@@ -63,25 +63,32 @@ def main():
                                                + ("deterministic" if m == "Baseline" else "3 seeds")),
              "sd_across_seeds": None if m == "Baseline" else round(v["macro_f1"]["sd"], 4)}
             for m, v in mc["models"].items()]
-    vt, ko = mc["open_set_valve_tick"]["Mahalanobis"], mc["open_set_knock_held_out"]["Mahalanobis"]
-    n_vt = mc["unknown_valve_tick_windows"] + n_test
-    held = {"valve_tick": {"auroc": metric(round(vt["auroc"], 4), n_vt, "held-out class (valve_tick) vs test windows",
-                                           unit="AUROC", note="healthy-model Mahalanobis"),
-                           "pauc": metric(round(vt["pauc_fpr_0.1"], 4), n_vt, "held-out class (valve_tick) vs test windows",
-                                          unit="pAUROC, FPR <= 0.1 (McClish)", note="healthy-model Mahalanobis")},
-            "knock": {"auroc": metric(round(ko["auroc"], 4), n_test, "knock held out vs other test windows", unit="AUROC",
-                                      note="healthy-model Mahalanobis"),
-                      "pauc": metric(round(ko["pauc_fpr_0.1"], 4), n_test, "knock held out vs other test windows",
-                                     unit="pAUROC, FPR <= 0.1 (McClish)", note="healthy-model Mahalanobis")}}
+    hm = mc["open_set_healthy_model_vs_healthy"]
+
+    def oc(key, split):
+        r = hm[key]
+        n = r["n_unknown"] + r["n_known"]
+        note = (f"healthy-model Mahalanobis; unknown n={r['n_unknown']} vs healthy n={r['n_known']}; at the VAL threshold "
+                f"TPR {r['tpr_at_val_threshold']:.3f}, FPR {r['fpr_at_val_threshold']:.3f}")
+        return {"auroc": metric(round(r["auroc"], 4), n, split, unit="AUROC", note=note),
+                "pauc": metric(round(r["pauc_fpr_0.1"], 4), n, split, unit="pAUROC, FPR <= 0.1 (McClish)", note=note)}
+    held = {"valve_tick": oc("valve_tick", "held-out class: valve_tick (15 test engines) vs healthy test windows"),
+            "knock": oc("knock", "knock (never seen by the healthy model) vs healthy test windows")}
     s50, s90 = cs["smallest_clog_alarm_rate_ge_0.5"], cs["smallest_clog_alarm_rate_ge_0.9"]
     k = f"{s50:.2f}" if s50 is not None else None
     clog = metric(s50, cs["per_severity"][k]["n_runs"] if k else None, cs["split"], unit="clog severity s (fuel lost)",
                   note=f"smallest s with a two-witness injector_clog ALARM in >= 50 % of runs "
                        f"({cs['per_severity'][k]['alarm']['successes']}/{cs['per_severity'][k]['n_runs']} at s = {s50}); "
                        f"no s reached 90 % (s = {s90}). At s = 0.6 lean misfire takes over (misfire rule, UNCLASSIFIED)" if k else None)
+    rb = json.loads((RES / "robustness_v2.json").read_text())
+    lat = rb["latency"]
+    li = lat["p1.0_idle"]
     mis = next(f for f in demo["faults"] if f["fault"] == "misfire")
-    latency = metric(round(1000 * mis["time_to_state_s"]), 1, "live acceptance run (one take)", unit="ms",
-                     note="POST /inject misfire cyl 3 p 1.0 -> ALARM on the dashboard's backend, wall clock; n = 1")
+    latency = metric(round(li["median_ms"]), li["n"], f"robustness engines (unseen), sim {rb['sim_version']}", unit="ms",
+                     note=(f"first true misfire -> ADVISORY window end, p 1.0, idle (the slowest band); median, p95 "
+                           f"{li['p95_ms']:.0f} ms. mid {lat['p1.0_mid']['median_ms']:.0f}, high {lat['p1.0_high']['median_ms']:.0f}, "
+                           f"held-out rpm {lat['p1.0_held-out']['median_ms']:.0f} ms. Live take: POST /inject -> ALARM "
+                           f"{1000 * mis['time_to_state_s']:.0f} ms (n = 1)"))
     column_a = {"split_gap": split_gap, "model_comparison": comp, "held_out_class": held,
                 "injector_detectability": {"smallest_clog_at_fixed_far": clog}, "latency_ms": latency}
 
