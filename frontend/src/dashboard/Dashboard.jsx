@@ -20,7 +20,7 @@ import './dashboard.css';
 
 const STALE_S = 3; // a data stream silent this long gets a panel notice (same limit as the UI watchdog)
 
-export default function Dashboard({ state, obd, obdWindows, transport, signal, error, scenarioError, links, apiUrl, ages, scenarios, scenarioId, onSelectScenario, onAck, onStartInjection, onStopInjection, ackError, offline, lastStateAt, sound, onToggleSound, audioAvailable, mock }) {
+export default function Dashboard({ state, obd, obdWindows, transport, signal, error, scenarioError, links, apiUrl, ages, scenarios, scenarioId, onSelectScenario, onAck, onStartInjection, onStopInjection, ackError, offline, lastStateAt, sound, onToggleSound, audioKind, mock }) {
   const color = decisionColor(state?.decision);
   // REAL log replay (contract 1.6): no crank or audio, so the OBD panels lead and the cylinder,
   // fingerprint and signal panels are hidden
@@ -66,7 +66,7 @@ export default function Dashboard({ state, obd, obdWindows, transport, signal, e
           )}
           {state && (
             <PanelBoundary name="Sound" variant="inline" resetKey={run}>
-              <SoundControls sound={sound} onToggle={onToggleSound} audioAvailable={audioAvailable} source={state.source} />
+              <SoundControls sound={sound} onToggle={onToggleSound} audioKind={audioKind} source={state.source} />
             </PanelBoundary>
           )}
         </div>

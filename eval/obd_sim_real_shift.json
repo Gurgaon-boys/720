@@ -1,0 +1,139 @@
+{
+  "created_at": "2026-10-16T16:55:04Z",
+  "git_commit": "65808e33da29e1cc94ac52b2a6add211a78728bc",
+  "produced_by": "python -m models.obd.shift_diagnosis",
+  "what": "sim-vs-real feature shift for the OBD classifier (diagnosis; carOBD CALIBRATION files only)",
+  "sim_healthy_windows": 1317,
+  "carobd_calibration_windows": 5969,
+  "classifier_calls_on_carobd_calibration": {
+    "injector_clog": 3662,
+    "healthy": 1874,
+    "knock": 433
+  },
+  "features_by_shift": [
+    {
+      "feature": "load_mean",
+      "shift_sd": 2.304,
+      "sim_mean": 57.151,
+      "sim_sd": 11.781,
+      "carobd_mean": 34.871,
+      "carobd_sd": 6.939
+    },
+    {
+      "feature": "timing_mean",
+      "shift_sd": 1.994,
+      "sim_mean": 21.738,
+      "sim_sd": 4.698,
+      "carobd_mean": 9.333,
+      "carobd_sd": 7.436
+    },
+    {
+      "feature": "timing_std",
+      "shift_sd": 1.893,
+      "sim_mean": 1.694,
+      "sim_sd": 1.75,
+      "carobd_mean": 6.674,
+      "carobd_sd": 3.284
+    },
+    {
+      "feature": "map_resid_mean",
+      "shift_sd": 1.49,
+      "sim_mean": 2.189,
+      "sim_sd": 1.396,
+      "carobd_mean": 0.07,
+      "carobd_sd": 1.448
+    },
+    {
+      "feature": "stft_std",
+      "shift_sd": 1.346,
+      "sim_mean": 1.796,
+      "sim_sd": 0.343,
+      "carobd_mean": 2.652,
+      "carobd_sd": 0.832
+    },
+    {
+      "feature": "rpm_mean",
+      "shift_sd": 1.244,
+      "sim_mean": 1842.166,
+      "sim_sd": 565.14,
+      "carobd_mean": 1224.004,
+      "carobd_sd": 417.623
+    },
+    {
+      "feature": "retard_events",
+      "shift_sd": 0.707,
+      "sim_mean": 0.077,
+      "sim_sd": 0.267,
+      "carobd_mean": 0.466,
+      "carobd_sd": 0.729
+    },
+    {
+      "feature": "ltft_mean",
+      "shift_sd": 0.598,
+      "sim_mean": 0.324,
+      "sim_sd": 1.686,
+      "carobd_mean": -0.678,
+      "carobd_sd": 1.666
+    },
+    {
+      "feature": "total_trim",
+      "shift_sd": 0.349,
+      "sim_mean": 0.292,
+      "sim_sd": 1.732,
+      "carobd_mean": -0.447,
+      "carobd_sd": 2.437
+    },
+    {
+      "feature": "coolant_mean",
+      "shift_sd": 0.265,
+      "sim_mean": 87.358,
+      "sim_sd": 0.459,
+      "carobd_mean": 86.882,
+      "carobd_sd": 2.501
+    },
+    {
+      "feature": "map_resid_std",
+      "shift_sd": 0.238,
+      "sim_mean": 3.478,
+      "sim_sd": 2.587,
+      "carobd_mean": 4.217,
+      "carobd_sd": 3.551
+    },
+    {
+      "feature": "stft_mean",
+      "shift_sd": 0.193,
+      "sim_mean": -0.032,
+      "sim_sd": 0.459,
+      "carobd_mean": 0.231,
+      "carobd_sd": 1.867
+    },
+    {
+      "feature": "ltft_slope",
+      "shift_sd": 0.037,
+      "sim_mean": 0.011,
+      "sim_sd": 0.428,
+      "carobd_mean": 0.167,
+      "carobd_sd": 5.889
+    },
+    {
+      "feature": "stft_slope",
+      "shift_sd": 0.009,
+      "sim_mean": 0.058,
+      "sim_sd": 2.808,
+      "carobd_mean": 0.104,
+      "carobd_sd": 6.795
+    }
+  ],
+  "operating_point": {
+    "sim_rpm_p5_p50_p95": [
+      907,
+      1875,
+      2745
+    ],
+    "carobd_rpm_p5_p50_p95": [
+      652,
+      1200,
+      1948
+    ]
+  }
+}

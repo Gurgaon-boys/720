@@ -1,14 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import './engine3d.css';
 
-// Switches between the 2D dashboard and the lazy-loaded 3D engine view. The choice lives in the
-// URL hash (#3d), so a rehearsal or demo can open straight on the 3D view and Back works.
+// Switches between the 2D dashboard, the lazy-loaded 3D engine view and the Results tab. The
+// choice lives in the URL hash (#3d, #results), so a rehearsal or demo can open straight on a
+// view and Back works.
 export const VIEWS = [
   { id: '2d', name: '2D dashboard' },
   { id: '3d', name: '3D engine' },
+  { id: 'results', name: 'Results' },
 ];
-const HASH = { '2d': '', '3d': '#3d' };
-const fromHash = () => (window.location.hash === HASH['3d'] ? '3d' : '2d');
+const HASH = { '2d': '', '3d': '#3d', results: '#results' };
+const fromHash = () => VIEWS.find((v) => HASH[v.id] && HASH[v.id] === window.location.hash)?.id ?? '2d';
 
 export function useViewTab() {
   const [view, setView] = useState(fromHash);

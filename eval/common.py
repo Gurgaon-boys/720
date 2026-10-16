@@ -40,6 +40,9 @@ SEEDS = {
     "soak_long": (list(range(1300, 1400)), 43000),
     # L3: extra VALIDATION engines for the healthy-model threshold (engine-to-engine spread); tuning allowed here
     "val_thr": (list(range(1200, 1280)), 50000),
+    # OBD-only classifier trained on simulated OBD (models/obd/sim_classifier.py, Diljit)
+    "obd_clf_train": (list(range(2000, 2060)), 60000),
+    "obd_clf_val": (list(range(2060, 2075)), 61000),
 }
 _used = [e for k, (es, _) in SEEDS.items() for e in es]
 assert len(_used) == len(set(_used)), "seed ranges overlap"

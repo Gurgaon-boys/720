@@ -62,10 +62,23 @@ def headline_fp() -> dict:
         "dataset": f"carOBD held-out files ({h['files']} files, {h['hours']:.2f} h), OBD branch {obd.get('version', 'v1')}",
         "anomaly_flags": rate_from(L["1_anomaly_flags"]["episodes"], h["files"], split, src, unit=unit),
         "advisories": rate_from(L["3_advisories"]["episodes"], h["files"], split, src, unit=unit),
-        "classifier_false_faults": null_rate("C", split, note=L["4_classifier_false_faults"]),
+        "classifier_false_faults": classifier_false_faults(split),
         "alarms": rate_from({k: L["5_alarms"][k] for k in ("count", "hours", "per_hour", "upper95_per_hour")},
                             h["files"], split, src, structurally_limited=True, note=L["5_alarms"]["note"]),
     }
+
+
+def classifier_false_faults(split: str) -> dict:
+    c = load("obd_classifier_carobd.json")
+    if c is None:
+        return null_rate("C", split, note="not available: no OBD classifier yet")
+    r = c["carobd_heldout"]
+    return rate_from(r["levels"]["4_classifier_false_faults"]["episodes"], r["files"], split,
+                     "eval/obd_classifier_carobd.json", unit="episodes (runs of consecutive 30 s windows)",
+                     note="OBD-only classifier trained on SIMULATED OBD (D125, D126), run on real held-out carOBD: "
+                          "a sim-to-real test, NOT part of the deployed OBD branch, whose other levels are shown here. "
+                          f"With it in the chain: ADVISORY {r['levels']['3_advisories']['episodes']['per_hour']}/h, "
+                          f"ALARM {r['levels']['5_alarms']['per_hour']}/h.")
 
 
 def secondary_fp() -> dict:
