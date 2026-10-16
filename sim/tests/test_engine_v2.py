@@ -5,7 +5,7 @@ import pytest
 from scipy import signal as sps
 
 from sim import FS, EngineParams, EngineSim
-from sim.engine import OBD_CHANNELS, HeldOutFaultError
+from sim.engine import CAM_OFFSET_DEG, CHANNEL_CALIBRATION, OBD_CHANNELS, SENSORS, SLOW_CHANNELS, HeldOutFaultError
 from sim.guard import HeldOutError, check_chunk, check_condition
 from sim.params import Regimes
 
@@ -81,7 +81,7 @@ def test_obd_at_1hz_with_all_channels_and_sources():
     _, cs = _chunks(10.0)
     obd = [o for c in cs for o in c["obd"]]
     assert [o["t"] for o in obd] == [float(i) for i in range(10)]
-    assert set(obd[0]) == {"t", *OBD_CHANNELS}
+    assert set(obd[0]) == {"t", *OBD_CHANNELS, *SLOW_CHANNELS}
     last = obd[-1]
     assert abs(last["rpm"] - 800) < 20 and 20 < last["map_kpa"] < 50 and 0 < last["throttle_pct"] < 40
     assert abs(last["stft_pct"]) < 6 and abs(last["lambda"] - 1) < 0.03 and 80 < last["coolant_c"] < 95
@@ -204,3 +204,61 @@ def test_accel_does_not_depend_on_chunk_size():
         sim = EngineSim(P, seed=0)
         out[step] = _cat([sim.step(step) for _ in range(int(round(3.0 / step)))], "accel")
     np.testing.assert_array_equal(out[0.5], out[0.05])
+
+
+# ---------------------------------------------------------------- L3 sensors (sim 2.1.1)
+
+def test_sensor_table_is_11_physical_plus_4_ecu_computed():
+    kinds = [k for k, _ in SENSORS.values()]
+    assert kinds.count("physical") == 11 and kinds.count("ecu_computed") == 4 and len(SENSORS) == 15
+    assert {"cam", "intake_air_temp_c", "battery_v", "baro_kpa"} <= set(SENSORS)
+    assert set(CHANNEL_CALIBRATION.values()) == {"real_calibrated", "sim_only"}
+    assert all(CHANNEL_CALIBRATION[c] in ("real_calibrated", "sim_only") for c in (*OBD_CHANNELS, *SLOW_CHANNELS))
+
+
+def test_cam_pulse_once_per_cycle_at_its_offset():
+    sim, cs = _chunks(4.0)
+    t = _cat(cs, "t")
+    theta = np.unwrap(_cat(cs, "crank_angle_deg"), period=720.0)
+    cam = _cat(cs, "cam_times")
+    assert np.allclose(np.mod(np.interp(cam, t, theta), 720.0), CAM_OFFSET_DEG, atol=0.05)
+    assert len(cam) == int((theta[-1] - CAM_OFFSET_DEG) // 720) + 1           # every cycle, none twice
+
+
+@pytest.mark.parametrize("ch,lo,hi", [("intake_air_temp_c", 0, 90), ("battery_v", 12.5, 15.0), ("baro_kpa", 95, 106)])
+def test_slow_sensors_in_carobd_range_and_quantised(ch, lo, hi):
+    from sim.params import SLOW_SENSORS
+    vals = [o[ch] for e in range(6) for o in (lambda c: [r for x in c for r in x["obd"]])(_chunks(6.0, seed=e)[1])]
+    assert all(lo < v < hi for v in vals)
+    step = SLOW_SENSORS[ch]["step"]
+    assert all(abs(v / step - round(v / step)) < 1e-6 for v in vals)
+
+
+def test_cam_and_slow_sensors_do_not_depend_on_chunk_size():
+    out = {}
+    for step in (0.5, 0.05):
+        sim = EngineSim(P, seed=2)
+        cs = [sim.step(step) for _ in range(int(round(6.0 / step)))]
+        out[step] = (_cat(cs, "cam_times"), [{k: o[k] for k in SLOW_CHANNELS} for c in cs for o in c["obd"]])
+    np.testing.assert_array_equal(out[0.5][0], out[0.05][0])
+    assert out[0.5][1] == out[0.05][1]
+
+
+def test_regimes_on_stream_does_not_depend_on_step_size():
+    """With hard regimes on, smaller steps are slices of the same 0.5 s blocks (D107): identical stream,
+    including an injection at a block boundary and sensor dropouts."""
+    out = {}
+    for step in (0.5, 0.05, 0.1):
+        sim = EngineSim(P, seed=4, regimes=Regimes.eval(dropout_per_min=4.0), purpose="eval")
+        cs = []
+        for k in range(int(round(6.0 / step))):
+            if abs(k * step - 3.0) < 1e-9:
+                sim.inject("misfire", 2, 0.5)
+            cs.append(sim.step(step))
+        out[step] = cs
+    for step in (0.05, 0.1):
+        for key in ("mic", "accel", "tooth_times", "rpm", "cam_times"):
+            np.testing.assert_array_equal(np.nan_to_num(_cat(out[0.5], key)), np.nan_to_num(_cat(out[step], key)), err_msg=key)
+        assert [o for c in out[0.5] for o in c["obd"]] == [o for c in out[step] for o in c["obd"]]
+        assert [lab["cycle"] for c in out[0.5] for lab in c["labels"]] == [lab["cycle"] for c in out[step] for lab in c["labels"]]
+    assert any(c["dropouts"] for c in out[0.05])

@@ -1,0 +1,750 @@
+{
+ "created_at": "2026-10-16T13:58:40+00:00",
+ "sim_version": "2.1.1",
+ "label": "SIM 2.1",
+ "column": "A",
+ "split": "robustness engines (unseen), valve tick held out of training",
+ "runs_per_severity": 20,
+ "fault_s": 90.0,
+ "configs": {
+  "before": {
+   "thresholds": "checkpoint (pooled val windows)",
+   "unclassified_windows_required": 1,
+   "val_unclassified_episodes_per_hour": 37.0,
+   "valve_tick": {
+    "0.3": {
+     "kind": "proportion",
+     "successes": 7,
+     "n": 20,
+     "value": 0.35,
+     "ci_95": [
+      0.18118954786794464,
+      0.5671494897805354
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": 2.818,
+     "latency_s_p90": 21.9994,
+     "named_fault_alarms": 0
+    },
+    "0.6": {
+     "kind": "proportion",
+     "successes": 18,
+     "n": 20,
+     "value": 0.9,
+     "ci_95": [
+      0.6989617935882066,
+      0.9721341060158468
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": 0.45399999999999996,
+     "latency_s_p90": 6.098300000000011,
+     "named_fault_alarms": 0
+    },
+    "1": {
+     "kind": "proportion",
+     "successes": 20,
+     "n": 20,
+     "value": 1.0,
+     "ci_95": [
+      0.8388698745050667,
+      1.0
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": 0.281,
+     "latency_s_p90": 1.2186000000000006,
+     "named_fault_alarms": 0
+    },
+    "all": {
+     "successes": 45,
+     "n": 60,
+     "value": 0.75,
+     "ci_95": [
+      0.6276768905451521,
+      0.8422361442158816
+     ]
+    }
+   },
+   "fresh3_unclassified_episodes_per_hour": 7.5
+  },
+  "persist2": {
+   "thresholds": "checkpoint (pooled val windows)",
+   "unclassified_windows_required": 2,
+   "val_unclassified_episodes_per_hour": 7.875,
+   "valve_tick": {
+    "0.3": {
+     "kind": "proportion",
+     "successes": 4,
+     "n": 20,
+     "value": 0.2,
+     "ci_95": [
+      0.0806563532712,
+      0.41602172202575993
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": 0.669,
+     "latency_s_p90": 18.488800000000005,
+     "named_fault_alarms": 0
+    },
+    "0.6": {
+     "kind": "proportion",
+     "successes": 15,
+     "n": 20,
+     "value": 0.75,
+     "ci_95": [
+      0.5312949900419365,
+      0.888139947210597
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": 0.432,
+     "latency_s_p90": 4.393599999999999,
+     "named_fault_alarms": 0
+    },
+    "1": {
+     "kind": "proportion",
+     "successes": 20,
+     "n": 20,
+     "value": 1.0,
+     "ci_95": [
+      0.8388698745050667,
+      1.0
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": 0.3485,
+     "latency_s_p90": 1.5284000000000006,
+     "named_fault_alarms": 0
+    },
+    "all": {
+     "successes": 39,
+     "n": 60,
+     "value": 0.65,
+     "ci_95": [
+      0.5236238380947751,
+      0.7583239827618451
+     ]
+    }
+   },
+   "fresh3_unclassified_episodes_per_hour": 2.0
+  },
+  "after": {
+   "thresholds": {
+    "idle": 11.117164435396916,
+    "mid": 12.800446140811347,
+    "high": 13.791712034485002
+   },
+   "unclassified_windows_required": 2,
+   "val_unclassified_episodes_per_hour": 0.0,
+   "valve_tick": {
+    "0.3": {
+     "kind": "proportion",
+     "successes": 1,
+     "n": 20,
+     "value": 0.05,
+     "ci_95": [
+      0.008881219432873136,
+      0.23613589351256675
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": 1.017,
+     "latency_s_p90": 1.017,
+     "named_fault_alarms": 0
+    },
+    "0.6": {
+     "kind": "proportion",
+     "successes": 7,
+     "n": 20,
+     "value": 0.35,
+     "ci_95": [
+      0.18118954786794464,
+      0.5671494897805354
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": 0.486,
+     "latency_s_p90": 9.549200000000008,
+     "named_fault_alarms": 0
+    },
+    "1": {
+     "kind": "proportion",
+     "successes": 20,
+     "n": 20,
+     "value": 1.0,
+     "ci_95": [
+      0.8388698745050667,
+      1.0
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": 0.45999999999999996,
+     "latency_s_p90": 2.3482000000000016,
+     "named_fault_alarms": 0
+    },
+    "all": {
+     "successes": 28,
+     "n": 60,
+     "value": 0.4666666666666667,
+     "ci_95": [
+      0.34627701540988,
+      0.5910679132886489
+     ]
+    }
+   },
+   "fresh3_unclassified_episodes_per_hour": 0.0
+  },
+  "family q0.5": {
+   "thresholds": {
+    "idle": 7.381062829645287,
+    "mid": 7.675973536035428,
+    "high": 7.818596286914347
+   },
+   "unclassified_windows_required": 2,
+   "val_unclassified_episodes_per_hour": 157.875,
+   "valve_tick": {
+    "0.3": {
+     "kind": "proportion",
+     "successes": 16,
+     "n": 20,
+     "value": 0.8,
+     "ci_95": [
+      0.5839782779742401,
+      0.9193436467288
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": 1.7825000000000002,
+     "latency_s_p90": 28.115499999999997,
+     "named_fault_alarms": 0
+    },
+    "0.6": {
+     "kind": "proportion",
+     "successes": 20,
+     "n": 20,
+     "value": 1.0,
+     "ci_95": [
+      0.8388698745050667,
+      1.0
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": 0.37,
+     "latency_s_p90": 1.5003000000000002,
+     "named_fault_alarms": 0
+    },
+    "1": {
+     "kind": "proportion",
+     "successes": 20,
+     "n": 20,
+     "value": 1.0,
+     "ci_95": [
+      0.8388698745050667,
+      1.0
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": 0.281,
+     "latency_s_p90": 0.6930999999999999,
+     "named_fault_alarms": 0
+    },
+    "all": {
+     "successes": 56,
+     "n": 60,
+     "value": 0.9333333333333333,
+     "ci_95": [
+      0.8407442010623228,
+      0.973771725856802
+     ]
+    }
+   }
+  },
+  "family q0.75": {
+   "thresholds": {
+    "idle": 8.045349832311679,
+    "mid": 8.186938470071475,
+    "high": 8.6483774802803
+   },
+   "unclassified_windows_required": 2,
+   "val_unclassified_episodes_per_hour": 68.5,
+   "valve_tick": {
+    "0.3": {
+     "kind": "proportion",
+     "successes": 11,
+     "n": 20,
+     "value": 0.55,
+     "ci_95": [
+      0.3420820083075997,
+      0.7418049791429071
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": 4.281,
+     "latency_s_p90": 23.744,
+     "named_fault_alarms": 0
+    },
+    "0.6": {
+     "kind": "proportion",
+     "successes": 20,
+     "n": 20,
+     "value": 1.0,
+     "ci_95": [
+      0.8388698745050667,
+      1.0
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": 0.45999999999999996,
+     "latency_s_p90": 3.7286000000000015,
+     "named_fault_alarms": 0
+    },
+    "1": {
+     "kind": "proportion",
+     "successes": 20,
+     "n": 20,
+     "value": 1.0,
+     "ci_95": [
+      0.8388698745050667,
+      1.0
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": 0.281,
+     "latency_s_p90": 0.7280000000000002,
+     "named_fault_alarms": 0
+    },
+    "all": {
+     "successes": 51,
+     "n": 60,
+     "value": 0.85,
+     "ci_95": [
+      0.7388517410884038,
+      0.9190265075770431
+     ]
+    }
+   }
+  },
+  "family q0.9": {
+   "thresholds": {
+    "idle": 8.303410108477582,
+    "mid": 8.97273485180128,
+    "high": 9.503805603001563
+   },
+   "unclassified_windows_required": 2,
+   "val_unclassified_episodes_per_hour": 21.875,
+   "valve_tick": {
+    "0.3": {
+     "kind": "proportion",
+     "successes": 8,
+     "n": 20,
+     "value": 0.4,
+     "ci_95": [
+      0.21880396741419272,
+      0.613422057684794
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": 11.795,
+     "latency_s_p90": 61.9567,
+     "named_fault_alarms": 0
+    },
+    "0.6": {
+     "kind": "proportion",
+     "successes": 19,
+     "n": 20,
+     "value": 0.95,
+     "ci_95": [
+      0.7638641064874331,
+      0.9911187805671268
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": 0.432,
+     "latency_s_p90": 4.667999999999999,
+     "named_fault_alarms": 0
+    },
+    "1": {
+     "kind": "proportion",
+     "successes": 20,
+     "n": 20,
+     "value": 1.0,
+     "ci_95": [
+      0.8388698745050667,
+      1.0
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": 0.3075,
+     "latency_s_p90": 0.7280000000000002,
+     "named_fault_alarms": 0
+    },
+    "all": {
+     "successes": 47,
+     "n": 60,
+     "value": 0.7833333333333333,
+     "ci_95": [
+      0.6637973165265748,
+      0.8687707895359299
+     ]
+    }
+   }
+  },
+  "family q0.95": {
+   "thresholds": {
+    "idle": 9.618706894730689,
+    "mid": 9.543837941273438,
+    "high": 10.616760560838514
+   },
+   "unclassified_windows_required": 2,
+   "val_unclassified_episodes_per_hour": 7.0,
+   "valve_tick": {
+    "0.3": {
+     "kind": "proportion",
+     "successes": 4,
+     "n": 20,
+     "value": 0.2,
+     "ci_95": [
+      0.0806563532712,
+      0.41602172202575993
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": 4.023,
+     "latency_s_p90": 20.869400000000002,
+     "named_fault_alarms": 0
+    },
+    "0.6": {
+     "kind": "proportion",
+     "successes": 15,
+     "n": 20,
+     "value": 0.75,
+     "ci_95": [
+      0.5312949900419365,
+      0.888139947210597
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": 0.649,
+     "latency_s_p90": 3.6304,
+     "named_fault_alarms": 0
+    },
+    "1": {
+     "kind": "proportion",
+     "successes": 20,
+     "n": 20,
+     "value": 1.0,
+     "ci_95": [
+      0.8388698745050667,
+      1.0
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": 0.3485,
+     "latency_s_p90": 0.9017000000000004,
+     "named_fault_alarms": 0
+    },
+    "all": {
+     "successes": 39,
+     "n": 60,
+     "value": 0.65,
+     "ci_95": [
+      0.5236238380947751,
+      0.7583239827618451
+     ]
+    }
+   }
+  },
+  "family q0.975": {
+   "thresholds": {
+    "idle": 10.157186193451,
+    "mid": 10.025886601317147,
+    "high": 12.813119843112062
+   },
+   "unclassified_windows_required": 2,
+   "val_unclassified_episodes_per_hour": 3.875,
+   "valve_tick": {
+    "0.3": {
+     "kind": "proportion",
+     "successes": 4,
+     "n": 20,
+     "value": 0.2,
+     "ci_95": [
+      0.0806563532712,
+      0.41602172202575993
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": 9.711,
+     "latency_s_p90": 24.2822,
+     "named_fault_alarms": 0
+    },
+    "0.6": {
+     "kind": "proportion",
+     "successes": 13,
+     "n": 20,
+     "value": 0.65,
+     "ci_95": [
+      0.43285051021946463,
+      0.8188104521320554
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": 0.432,
+     "latency_s_p90": 12.448000000000002,
+     "named_fault_alarms": 0
+    },
+    "1": {
+     "kind": "proportion",
+     "successes": 20,
+     "n": 20,
+     "value": 1.0,
+     "ci_95": [
+      0.8388698745050667,
+      1.0
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": 0.364,
+     "latency_s_p90": 0.9017000000000004,
+     "named_fault_alarms": 0
+    },
+    "all": {
+     "successes": 37,
+     "n": 60,
+     "value": 0.6166666666666667,
+     "ci_95": [
+      0.4901736454040315,
+      0.7291191041511176
+     ]
+    }
+   }
+  },
+  "family q1": {
+   "thresholds": {
+    "idle": 11.117164435396916,
+    "mid": 12.800446140811347,
+    "high": 13.791712034485002
+   },
+   "unclassified_windows_required": 2,
+   "val_unclassified_episodes_per_hour": 0.0,
+   "valve_tick": {
+    "0.3": {
+     "kind": "proportion",
+     "successes": 1,
+     "n": 20,
+     "value": 0.05,
+     "ci_95": [
+      0.008881219432873136,
+      0.23613589351256675
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": 1.017,
+     "latency_s_p90": 1.017,
+     "named_fault_alarms": 0
+    },
+    "0.6": {
+     "kind": "proportion",
+     "successes": 7,
+     "n": 20,
+     "value": 0.35,
+     "ci_95": [
+      0.18118954786794464,
+      0.5671494897805354
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": 0.486,
+     "latency_s_p90": 9.549200000000008,
+     "named_fault_alarms": 0
+    },
+    "1": {
+     "kind": "proportion",
+     "successes": 20,
+     "n": 20,
+     "value": 1.0,
+     "ci_95": [
+      0.8388698745050667,
+      1.0
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": 0.45999999999999996,
+     "latency_s_p90": 2.3482000000000016,
+     "named_fault_alarms": 0
+    },
+    "all": {
+     "successes": 28,
+     "n": 60,
+     "value": 0.4666666666666667,
+     "ci_95": [
+      0.34627701540988,
+      0.5910679132886489
+     ]
+    }
+   }
+  },
+  "family max_x1.1": {
+   "thresholds": {
+    "idle": 12.228880878936609,
+    "mid": 14.080490754892484,
+    "high": 15.170883237933504
+   },
+   "unclassified_windows_required": 2,
+   "val_unclassified_episodes_per_hour": 0.0,
+   "valve_tick": {
+    "0.3": {
+     "kind": "proportion",
+     "successes": 1,
+     "n": 20,
+     "value": 0.05,
+     "ci_95": [
+      0.008881219432873136,
+      0.23613589351256675
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": 1.017,
+     "latency_s_p90": 1.017,
+     "named_fault_alarms": 0
+    },
+    "0.6": {
+     "kind": "proportion",
+     "successes": 6,
+     "n": 20,
+     "value": 0.3,
+     "ci_95": [
+      0.14547527396899385,
+      0.5189767762289793
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": 0.71,
+     "latency_s_p90": 6.692500000000001,
+     "named_fault_alarms": 0
+    },
+    "1": {
+     "kind": "proportion",
+     "successes": 19,
+     "n": 20,
+     "value": 0.95,
+     "ci_95": [
+      0.7638641064874331,
+      0.9911187805671268
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": 0.42,
+     "latency_s_p90": 14.078999999999969,
+     "named_fault_alarms": 0
+    },
+    "all": {
+     "successes": 26,
+     "n": 60,
+     "value": 0.43333333333333335,
+     "ci_95": [
+      0.31572200394400635,
+      0.5589678534530513
+     ]
+    }
+   }
+  },
+  "family max_x1.2": {
+   "thresholds": {
+    "idle": 13.340597322476299,
+    "mid": 15.360535368973617,
+    "high": 16.550054441382002
+   },
+   "unclassified_windows_required": 2,
+   "val_unclassified_episodes_per_hour": 0.0,
+   "valve_tick": {
+    "0.3": {
+     "kind": "proportion",
+     "successes": 0,
+     "n": 20,
+     "value": 0.0,
+     "ci_95": [
+      0.0,
+      0.16113012549493322
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": null,
+     "latency_s_p90": null,
+     "named_fault_alarms": 0
+    },
+    "0.6": {
+     "kind": "proportion",
+     "successes": 6,
+     "n": 20,
+     "value": 0.3,
+     "ci_95": [
+      0.14547527396899385,
+      0.5189767762289793
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": 1.6345,
+     "latency_s_p90": 13.907499999999999,
+     "named_fault_alarms": 0
+    },
+    "1": {
+     "kind": "proportion",
+     "successes": 16,
+     "n": 20,
+     "value": 0.8,
+     "ci_95": [
+      0.5839782779742401,
+      0.9193436467288
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": 0.364,
+     "latency_s_p90": 6.686,
+     "named_fault_alarms": 0
+    },
+    "all": {
+     "successes": 22,
+     "n": 60,
+     "value": 0.36666666666666664,
+     "ci_95": [
+      0.2562073884620827,
+      0.4931723263320327
+     ]
+    }
+   }
+  },
+  "family max_x1.5": {
+   "thresholds": {
+    "idle": 16.675746653095374,
+    "mid": 19.200669211217022,
+    "high": 20.687568051727503
+   },
+   "unclassified_windows_required": 2,
+   "val_unclassified_episodes_per_hour": 0.0,
+   "valve_tick": {
+    "0.3": {
+     "kind": "proportion",
+     "successes": 0,
+     "n": 20,
+     "value": 0.0,
+     "ci_95": [
+      0.0,
+      0.16113012549493322
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": null,
+     "latency_s_p90": null,
+     "named_fault_alarms": 0
+    },
+    "0.6": {
+     "kind": "proportion",
+     "successes": 3,
+     "n": 20,
+     "value": 0.15,
+     "ci_95": [
+      0.05236779195949584,
+      0.36042329588695743
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": 0.482,
+     "latency_s_p90": 15.173200000000001,
+     "named_fault_alarms": 0
+    },
+    "1": {
+     "kind": "proportion",
+     "successes": 9,
+     "n": 20,
+     "value": 0.45,
+     "ci_95": [
+      0.25819502085709295,
+      0.6579179916924003
+     ],
+     "ci_method": "wilson_95",
+     "latency_s_median": 0.486,
+     "latency_s_p90": 6.427400000000002,
+     "named_fault_alarms": 0
+    },
+    "all": {
+     "successes": 12,
+     "n": 60,
+     "value": 0.2,
+     "ci_95": [
+      0.11828389736858964,
+      0.3178204609181701
+     ]
+    }
+   }
+  }
+ }
+}

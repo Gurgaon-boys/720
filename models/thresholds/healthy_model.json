@@ -1,0 +1,186 @@
+{
+ "created_at": "2026-10-16T13:53:50+00:00",
+ "method": "per band: max over VALIDATION engine-runs of the run's largest 2-window persisted Mahalanobis distance (max over consecutive valid window pairs in the band of min(d_t, d_t+1))",
+ "bands": {
+  "idle": 11.117164435396916,
+  "mid": 12.800446140811347,
+  "high": 13.791712034485002
+ },
+ "previous": {
+  "method": "(1 - 0.001) quantile of pooled VAL healthy windows (models/fast_v1.json)",
+  "bands": {
+   "idle": 11.238683481353982,
+   "mid": 9.371346693857134,
+   "high": 10.466989334735429
+  }
+ },
+ "engine_runs_per_band": {
+  "idle": 36,
+  "mid": 108,
+  "high": 101
+ },
+ "per_run_statistic_quantiles": {
+  "idle": {
+   "0.5": 7.381,
+   "0.9": 8.303,
+   "0.95": 9.619,
+   "1.0": 11.117
+  },
+  "mid": {
+   "0.5": 7.676,
+   "0.9": 8.973,
+   "0.95": 9.544,
+   "1.0": 12.8
+  },
+  "high": {
+   "0.5": 7.819,
+   "0.9": 9.504,
+   "0.95": 10.617,
+   "1.0": 13.792
+  }
+ },
+ "validation": {
+  "dataset_val": "engines 760-774, healthy runs (75 x 36 s)",
+  "val_thr": "engines 1200-1279, 160 runs x 3 min = 8.00 h through the full live chain"
+ },
+ "val_thr_unclassified": {
+  "before (pooled windows, 1 window)": {
+   "unclassified_episodes": 296,
+   "unclassified_windows": 498,
+   "per_hour": 37.0,
+   "anomaly_flag_windows": 498
+  },
+  "pooled windows, 2 windows": {
+   "unclassified_episodes": 63,
+   "unclassified_windows": 202,
+   "per_hour": 7.875,
+   "anomaly_flag_windows": 498
+  },
+  "after (engine spread, 2 windows)": {
+   "unclassified_episodes": 0,
+   "unclassified_windows": 0,
+   "per_hour": 0.0,
+   "anomaly_flag_windows": 24
+  }
+ },
+ "family_on_validation": {
+  "q0.5": {
+   "thresholds": {
+    "idle": 7.381062829645287,
+    "mid": 7.675973536035428,
+    "high": 7.818596286914347
+   },
+   "val_thr": {
+    "unclassified_episodes": 1263,
+    "unclassified_windows": 2975,
+    "per_hour": 157.875,
+    "anomaly_flag_windows": 7502
+   }
+  },
+  "q0.75": {
+   "thresholds": {
+    "idle": 8.045349832311679,
+    "mid": 8.186938470071475,
+    "high": 8.6483774802803
+   },
+   "val_thr": {
+    "unclassified_episodes": 548,
+    "unclassified_windows": 1156,
+    "per_hour": 68.5,
+    "anomaly_flag_windows": 3084
+   }
+  },
+  "q0.9": {
+   "thresholds": {
+    "idle": 8.303410108477582,
+    "mid": 8.97273485180128,
+    "high": 9.503805603001563
+   },
+   "val_thr": {
+    "unclassified_episodes": 175,
+    "unclassified_windows": 418,
+    "per_hour": 21.875,
+    "anomaly_flag_windows": 1180
+   }
+  },
+  "q0.95": {
+   "thresholds": {
+    "idle": 9.618706894730689,
+    "mid": 9.543837941273438,
+    "high": 10.616760560838514
+   },
+   "val_thr": {
+    "unclassified_episodes": 56,
+    "unclassified_windows": 194,
+    "per_hour": 7.0,
+    "anomaly_flag_windows": 462
+   }
+  },
+  "q0.975": {
+   "thresholds": {
+    "idle": 10.157186193451,
+    "mid": 10.025886601317147,
+    "high": 12.813119843112062
+   },
+   "val_thr": {
+    "unclassified_episodes": 31,
+    "unclassified_windows": 73,
+    "per_hour": 3.875,
+    "anomaly_flag_windows": 232
+   }
+  },
+  "q1": {
+   "thresholds": {
+    "idle": 11.117164435396916,
+    "mid": 12.800446140811347,
+    "high": 13.791712034485002
+   },
+   "val_thr": {
+    "unclassified_episodes": 0,
+    "unclassified_windows": 0,
+    "per_hour": 0.0,
+    "anomaly_flag_windows": 24
+   }
+  },
+  "max_x1.1": {
+   "thresholds": {
+    "idle": 12.228880878936609,
+    "mid": 14.080490754892484,
+    "high": 15.170883237933504
+   },
+   "val_thr": {
+    "unclassified_episodes": 0,
+    "unclassified_windows": 0,
+    "per_hour": 0.0,
+    "anomaly_flag_windows": 4
+   }
+  },
+  "max_x1.2": {
+   "thresholds": {
+    "idle": 13.340597322476299,
+    "mid": 15.360535368973617,
+    "high": 16.550054441382002
+   },
+   "val_thr": {
+    "unclassified_episodes": 0,
+    "unclassified_windows": 0,
+    "per_hour": 0.0,
+    "anomaly_flag_windows": 0
+   }
+  },
+  "max_x1.5": {
+   "thresholds": {
+    "idle": 16.675746653095374,
+    "mid": 19.200669211217022,
+    "high": 20.687568051727503
+   },
+   "val_thr": {
+    "unclassified_episodes": 0,
+    "unclassified_windows": 0,
+    "per_hour": 0.0,
+    "anomaly_flag_windows": 0
+   }
+  }
+ },
+ "note": "SIM 2.1, column A, validation engines only. The third untouched range and the valve-tick cost are measured afterwards with these thresholds fixed (eval/soak_l3.py, eval/valve_tick_cost.py)"
+}

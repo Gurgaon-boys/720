@@ -26,7 +26,7 @@ The shape is exactly `frontend/src/data/mockEval.js` (Livana's proposal), now fi
 |---|---|---|
 | `false_positives.headline` | `eval/obd_carobd.json` (OBD branch v1, pre-registered; held-out carOBD files) | anomaly flags, advisories, alarms filled; classifier false faults null (no OBD classifier yet) |
 | `false_positives.secondary` | AudioSet P3 audio pipeline (to do) | null until vetting + audio pipeline |
-| `operator_projection` | — | null: alarms are structurally 0 without a classifier witness, so a fleet projection would mislead |
+| `operator_projection` | `eval/results/alarm_budget.json` (L3, Dipen) | SIM 2.1 third soak (both witnesses run; carOBD alarms are structurally 0): 50 × ALARM + UNCLASSIFIED episodes per engine-hour, `upper_95` and the bound stated in `basis` |
 | `column_a` | `eval/table_a_misfire.json` (simulator misfire vs healthy) | filled when that file exists |
 | `column_b` | injected knock / valve tick (to do; needs P2 + injection generator) | null |
 | `column_c.obd_branch` | `eval/obd_carobd.json`: share of held-out 30 s windows flagged, Wilson 95% | filled |
