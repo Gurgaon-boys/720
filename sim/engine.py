@@ -46,9 +46,9 @@ import numpy as np
 from scipy import signal as sps
 from scipy.integrate import cumulative_trapezoid
 
-from sim.params import HELD_OUT_FAULTS, EcuParams, Regimes
+from sim.params import HELD_OUT_FAULTS, SLOW_SENSORS, EcuParams, Regimes
 
-SIM_VERSION = "2.1.0"
+SIM_VERSION = "2.1.1"   # 2.1.1 = 2.1.0 + cam pulse + 3 slow OBD sensors; every 2.1.0 channel bit-identical (tested)
 ACCEL_RMS_TAU_S = 1.0     # running RMS behind the accelerometer's noise level
 FS = 48_000
 
@@ -60,6 +60,25 @@ OBD_RESOLUTION = {"rpm": 0.25, "load_pct": 100 / 255, "throttle_pct": 100 / 255,
                   "stft_pct": 100 / 128, "ltft_pct": 100 / 128, "spark_adv_deg": 0.5}
 OBD_CHANNELS = ("rpm", "load_pct", "throttle_pct", "map_kpa", "coolant_c", "stft_pct", "ltft_pct",
                 "spark_adv_deg", "lambda")
+
+# L3 additions. Cam: one pulse per 720 deg at this crank angle (cylinder 1 firing TDC = 0); DSP derives the
+# cycle phase from it (dsp/windows.py). Slow OBD sensors: own round-robin stagger and own random stream,
+# so the 2.1.0 channels are unchanged.
+CAM_OFFSET_DEG = 90.0
+SLOW_CHANNELS = ("intake_air_temp_c", "battery_v", "baro_kpa")
+# every variable, by kind: 11 physical sensors + 4 ECU-computed values = 15. "real_calibrated" = constants
+# measured on carOBD calibration files; "sim_only" = no real counterpart in carOBD (simulator physics only)
+SENSORS = {
+    "mic": ("physical", "sim_only"), "accel": ("physical", "sim_only"), "crank": ("physical", "sim_only"),
+    "cam": ("physical", "sim_only"), "map_kpa": ("physical", "real_calibrated"),
+    "throttle_pct": ("physical", "real_calibrated"), "coolant_c": ("physical", "real_calibrated"),
+    "lambda": ("physical", "sim_only"), "intake_air_temp_c": ("physical", "real_calibrated"),
+    "battery_v": ("physical", "real_calibrated"), "baro_kpa": ("physical", "real_calibrated"),
+    "load_pct": ("ecu_computed", "real_calibrated"), "stft_pct": ("ecu_computed", "real_calibrated"),
+    "ltft_pct": ("ecu_computed", "real_calibrated"), "spark_adv_deg": ("ecu_computed", "real_calibrated"),
+}
+# rpm is derived from the crank sensor; reported on OBD, calibrated on carOBD idle
+CHANNEL_CALIBRATION = {"rpm": "real_calibrated", **{k: v[1] for k, v in SENSORS.items()}}
 
 _UNCHANGED = object()
 
@@ -297,6 +316,10 @@ class EngineSim:
         self._rng_regime = np.random.default_rng(s_regime)
         self._rng_drop = np.random.default_rng(s_drop)
         s_an_red, s_an_white = ss.spawn(2)             # 2.1: accel background noise, one stream per term
+        (s_slow,) = ss.spawn(1)                         # 2.1.1: slow OBD sensors (spawned last: earlier streams unchanged)
+        self._slow_key = [int(x) for x in s_slow.generate_state(2)]
+        self._slow = self._slow_sensor_setup(np.random.default_rng(s_slow))
+        self._cam_last = None
         self._rng_accel_red = np.random.default_rng(s_an_red)
         self._rng_accel_white = np.random.default_rng(s_an_white)
 
@@ -417,6 +440,7 @@ class EngineSim:
         theta_a = float(np.interp(t_start, tn, th))
         theta_b = float(np.interp(t_end, tn, th))
         tooth_times, tooth_ids = self._teeth_between(theta_a, theta_b, tn, th)
+        cam_times = self._cam_pulses(t, theta)
         tooth_times = self._apply_crank_regimes(tooth_times, t, rpm)
 
         mic = self._render_mic(n0, n_samples, background)
@@ -448,6 +472,7 @@ class EngineSim:
             "rpm": rpm,
             "tooth_times": tooth_times,
             "tooth_ids": tooth_ids,
+            "cam_times": cam_times,
             "mic": mic,
             "accel": accel,
             "cylinder_pressure": pressure,
@@ -821,9 +846,44 @@ class EngineSim:
                 q = OBD_RESOLUTION.get(ch)
                 v = float(self._fast[j][ch])
                 row[ch] = round(v / q) * q if q else v
+            for k, ch in enumerate(SLOW_CHANNELS):
+                off = (k + 0.5) / (len(SLOW_CHANNELS) * hz)
+                idx = math.floor((ts - off) * hz + 1e-9) if ts >= off else 0
+                row[ch] = self._slow_value(k, ch, max(idx / hz + off, 0.0) if ts >= off else 0.0, idx)
             out.append(row)
             self._obd_next += 1
         return out
+
+    def _cam_pulses(self, t, theta):
+        """Cam sensor: times where the crank angle crosses 720 k + CAM_OFFSET_DEG, linear between 48 kHz
+        samples (the previous chunk's last sample included, so the pulses don't depend on chunk size)."""
+        tt = np.concatenate([[self._cam_last[0]], t]) if self._cam_last else t
+        th = np.concatenate([[self._cam_last[1]], theta]) if self._cam_last else theta
+        self._cam_last = (float(t[-1]), float(theta[-1]))
+        cyc = np.floor((th - CAM_OFFSET_DEG) / 720.0)
+        i = np.flatnonzero(np.diff(cyc) > 0)
+        target = 720.0 * cyc[i + 1] + CAM_OFFSET_DEG
+        return tt[i] + (target - th[i]) / (th[i + 1] - th[i]) * (tt[i + 1] - tt[i])
+
+    def _slow_sensor_setup(self, rng) -> dict:
+        """Per engine run: a level per slow sensor (across-file spread) and a smooth wander (3 slow
+        sinusoids with random periods 300-1800 s, total sd = wander_sd)."""
+        out = {}
+        for ch in SLOW_CHANNELS:
+            c = SLOW_SENSORS[ch]
+            out[ch] = {"level": c["level"] + c["level_sd"] * rng.standard_normal(),
+                       "periods": rng.uniform(300.0, 1800.0, 3), "phases": rng.uniform(0, 2 * math.pi, 3),
+                       "amp": c["wander_sd"] * math.sqrt(2.0 / 3.0)}
+        return out
+
+    def _slow_value(self, k: int, ch: str, tp: float, idx: int) -> float:
+        """The value polled at time tp (refresh number idx): level + wander + noise, at the reporting step.
+        The noise is keyed by (channel, refresh number), so it doesn't depend on chunk size."""
+        c, s = SLOW_SENSORS[ch], self._slow[ch]
+        wander = s["amp"] * float(np.sum(np.sin(2 * math.pi * tp / s["periods"] + s["phases"])))
+        noise = c["noise_sd"] * float(np.random.default_rng(self._slow_key + [k, idx]).standard_normal())
+        v = s["level"] + wander + noise
+        return round(round(v / c["step"]) * c["step"], 3)
 
     # ------------------------------------------------------------------ regimes
 
@@ -951,10 +1011,14 @@ class EngineSim:
             "stalled": self.stalled,
             "source": "simulated",
             "sources": {"ecu_fast": "sim_internal", "obd": "simulator",
+                        "slow_sensors": "simulator; level, wander, noise and step from carOBD calibration files",
+                        "cam": "simulator: one pulse per 720 deg at CAM_OFFSET_DEG",
                         "lambda": "simulator only: carOBD logs commanded equivalence ratio, not O2"},
             "units": {"t": "s", "crank_angle_deg": "deg", "rpm": "rev/min", "tooth_times": "s",
                       "mic": "arbitrary (float32)", "accel": "arbitrary (float32), block accelerometer = knock sensor",
                       "cylinder_pressure": "Pa", "map_pa": "Pa", "load_pct": "%", "throttle_pct": "%",
                       "map_kpa": "kPa", "coolant_c": "degC", "stft_pct": "%", "ltft_pct": "%",
-                      "spark_adv_deg": "deg BTDC", "lambda": "1"},
+                      "spark_adv_deg": "deg BTDC", "lambda": "1", "cam_times": "s",
+                      "intake_air_temp_c": "degC", "battery_v": "V", "baro_kpa": "kPa"},
+            "calibration": dict(CHANNEL_CALIBRATION),
         }
