@@ -24,12 +24,17 @@ from backend.rule_layer import AckResult, RuleLayer, asset_ne107
 from backend.scenarios import OBD_S, SIGNAL_S, WINDOW_S
 from backend.sources import make_source
 from backend.signal_frame import encode_frame
+from backend.events import EventLog
 from backend.watchdog import Watchdog
 from models.guidance import guidance
 
 log = logging.getLogger("backend")
 
 QUEUE_SIZE = 64
+
+
+class SensorControlError(RuntimeError):
+    """The current source has no sensor controls (only the live simulator has)."""
 
 
 class Hub:
@@ -65,6 +70,7 @@ class Runtime:
         self._tasks: list[asyncio.Task] = []
         self._listeners: list = []
         self.maintenance_mode = False  # explicit maintenance/test mode (asset health CHECK_FUNCTION)
+        self.events = EventLog(clock)  # incident record: requested / accepted / confirmed (D138)
         self.select(scenario)
 
     def set_maintenance(self, on: bool) -> None:
@@ -96,19 +102,70 @@ class Runtime:
         self.injection = None  # a new source starts with nothing injected
         self._epoch = time.monotonic()
         self._generation = getattr(self, "_generation", 0) + 1
+        self.events.reset_digest()
+        self.events.record("source", "confirmed", f"Source switched to {name!r}: new run, rule layer reset, every sensor on",
+                           source=name)
 
-    def inject(self, fault: str, cylinder: int, severity: float) -> dict:
+    def _command(self, kind: str, text: str, via: str, fn, **data):
+        """Run one operator command with its requested -> accepted / refused record (D138)."""
+        st = getattr(self.scenario, "stream_t", None)
+        self.events.record(kind, "requested", text, via=via, stream_t=st, **data)
+        try:
+            out = fn()
+        except Exception as e:
+            self.events.record(kind, "refused", f"{text}: refused ({e})", via=via, stream_t=st, reason=str(e), **data)
+            raise
+        self.events.record(kind, "accepted", f"{text}: accepted by the backend", via=via, stream_t=st, **data)
+        return out
+
+    def inject(self, fault: str, cylinder: int, severity: float, via: str = "api") -> dict:
         """Inject into the simulator source and record the accepted request for state.injection (1.4).
         The source's own errors (NotImplementedError, ValueError) pass through unrecorded."""
-        self.scenario.inject(fault, cylinder, severity)
+        where = "" if cylinder is None else f" cyl {cylinder}"
+        self._command("inject", f"Inject {fault}{where} (severity {float(severity):.2f})", via,
+                      lambda: self.scenario.inject(fault, cylinder, severity), fault=fault, cylinder=cylinder,
+                      severity=float(severity))
         self.injection = {"active": True, "fault": fault, "cylinder": None if cylinder is None else int(cylinder),
                           "severity": float(severity),
                           "started_at": self.clock()}
         return self.injection
 
-    def clear_faults(self) -> None:
-        self.scenario.clear_faults()
+    def clear_faults(self, via: str = "api") -> None:
+        self._command("clear", "Clear faults", via, self.scenario.clear_faults)   # disabled sensors stay disabled (D137)
         self.injection = None
+
+    # ------------------------------------------------------------ sensor sabotage (D137)
+
+    def _sabotage_source(self):
+        """The current source if it can switch sensors off (the live simulator), else SensorControlError.
+        HTTP and OPC UA both come through here, so there is one sensor state: the source's."""
+        if not hasattr(self.scenario, "disable_sensor"):
+            raise SensorControlError(f"source {self.scenario.name!r} has no simulator; switch to sim first")
+        return self.scenario
+
+    def disable_sensor(self, channel: str, via: str = "api") -> list[str]:
+        """Raises SensorControlError off the simulator, ValueError for an unknown channel."""
+        src = self._command("sensor_off", f"Disable {str(channel).upper()}", via,
+                            lambda: (self._sabotage_source().disable_sensor(channel), self.scenario)[1], sensor=channel)
+        log.info("SENSOR %s off at t=%.2f s", channel, src.stream_t)
+        return src.disabled_sensors()
+
+    def enable_sensor(self, channel: str, via: str = "api") -> list[str]:
+        src = self._command("sensor_on", f"Enable {str(channel).upper()}", via,
+                            lambda: (self._sabotage_source().enable_sensor(channel), self.scenario)[1], sensor=channel)
+        log.info("SENSOR %s on at t=%.2f s", channel, src.stream_t)
+        return src.disabled_sensors()
+
+    def restore_sensors(self, via: str = "api") -> list[str]:
+        src = self._command("sensor_restore", "Restore all sensors", via,
+                            lambda: (self._sabotage_source().restore_sensors(), self.scenario)[1])
+        log.info("SENSORS restored at t=%.2f s", src.stream_t)
+        return src.disabled_sensors()
+
+    def disabled_sensors(self) -> list[str] | None:
+        """None when the source has no sensor controls."""
+        fn = getattr(self.scenario, "disabled_sensors", None)
+        return fn() if fn else None
 
     async def start(self) -> None:
         self._tasks = [asyncio.create_task(self._loop(p, f)) for p, f in
@@ -173,6 +230,7 @@ class Runtime:
         msg = messages.state_message(sent_at=now, decision=decision, health=health, latency_ms=latency,
                                      injection=self.injection, **w.fields)
         self.last_state = msg
+        self.events.observe(msg)
         self._send(self.state_hub, "state", msg)
 
     def _tick_obd(self, i: int) -> None:
@@ -239,10 +297,16 @@ class Runtime:
 
     def ack(self, alarm_id: str, operator: str, via: str) -> AckResult:
         """The one ACK path (WebSocket and OPC UA). On success, broadcasts the new state at once."""
+        st = getattr(self.scenario, "stream_t", None)
+        self.events.record("ack", "requested", f"ACK {alarm_id} by {operator}", via=via, stream_t=st, alarm_id=alarm_id)
         res = self.rules.ack(alarm_id, operator, self.clock())
         if not res.ok:
             log.warning("ACK rejected via %s (%s): %s", via, res.reason, res.detail)
+            self.events.record("ack", "refused", f"ACK {alarm_id}: refused ({res.reason})", via=via, stream_t=st,
+                               alarm_id=alarm_id, reason=res.reason)
             return res
+        self.events.record("ack", "accepted", f"ACK {alarm_id} accepted by the rule layer", via=via, stream_t=st,
+                           alarm_id=alarm_id, operator=operator)
         log.info("ACK %s by %s via %s", alarm_id, operator, via)
         if self.last_window is not None:
             self._publish_state(self.rules.decision(), time.perf_counter())
