@@ -1,8 +1,8 @@
 {
   "eval_version": "0.1",
   "placeholder": false,
-  "generated_at": "2026-10-16T14:57:11Z",
-  "source_commit": "85c3ec4",
+  "generated_at": "2026-10-16T15:06:15Z",
+  "source_commit": "21a2cfc",
   "produced_by": "python -m eval.build_eval_json",
   "false_positives": {
     "headline": {
@@ -281,23 +281,37 @@
   "column_b": {
     "knock": {
       "kind": "proportion",
-      "successes": null,
-      "n": null,
-      "value": null,
-      "ci_95": null,
+      "successes": 851,
+      "n": 1685,
+      "value": 0.50504,
+      "ci_95": [
+        0.48119,
+        0.52888
+      ],
       "ci_method": "wilson_95",
       "column": "B",
-      "split": "grouped by source clip"
+      "split": "5 folds by source clip (vetted P2, >= 8 kHz)",
+      "source": "eval/table_b.json",
+      "measure": "detection",
+      "condition": "injected at +0 dB re clip 5-15 kHz RMS, severities pooled, windows",
+      "false_positive_on_healthy": 0.49206
     },
     "valve_tick": {
       "kind": "proportion",
-      "successes": null,
-      "n": null,
-      "value": null,
-      "ci_95": null,
+      "successes": 38,
+      "n": 1701,
+      "value": 0.02234,
+      "ci_95": [
+        0.01632,
+        0.03051
+      ],
       "ci_method": "wilson_95",
       "column": "B",
-      "split": "grouped by source clip"
+      "split": "5 folds by source clip (vetted P2, >= 8 kHz)",
+      "source": "eval/table_b.json",
+      "measure": "sent to unknown (held-out class)",
+      "condition": "injected at +0 dB re clip 5-15 kHz RMS, severities pooled, windows",
+      "mislabelled_knock": 0.49971
     }
   },
   "column_c": {
