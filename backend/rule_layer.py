@@ -22,7 +22,7 @@ corroborates it; the classifier still hasn't named it, so it is one witness, not
 needs a hold with no named fault. The valve-tick rule is not a named fault here (valve tick is never
 trained), so it stays a hint on UNCLASSIFIED. Applies to every source.
 
-Post-misfire recovery (docs/decisions_pending/post_misfire_recovery.md): a misfire makes the O2 sensor read
+Post-misfire recovery (D144, D146): a misfire makes the O2 sensor read
 lean, so the ECU trims rich; after the misfire stops, the trims take tens of seconds to re-adapt and the trim-drift
 rule's 30 s window still holds the misfire period, which looks like an injector clog. Like OBD-II, which suspends
 fuel-trim monitoring around a misfire, a confirmed misfire (a two-witness `match`) arms a recovery window that lasts
@@ -33,7 +33,7 @@ no witness), never UNCLASSIFIED. Other faults (knock, a new misfire) go through 
 by a confirmed misfire, not by the misfire rule alone: in the simulator a clog starves its cylinder and fires the
 misfire rule in ~95 % of windows, so gating on the rule alone would switch clog detection off.
 
-Bank-wide faults: when the physics rule names no cylinder (trims are bank-wide) and the classifier names different
+Bank-wide faults (D145): when the physics rule names no cylinder (trims are bank-wide) and the classifier names different
 cylinders in the windows of the streak, the ALARM's location is null ("bank"), not whichever cylinder came last.
 
 Latch (decided by Nishant, 2026-10-16):
