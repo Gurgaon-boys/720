@@ -65,6 +65,7 @@ OBD_CHANNELS = ("rpm", "load_pct", "throttle_pct", "map_kpa", "coolant_c", "stft
 # cycle phase from it (dsp/windows.py). Slow OBD sensors: own round-robin stagger and own random stream,
 # so the 2.1.0 channels are unchanged.
 CAM_OFFSET_DEG = 90.0
+BLOCK_S = 0.5             # with regimes on, the stream is generated in blocks of this length (see EngineSim.step)
 SLOW_CHANNELS = ("intake_air_temp_c", "battery_v", "baro_kpa")
 # every variable, by kind: 11 physical sensors + 4 ECU-computed values = 15. "real_calibrated" = constants
 # measured on carOBD calibration files; "sim_only" = no real counterpart in carOBD (simulator physics only)
@@ -371,6 +372,8 @@ class EngineSim:
         self._tors_zi = np.zeros(2)
         self._load_dist = 0.0
         self._dropouts: list = []                     # (channel, t0, t1)
+        self._blocks: list = []                       # generated BLOCK_S chunks not yet fully served (regimes on)
+        self._served = 0                              # samples of _blocks[0] already returned
 
     # ------------------------------------------------------------------ public API
 
@@ -411,6 +414,82 @@ class EngineSim:
 
     def step(self, duration_s: float = 0.5, background: np.ndarray | None = None) -> dict:
         """Advance the simulation by `duration_s` and return one chunk on the 48 kHz grid.
+
+        With hard regimes on, the regime noise (load torque, torsional flex, tooth jitter, dropouts) is
+        drawn per generated chunk, so its realisation would depend on the step size. To keep one stream
+        whatever the caller's step, the simulator then always generates BLOCK_S blocks (aligned to t = 0)
+        and serves other steps as slices of them: step(0.5) is unchanged, step(0.05) returns the same
+        samples. A fault or operating-point change requested mid-block takes effect from the next block
+        (at most BLOCK_S later). With regimes off the stream is chunk-independent already and nothing changes.
+        """
+        n_block = int(round(BLOCK_S * FS))
+        if not self.regimes.any_on or (not self._blocks and abs(duration_s - BLOCK_S) < 1e-12 and self._n % n_block == 0):
+            return self._step(duration_s, background)
+        if background is not None:
+            raise ValueError("background texture needs step(BLOCK_S) when regimes are on")
+        return self._sliced(int(round(duration_s * FS)))
+
+    def _sliced(self, n_want: int) -> dict:
+        """Serve the next n_want samples from whole BLOCK_S blocks."""
+        while sum(len(b["t"]) for b in self._blocks) - self._served < n_want:
+            self._blocks.append(self._step(BLOCK_S))
+        ta = self._blocks[0]["t"][self._served]
+        parts, need, off = [], n_want, self._served
+        for b in self._blocks:
+            n = len(b["t"])
+            if off >= n:
+                off -= n
+                continue
+            k = min(n - off, need)
+            parts.append((b, off, off + k))
+            need -= k
+            off = 0
+            if need == 0:
+                break
+        last, _, i1 = parts[-1]
+        tb = last["t"][i1 - 1] + 1.0 / FS
+        cat = lambda key: np.concatenate([b[key][..., i0:i1] for b, i0, i1 in parts], axis=-1)
+        sel = lambda x: (x >= ta) & (x < tb)
+        # events go with the block that produced them: crank regimes (torsional flex, jitter) can move a
+        # tooth timestamp just outside its block, so a block's first / last slice takes those too
+        def own(b, i0, i1, x):
+            lo = -np.inf if i0 == 0 else b["t"][i0]
+            hi = np.inf if i1 == len(b["t"]) else b["t"][i1 - 1] + 1.0 / FS
+            return (x >= lo) & (x < hi)
+        tt = np.concatenate([b["tooth_times"][own(b, i0, i1, b["tooth_times"])] for b, i0, i1 in parts])
+        ti = np.concatenate([b["tooth_ids"][own(b, i0, i1, b["tooth_times"])] for b, i0, i1 in parts])
+        cam = np.concatenate([b["cam_times"][own(b, i0, i1, b["cam_times"])] for b, i0, i1 in parts])
+        fast = {}
+        for key in parts[0][0]["ecu_fast"]:
+            v = np.concatenate([b["ecu_fast"][key] for b, _, _ in parts])
+            ft = np.concatenate([b["ecu_fast"]["t"] for b, _, _ in parts])
+            fast[key] = v[sel(ft)]
+        blocks_used = {id(b): b for b, _, _ in parts}.values()
+        labels = [lab for b in blocks_used for lab in b["labels"] if not lab.get("_served")]
+        out_labels = []
+        for lab in labels:
+            if lab["t_start"] < tb:
+                lab["_served"] = True
+                out_labels.append({k: v for k, v in lab.items() if k != "_served"})
+        chunk = {
+            "t": cat("t"), "crank_angle_deg": cat("crank_angle_deg"), "rpm": cat("rpm"),
+            "tooth_times": tt, "tooth_ids": ti, "cam_times": cam,
+            "mic": cat("mic"), "accel": cat("accel"), "cylinder_pressure": cat("cylinder_pressure"),
+            "ecu_fast": fast,
+            "obd": [o for b in blocks_used for o in b["obd"] if ta <= o["t"] < tb],
+            "dropouts": [{"channel": d["channel"], "t0": max(d["t0"], ta), "t1": min(d["t1"], tb)}
+                         for b in blocks_used for d in b["dropouts"] if d["t0"] < tb and d["t1"] > ta],
+            "labels": out_labels,
+            "meta": last["meta"],
+        }
+        self._served += n_want
+        while self._blocks and self._served >= len(self._blocks[0]["t"]):
+            self._served -= len(self._blocks[0]["t"])
+            self._blocks.pop(0)
+        return chunk
+
+    def _step(self, duration_s: float = 0.5, background: np.ndarray | None = None) -> dict:
+        """Generate the next `duration_s` (see step).
 
         background: optional real texture (e.g. an AudioSet P1 clip), length = number of samples
         in this chunk. It is high-passed and mixed into the mic as texture only; the engine's

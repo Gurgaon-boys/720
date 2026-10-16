@@ -4,6 +4,7 @@ Job sets:
   val_thr   160 healthy runs (3 min) on 80 extra VALIDATION engines: the healthy-model threshold (models/calibrate_healthy.py)
   fresh2    the 40 healthy soak_fresh2 runs again (same operating points as eval/soak_l2.py), now recorded
   fresh3    40 healthy runs on the THIRD untouched range (engines 1100-1139)
+  long      400 healthy runs (3 min) on a FOURTH untouched range (engines 1300-1399, 4 runs each): 20 engine-hours
   faults    fault runs on robustness engines (unseen): misfire p 0.5, knock 0.5, injector_clog s 0.5, valve_tick
             0.3 / 0.6 / 1.0; 20 runs each, 30 s healthy then 90 s of fault
 
@@ -32,6 +33,8 @@ def jobs(name: str) -> list[tuple]:
         return [("soak_fresh2", i, None, 0.0, 180.0) for i in range(40)]
     if name == "fresh3":
         return [("soak_fresh3", i, None, 0.0, 180.0) for i in range(40)]
+    if name == "long":                       # 100 engines x 4 runs x 3 min = 20 engine-hours
+        return [("soak_long", i, None, 0.0, 180.0) for i in range(400)]
     if name == "faults":
         return [("robustness", k, f, s, FAULT_S) for f, s in FAULTS for k in range(FAULT_RUNS)]
     raise ValueError(name)

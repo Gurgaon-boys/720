@@ -242,3 +242,23 @@ def test_cam_and_slow_sensors_do_not_depend_on_chunk_size():
         out[step] = (_cat(cs, "cam_times"), [{k: o[k] for k in SLOW_CHANNELS} for c in cs for o in c["obd"]])
     np.testing.assert_array_equal(out[0.5][0], out[0.05][0])
     assert out[0.5][1] == out[0.05][1]
+
+
+def test_regimes_on_stream_does_not_depend_on_step_size():
+    """With hard regimes on, smaller steps are slices of the same 0.5 s blocks (D103): identical stream,
+    including an injection at a block boundary and sensor dropouts."""
+    out = {}
+    for step in (0.5, 0.05, 0.1):
+        sim = EngineSim(P, seed=4, regimes=Regimes.eval(dropout_per_min=4.0), purpose="eval")
+        cs = []
+        for k in range(int(round(6.0 / step))):
+            if abs(k * step - 3.0) < 1e-9:
+                sim.inject("misfire", 2, 0.5)
+            cs.append(sim.step(step))
+        out[step] = cs
+    for step in (0.05, 0.1):
+        for key in ("mic", "accel", "tooth_times", "rpm", "cam_times"):
+            np.testing.assert_array_equal(np.nan_to_num(_cat(out[0.5], key)), np.nan_to_num(_cat(out[step], key)), err_msg=key)
+        assert [o for c in out[0.5] for o in c["obd"]] == [o for c in out[step] for o in c["obd"]]
+        assert [lab["cycle"] for c in out[0.5] for lab in c["labels"]] == [lab["cycle"] for c in out[step] for lab in c["labels"]]
+    assert any(c["dropouts"] for c in out[0.05])
