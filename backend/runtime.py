@@ -168,12 +168,35 @@ class Runtime:
         now = self.clock()
         health = {"asset_ne107": asset_ne107(decision, self.maintenance_mode), "sensors": self.watchdog.status(now)}
         cap = getattr(self.scenario, "guidance_capability", None)   # e.g. single-witness REAL replay (D135)
-        decision = {**decision, "guidance": guidance(decision, health, cap)}
+        decision = {**decision, "guidance": guidance(decision, health, cap, self.guidance_context(decision))}
         latency = round((time.perf_counter() - start) * 1000, 2)
         msg = messages.state_message(sent_at=now, decision=decision, health=health, latency_ms=latency,
                                      injection=self.injection, **w.fields)
         self.last_state = msg
         self._send(self.state_hub, "state", msg)
+
+    @property
+    def resets(self) -> int:
+        return getattr(self, "_resets", 0)
+
+    def guidance_context(self, decision: dict) -> str | None:
+        """The engine's situation for the guidance line: the post-misfire recovery ADVISORY, or warming up."""
+        if decision["state"] == "ADVISORY" and decision["fault"] is None and self.rules.recovering:
+            return "recovering_after_misfire"
+        if getattr(self.scenario, "warming_up", False):
+            return "warming_up"
+        return None
+
+    def reset_engine(self, source=None) -> None:
+        """A fresh healthy simulator engine with the same seed (POST /reset_engine). Like a source switch, it
+        restarts stream time and the rule layer; alarm ids keep counting. Simulator only."""
+        from backend.sources.sim_source import SimSource
+
+        if not isinstance(self.scenario, SimSource):
+            raise TypeError(f"source {self.scenario.name!r} is not the simulator")
+        self._resets = self.resets + 1
+        self.select("sim", source if source is not None else SimSource.from_env(reset_n=self._resets))
+        log.info("engine reset (%d): fresh healthy simulator engine, same seed", self._resets)
 
     def _tick_obd(self, i: int) -> None:
         t = i * OBD_S

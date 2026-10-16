@@ -20,7 +20,7 @@ import './dashboard.css';
 
 const STALE_S = 3; // a data stream silent this long gets a panel notice (same limit as the UI watchdog)
 
-export default function Dashboard({ state, obd, obdWindows, transport, signal, error, scenarioError, links, apiUrl, ages, scenarios, scenarioId, onSelectScenario, onAck, onStartInjection, onStopInjection, ackError, offline, lastStateAt, sound, onToggleSound, audioKind, mock }) {
+export default function Dashboard({ state, obd, obdWindows, transport, signal, error, scenarioError, links, apiUrl, ages, scenarios, scenarioId, onSelectScenario, onAck, onStartInjection, onStopInjection, onResetEngine, ackError, offline, lastStateAt, sound, onToggleSound, audioKind, mock }) {
   const color = decisionColor(state?.decision);
   // REAL log replay (contract 1.6): no crank or audio, so the OBD panels lead and the cylinder,
   // fingerprint and signal panels are hidden
@@ -130,7 +130,7 @@ export default function Dashboard({ state, obd, obdWindows, transport, signal, e
             </PanelBoundary>
           </div>
           <PanelBoundary name="Injection console" className="inject" resetKey={run}>
-            <InjectionConsole key={state.run_id} state={state} offline={offline} mock={mock} onStart={onStartInjection} onStop={onStopInjection} />
+            <InjectionConsole key={state.run_id} state={state} offline={offline} mock={mock} onStart={onStartInjection} onStop={onStopInjection} onReset={onResetEngine} />
           </PanelBoundary>
           <p className="panel-note">No crank signal in this data: the cylinder bank, 720° fingerprint and audio panels are hidden.</p>
         </>
@@ -158,7 +158,7 @@ export default function Dashboard({ state, obd, obdWindows, transport, signal, e
             </PanelBoundary>
           </div>
           <PanelBoundary name="Injection console" className="inject" resetKey={run}>
-            <InjectionConsole key={state.run_id} state={state} offline={offline} mock={mock} onStart={onStartInjection} onStop={onStopInjection} />
+            <InjectionConsole key={state.run_id} state={state} offline={offline} mock={mock} onStart={onStartInjection} onStop={onStopInjection} onReset={onResetEngine} />
           </PanelBoundary>
           <PanelBoundary name="Signal" className="strip" resetKey={run}>
             <SignalStrip key={state.run_id} signal={signal} source={state.source} sensors={sensors} silentFor={signalSilent} />

@@ -161,6 +161,10 @@ export function createWsTransport(apiUrl) {
     stopInjection() {
       return post('/clear_faults');
     },
+    // a fresh healthy simulator engine, same seed; the new run arrives as a new run_id
+    resetEngine() {
+      return post('/reset_engine');
+    },
 
     // REAL carOBD replay (contract 1.6): held-out files by type + uploads; file + speed; upload a log
     async listReplayFiles() {
