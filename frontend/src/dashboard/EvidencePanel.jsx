@@ -91,6 +91,9 @@ function FalsePositives({ fp, caption }) {
 
 export default function EvidencePanel() {
   const [ev, setEv] = useState(null);
+  // default: the headline (false positives on real ECU data); every other table and the provenance
+  // are one click away, unchanged
+  const [showAll, setShowAll] = useState(false);
   useEffect(() => {
     let live = true;
     loadEval().then((r) => {
@@ -112,17 +115,23 @@ export default function EvidencePanel() {
       <div className="ev-head">
         <h2 className="panel-label">EVIDENCE</h2>
         {placeholder && <span className="ev-placeholder">PLACEHOLDER · NOT RESULTS</span>}
-        <span className="mono ev-src">
-          {ev.status === 'loaded'
-            ? `eval.json · ${d.eval_version ?? 'version ?'} · generated ${d.generated_at ?? '?'} · commit ${d.source_commit ?? '?'}`
-            : 'placeholder structure (docs/EVAL_JSON.md, proposed)'}
-        </span>
+        <button type="button" className="toggle-btn" aria-expanded={showAll} aria-controls="evidence-all" onClick={() => setShowAll((v) => !v)}>
+          {showAll ? 'Show summary only' : 'Show all evidence tables and provenance'}
+        </button>
       </div>
       {ev.status === 'missing' && <p className="panel-note">{ev.message}.</p>}
       {ev.status === 'error' && <p className="inject-error" role="alert">{ev.message}. Showing the placeholder structure instead.</p>}
 
       <h3 className="ev-h">False positives on real data, at every level</h3>
       <FalsePositives fp={d.false_positives?.headline} caption="Headline · real ECU" />
+
+      {showAll && (
+      <div id="evidence-all" className="ev-all">
+      <p className="mono ev-src">
+        {ev.status === 'loaded'
+          ? `Provenance: eval.json · ${d.eval_version ?? 'version ?'} · generated ${d.generated_at ?? '?'} · commit ${d.source_commit ?? '?'}`
+          : 'Provenance: placeholder structure (docs/EVAL_JSON.md, proposed)'}
+      </p>
       <FalsePositives fp={d.false_positives?.secondary} caption="Secondary · real audio" />
 
       <h3 className="ev-h">Simulated, injected and real results, kept apart</h3>
@@ -162,6 +171,14 @@ export default function EvidencePanel() {
       <Table caption={`${COLUMNS.C} · held-out`}>
         <Row label="OBD branch" r={d.column_c?.obd_branch} />
       </Table>
+      </div>
+      )}
+      {/* a data problem in the file is never hidden behind the toggle */}
+      {!showAll && extraB.length > 0 && (
+        <p className="inject-error" role="alert">
+          eval.json lists {extraB.join(', ')} under column B; only knock and valve tick can be injected onto real audio. Not shown.
+        </p>
+      )}
     </section>
   );
 }

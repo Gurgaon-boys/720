@@ -239,6 +239,9 @@ const plotClass = (s) => `plot${s != null ? ' stale' : ''}`;
 // silentFor: { mic, accel, stft } seconds since that stream's last frame, past the stale limit (else null)
 export default function SignalStrip({ signal, source, sensors, silentFor }) {
   const { mic, accel, stft } = signal;
+  // compact by default: the mic trace as a preview, the accelerometer and spectrogram one click away.
+  // On real audio the spectral view stands in for the crank-referenced fingerprint, so it opens.
+  const [open, setOpen] = useState(source === 'real');
   const hasMic = 'mic' in sensors;
   const hasAccel = 'accel' in sensors;
   const micRef = useRef(null);
@@ -268,6 +271,9 @@ export default function SignalStrip({ signal, source, sensors, silentFor }) {
         [[micRef, s.mic, drawWave], [accelRef, s.accel, drawWave], [specRef, s.stft, drawSpec]].forEach(([ref, st, draw]) => {
           const ready = st.hist || st.buf?.length;
           if (!ref.current || !ready) return;
+          // collapsed plots (zero width) are skipped but keep their buffers and dirty flag,
+          // so they draw the current data as soon as they are opened
+          if (ref.current.clientWidth === 0) return;
           if (still && !st.dirty) return;
           draw(ref.current, st, still);
           st.dirty = false;
@@ -290,6 +296,11 @@ export default function SignalStrip({ signal, source, sensors, silentFor }) {
           <SourceBadge source={source} />
         </div>
         {mic && <span className="mono strip-note">display rate {mic.sample_rate_hz / 1000} kHz (server-downsampled)</span>}
+        {(mic || stft) && (
+          <button type="button" className="toggle-btn" aria-expanded={open} aria-controls="signal-full" onClick={() => setOpen((v) => !v)}>
+            {open ? 'Show mic preview only' : 'Show full waveforms and spectrogram'}
+          </button>
+        )}
       </div>
       {!mic && !stft && (
         <p className="panel-note">{hasMic || hasAccel ? 'Waiting for signal…' : 'No signal sensors on this recording.'}</p>
@@ -297,9 +308,11 @@ export default function SignalStrip({ signal, source, sensors, silentFor }) {
       {mic && (
         <figure className={plotClass(silentFor.mic)}>
           <figcaption className="eyebrow">Mic · amplitude (a.u.){staleCaption(silentFor.mic)}</figcaption>
-          <canvas ref={micRef} className="plot-wave" role="img" aria-label="Microphone waveform, last second" />
+          <canvas ref={micRef} className={`plot-wave${open ? '' : ' preview'}`} role="img" aria-label="Microphone waveform, last second" />
         </figure>
       )}
+      {/* hidden, not unmounted: the canvases keep their buffers while collapsed */}
+      <div id="signal-full" className="strip-more" hidden={!open}>
       {mic && (accel ? (
         <figure className={plotClass(silentFor.accel)}>
           <figcaption className="eyebrow">Accelerometer · amplitude (a.u.){staleCaption(silentFor.accel)}</figcaption>
@@ -316,6 +329,7 @@ export default function SignalStrip({ signal, source, sensors, silentFor }) {
       ) : (
         mic && <p className="panel-note">Waiting for spectrogram…</p>
       )}
+      </div>
     </section>
   );
 }
