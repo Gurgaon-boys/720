@@ -157,3 +157,29 @@ def test_rule_shape_and_per_location():
 def test_tdc_table_matches_simulator():
     meta = EngineSim(EngineParams(), seed=0).step(0.1)["meta"]
     assert {int(k): v for k, v in meta["tdc_deg"].items()} == TDC_DEG
+
+
+# ---------------------------------------------------------------- L3: cycle phase from the cam sensor
+
+def test_windower_takes_cycle_phase_from_the_cam():
+    """A crank wheel alone can't tell the two revolutions of a cycle apart. Give the windower a crank
+    angle that is wrong by 360 deg: with cam pulses it still cuts the same cycles; without them it can't."""
+    from sim import EngineParams, EngineSim
+    from dsp.windows import CycleWindower
+
+    def cuts(shift, cam=True):
+        sim, w, out = EngineSim(EngineParams(), seed=3), CycleWindower(), []
+        for _ in range(12):
+            c = sim.step(0.5)
+            if shift:
+                c = {**c, "crank_angle_deg": np.mod(c["crank_angle_deg"] + 360.0, 720.0)}
+            if not cam:
+                c = {k: v for k, v in c.items() if k != "cam_times"}
+            out += [(round(x.t_start, 9), round(x.t_end, 9)) for x in w.push(c)]
+        return out, w.phase_source
+
+    true, src = cuts(False)
+    assert src == "cam" and len(true) > 10
+    assert cuts(True) == (true, "cam")
+    wrong, src = cuts(True, cam=False)
+    assert src == "given" and wrong != true

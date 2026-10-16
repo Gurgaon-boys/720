@@ -11,24 +11,32 @@ Per-window assessment, in order of precedence:
   advisory      one witness only (classifier or physics)
   healthy       none of the above
 
+UNCLASSIFIED persistence: like ALARM, UNCLASSIFIED needs UNCLASSIFIED_WINDOWS (2) consecutive
+`unclassified` windows. The first one is assessed as if there were no anomaly witness (ADVISORY when a
+physics rule fired, else NORMAL), so one stray anomalous window raises nothing.
+
 Latch (decided by Nishant, 2026-10-16):
   - ALARM after 2 consecutive `match` windows for the same fault. The first one is ADVISORY.
-  - The alarm stays latched until it is acknowledged and the engine is healthy again,
+  - The alarm stays latched until it is acknowledged and its own fault has stopped matching,
     even if the fault clears before anyone presses ACK.
   - ACK only marks the alarm acknowledged. It never clears it.
   - Reset happens on a window evaluation, once the alarm is acknowledged and the last
-    2 consecutive windows were healthy.
+    2 consecutive windows were not a `match` for the alarm's fault (amended 2026-10-16, D124: it was
+    "2 healthy windows", which kept an acknowledged alarm up while the ECU recovered and the healthy
+    model still flagged, and hid any new fault behind it). Whatever remains (an anomaly, one witness)
+    then shows as itself: UNCLASSIFIED or ADVISORY.
   - Each new episode gets a new alarm_id. One alarm is active at a time.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 TRAINED_FAULTS = ("misfire", "knock", "injector_clog")
 
 RAISE_WINDOWS = 2  # consecutive two-witness windows before ALARM
-CLEAR_WINDOWS = 2  # consecutive healthy windows (after ACK) before reset
+CLEAR_WINDOWS = 2  # consecutive windows without a match for the alarm's own fault (after ACK) before reset
+UNCLASSIFIED_WINDOWS = 2  # consecutive anomalous, unnamed windows before UNCLASSIFIED
 P_MIN = 0.6  # mean probability the classifier majority needs to count as a witness
 
 # NE 107 asset health for a latched alarm, by fault (DECISIONS.md D14)
@@ -118,19 +126,24 @@ def assess(ev: Evidence) -> Assessment:
 
 
 class RuleLayer:
-    def __init__(self, first_alarm_id: int = 1) -> None:
+    def __init__(self, first_alarm_id: int = 1, unclassified_windows: int = UNCLASSIFIED_WINDOWS) -> None:
+        self.unclassified_windows = unclassified_windows
         self.alarm: ActiveAlarm | None = None
         self._streak_fault: str | None = None
         self._streak_n = 0
-        self._healthy_n = 0
+        self._quiet_n = 0  # consecutive windows without a match for the latched alarm's fault
         self._next_id = first_alarm_id
         self._cleared_ids: set[str] = set()
         self._last = Assessment("healthy")
         self._last_severity: float | None = None
+        self._unclassified_n = 0
 
     def step(self, ev: Evidence) -> dict:
         """Evaluate one window and return the contract's `decision` object."""
         a = assess(ev)
+        self._unclassified_n = self._unclassified_n + 1 if a.kind == "unclassified" else 0
+        if a.kind == "unclassified" and self._unclassified_n < self.unclassified_windows:
+            a = assess(replace(ev, anomaly_score=None))      # not yet persistent: no anomaly witness
         self._last, self._last_severity = a, ev.severity
 
         if a.kind == "match":
@@ -138,15 +151,17 @@ class RuleLayer:
             self._streak_fault = a.fault
         else:
             self._streak_fault, self._streak_n = None, 0
-        self._healthy_n = self._healthy_n + 1 if a.kind == "healthy" else 0
+        own = self.alarm is not None and a.kind == "match" and a.fault == self.alarm.fault
+        self._quiet_n = 0 if own else self._quiet_n + 1
 
         if self.alarm is None and self._streak_n >= RAISE_WINDOWS:
             self.alarm = ActiveAlarm(f"a_{self._next_id:04d}", a.fault, a.location, ev.severity)
             self._next_id += 1
+            self._quiet_n = 0
         elif self.alarm is not None and a.kind == "match" and a.fault == self.alarm.fault:
             self.alarm.location, self.alarm.severity = a.location, ev.severity
 
-        if self.alarm is not None and self.alarm.acked and self._healthy_n >= CLEAR_WINDOWS:
+        if self.alarm is not None and self.alarm.acked and self._quiet_n >= CLEAR_WINDOWS:
             self._cleared_ids.add(self.alarm.alarm_id)
             self.alarm = None
 

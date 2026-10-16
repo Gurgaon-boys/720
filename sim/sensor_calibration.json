@@ -1,0 +1,49 @@
+{
+ "created_at": "2026-10-16T13:34:19+00:00",
+ "source": "carOBD calibration files only (data/splits/carobd_split.json 'calibration'), engine running",
+ "files": 90,
+ "channels": {
+  "intake_air_temp_c": {
+   "carobd_column": "INTAKE_AIR_TEMP",
+   "level_mean": 45.53333333333333,
+   "level_sd_across_files": 7.570195847436136,
+   "level_range": [
+    32.0,
+    65.0
+   ],
+   "wander_sd": 3.8802640959806975,
+   "noise_sd": 0.4934535013154308,
+   "files": 90,
+   "change_hz": 0.09429082969073746,
+   "step": 1.0
+  },
+  "battery_v": {
+   "carobd_column": "CONTROL_MODULE_VOLTAGE",
+   "level_mean": 13.768655555555556,
+   "level_sd_across_files": 0.14927300689262799,
+   "level_range": [
+    13.515,
+    14.16
+   ],
+   "wander_sd": 0.11124697206282352,
+   "noise_sd": 0.04798983986848693,
+   "files": 90,
+   "change_hz": 0.31679179932214135,
+   "step": 0.01899999999999835
+  },
+  "baro_kpa": {
+   "carobd_column": "ABSOLUTE_BAROMETRIC_PRESSURE",
+   "level_mean": 100.84444444444445,
+   "level_sd_across_files": 0.8198535236551027,
+   "level_range": [
+    100.0,
+    102.0
+   ],
+   "wander_sd": 0.23414291816311106,
+   "noise_sd": 0.0,
+   "files": 90,
+   "change_hz": 0.0013523456959393066,
+   "step": 1.0
+  }
+ }
+}

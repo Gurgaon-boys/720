@@ -1,0 +1,851 @@
+{
+  "created_at": "2026-10-16T15:08:34Z",
+  "git_commit": "ee12a5b796f99888229b7c541d765cd61534a76b",
+  "produced_by": "data/enginefaultdb.py",
+  "source": "https://github.com/Leo-Thomas/EngineFaultDB (EngineFaultDB_Final.csv)",
+  "source_commit": "c63f23ba048761d9c2a2c95d8fb4c0392a3c63d3",
+  "citation": "Vergara M., Ramos L., Rivera-Campoverde N. D., Rivas-Echeverria F. EngineFaultDB: A Novel Dataset for Automotive Engine Fault Classification and Baseline Results. IEEE Access 11 (2023) 126155-126171. doi:10.1109/ACCESS.2023.3331316. Data licensed GPL-3.0.",
+  "data_kind": "REAL lab engine (C14NE), 4 sessions, faults induced on a test bench",
+  "rows": 55999,
+  "variables": [
+    "MAP",
+    "TPS",
+    "Force",
+    "Power",
+    "RPM",
+    "Consumption L/H",
+    "Consumption L/100KM",
+    "Speed",
+    "CO",
+    "HC",
+    "CO2",
+    "O2",
+    "Lambda",
+    "AFR"
+  ],
+  "units_as_given": {
+    "MAP": "kPa (as stated; values ~0.6-5 suggest volts)",
+    "TPS": "% (as stated)",
+    "Force": "N",
+    "Power": "kW",
+    "RPM": "rpm",
+    "Consumption L/H": "L/h",
+    "Consumption L/100KM": "L/100 km",
+    "Speed": "km/h",
+    "CO": "% vol",
+    "HC": "ppm",
+    "CO2": "% vol",
+    "O2": "% vol",
+    "Lambda": "-",
+    "AFR": "-"
+  },
+  "labels": {
+    "0": "normal",
+    "1": "rich_mixture",
+    "2": "lean_mixture",
+    "3": "low_voltage"
+  },
+  "labels_confirmed_against_paper": false,
+  "labels_note": "README gives counts per label but no names; mapping is the team's, chemistry agrees for 1 and 2",
+  "layout": {
+    "blocks": {
+      "0": [
+        0,
+        16000
+      ],
+      "1": [
+        16000,
+        26998
+      ],
+      "2": [
+        26998,
+        41998
+      ],
+      "3": [
+        41998,
+        55999
+      ]
+    },
+    "each_class_one_contiguous_block": true,
+    "sessions_total": 4,
+    "segment_rule": "new segment at |dRPM| > 500 rpm between consecutive rows",
+    "segments_total": 38
+  },
+  "rpm_row_jump_all": {
+    "median": 41.1,
+    "p99": 231.9,
+    "max": 2851.8,
+    "n_over_500": 37
+  },
+  "duplicate_rows_exact": 1,
+  "class3_copies_class2": {
+    "class_a": 2,
+    "class_b": 3,
+    "lag_rows": 1000,
+    "rows_compared": 14000,
+    "class_b_rows_total": 14001,
+    "rows_with_identical_MAP_and_TPS": 14000,
+    "per_variable": {
+      "MAP": {
+        "identical_frac": 1.0,
+        "corr": 1.0,
+        "median_abs_diff_over_sd": 0.0,
+        "mean_diff": 0.0
+      },
+      "TPS": {
+        "identical_frac": 1.0,
+        "corr": 1.0,
+        "median_abs_diff_over_sd": 0.0,
+        "mean_diff": 0.0
+      },
+      "Force": {
+        "identical_frac": 0.0006,
+        "corr": 0.9994,
+        "median_abs_diff_over_sd": 0.0057,
+        "mean_diff": 0.1186
+      },
+      "Power": {
+        "identical_frac": 0.0084,
+        "corr": 0.9994,
+        "median_abs_diff_over_sd": 0.0051,
+        "mean_diff": -0.0029
+      },
+      "RPM": {
+        "identical_frac": 0.0,
+        "corr": 0.9965,
+        "median_abs_diff_over_sd": 0.049,
+        "mean_diff": 0.675
+      },
+      "Consumption L/H": {
+        "identical_frac": 0.0034,
+        "corr": 0.9974,
+        "median_abs_diff_over_sd": 0.0393,
+        "mean_diff": -0.0004
+      },
+      "Consumption L/100KM": {
+        "identical_frac": 0.0014,
+        "corr": 0.9971,
+        "median_abs_diff_over_sd": 0.0441,
+        "mean_diff": -0.0025
+      },
+      "Speed": {
+        "identical_frac": 0.0005,
+        "corr": 0.9965,
+        "median_abs_diff_over_sd": 0.0486,
+        "mean_diff": 0.0068
+      },
+      "CO": {
+        "identical_frac": 0.0151,
+        "corr": 0.9992,
+        "median_abs_diff_over_sd": 0.0118,
+        "mean_diff": -0.0008
+      },
+      "HC": {
+        "identical_frac": 0.0001,
+        "corr": 0.9954,
+        "median_abs_diff_over_sd": 0.0588,
+        "mean_diff": 0.0191
+      },
+      "CO2": {
+        "identical_frac": 0.0014,
+        "corr": 0.8882,
+        "median_abs_diff_over_sd": 0.3109,
+        "mean_diff": 0.002
+      },
+      "O2": {
+        "identical_frac": 0.0305,
+        "corr": 0.9966,
+        "median_abs_diff_over_sd": 0.0489,
+        "mean_diff": -0.0001
+      },
+      "Lambda": {
+        "identical_frac": 0.0113,
+        "corr": 0.7379,
+        "median_abs_diff_over_sd": 0.4769,
+        "mean_diff": 0.0001
+      },
+      "AFR": {
+        "identical_frac": 0.0012,
+        "corr": 0.738,
+        "median_abs_diff_over_sd": 0.4854,
+        "mean_diff": 0.0018
+      }
+    }
+  },
+  "per_class": {
+    "0": {
+      "label": "normal",
+      "rows": 16000,
+      "start_row": 0,
+      "end_row_exclusive": 16000,
+      "sessions": 1,
+      "segments": 10,
+      "stats": {
+        "MAP": {
+          "mean": 1.9664,
+          "sd": 0.9793,
+          "min": 0.677,
+          "max": 4.547
+        },
+        "TPS": {
+          "mean": 1.4817,
+          "sd": 1.0073,
+          "min": 0.463,
+          "max": 4.048
+        },
+        "Force": {
+          "mean": 293.9351,
+          "sd": 351.9208,
+          "min": 7.047,
+          "max": 998.938
+        },
+        "Power": {
+          "mean": 4.1513,
+          "sd": 4.3065,
+          "min": 0.558,
+          "max": 15.421
+        },
+        "RPM": {
+          "mean": 2145.7019,
+          "sd": 889.8908,
+          "min": 1066.452,
+          "max": 4843.028
+        },
+        "Consumption L/H": {
+          "mean": 4.0639,
+          "sd": 1.3284,
+          "min": 2.297,
+          "max": 7.309
+        },
+        "Consumption L/100KM": {
+          "mean": 9.247,
+          "sd": 2.1593,
+          "min": 5.877,
+          "max": 13.146
+        },
+        "Speed": {
+          "mean": 46.2774,
+          "sd": 19.141,
+          "min": 22.757,
+          "max": 104.512
+        },
+        "CO": {
+          "mean": 2.1561,
+          "sd": 1.3776,
+          "min": 0.424,
+          "max": 5.99
+        },
+        "HC": {
+          "mean": 190.2663,
+          "sd": 57.4736,
+          "min": 1.787,
+          "max": 312.865
+        },
+        "CO2": {
+          "mean": 13.2632,
+          "sd": 0.8298,
+          "min": 10.445,
+          "max": 15.083
+        },
+        "O2": {
+          "mean": 0.6008,
+          "sd": 0.2188,
+          "min": 0.262,
+          "max": 1.151
+        },
+        "Lambda": {
+          "mean": 0.9571,
+          "sd": 0.0536,
+          "min": 0.761,
+          "max": 1.149
+        },
+        "AFR": {
+          "mean": 14.0696,
+          "sd": 0.7885,
+          "min": 11.184,
+          "max": 16.893
+        }
+      },
+      "rpm_row_jump": {
+        "median": 35.9,
+        "p99": 218.4,
+        "max": 2622.5,
+        "n_over_500": 9
+      },
+      "segment_list": [
+        {
+          "start_row": 0,
+          "rows": 2000,
+          "rpm_mean": 1153.4,
+          "speed_mean": 25.0,
+          "lambda_mean": 1.0241
+        },
+        {
+          "start_row": 2000,
+          "rows": 4000,
+          "rpm_mean": 1701.8,
+          "speed_mean": 36.7,
+          "lambda_mean": 0.9546
+        },
+        {
+          "start_row": 6000,
+          "rows": 2000,
+          "rpm_mean": 2577.0,
+          "speed_mean": 55.7,
+          "lambda_mean": 0.9751
+        },
+        {
+          "start_row": 8000,
+          "rows": 1000,
+          "rpm_mean": 2086.5,
+          "speed_mean": 45.0,
+          "lambda_mean": 0.8497
+        },
+        {
+          "start_row": 9000,
+          "rows": 1000,
+          "rpm_mean": 2783.4,
+          "speed_mean": 60.0,
+          "lambda_mean": 0.9392
+        },
+        {
+          "start_row": 10000,
+          "rows": 2000,
+          "rpm_mean": 1366.6,
+          "speed_mean": 29.5,
+          "lambda_mean": 0.9644
+        },
+        {
+          "start_row": 12000,
+          "rows": 1000,
+          "rpm_mean": 3301.8,
+          "speed_mean": 71.2,
+          "lambda_mean": 1.0078
+        },
+        {
+          "start_row": 13000,
+          "rows": 1000,
+          "rpm_mean": 2737.4,
+          "speed_mean": 59.0,
+          "lambda_mean": 0.9
+        },
+        {
+          "start_row": 14000,
+          "rows": 1000,
+          "rpm_mean": 4563.7,
+          "speed_mean": 98.2,
+          "lambda_mean": 0.9561
+        },
+        {
+          "start_row": 15000,
+          "rows": 1000,
+          "rpm_mean": 1857.1,
+          "speed_mean": 40.0,
+          "lambda_mean": 0.9155
+        }
+      ]
+    },
+    "1": {
+      "label": "rich_mixture",
+      "rows": 10998,
+      "start_row": 16000,
+      "end_row_exclusive": 26998,
+      "sessions": 1,
+      "segments": 6,
+      "stats": {
+        "MAP": {
+          "mean": 1.7528,
+          "sd": 0.8619,
+          "min": 0.596,
+          "max": 3.733
+        },
+        "TPS": {
+          "mean": 1.2839,
+          "sd": 0.717,
+          "min": 0.382,
+          "max": 3.315
+        },
+        "Force": {
+          "mean": 348.7702,
+          "sd": 441.6288,
+          "min": 69.433,
+          "max": 1537.118
+        },
+        "Power": {
+          "mean": 5.8898,
+          "sd": 7.8858,
+          "min": 0.465,
+          "max": 23.878
+        },
+        "RPM": {
+          "mean": 2227.1966,
+          "sd": 886.1222,
+          "min": 1086.392,
+          "max": 4923.988
+        },
+        "Consumption L/H": {
+          "mean": 5.0642,
+          "sd": 3.5274,
+          "min": 1.917,
+          "max": 14.81
+        },
+        "Consumption L/100KM": {
+          "mean": 9.8765,
+          "sd": 3.4585,
+          "min": 5.277,
+          "max": 18.996
+        },
+        "Speed": {
+          "mean": 48.0075,
+          "sd": 19.1142,
+          "min": 23.628,
+          "max": 107.539
+        },
+        "CO": {
+          "mean": 3.1714,
+          "sd": 3.0835,
+          "min": 0.536,
+          "max": 10.132
+        },
+        "HC": {
+          "mean": 259.7947,
+          "sd": 211.253,
+          "min": 144.144,
+          "max": 975.657
+        },
+        "CO2": {
+          "mean": 12.7743,
+          "sd": 1.6711,
+          "min": 8.649,
+          "max": 15.129
+        },
+        "O2": {
+          "mean": 0.5943,
+          "sd": 0.2325,
+          "min": 0.203,
+          "max": 0.925
+        },
+        "Lambda": {
+          "mean": 0.9303,
+          "sd": 0.0911,
+          "min": 0.695,
+          "max": 1.113
+        },
+        "AFR": {
+          "mean": 13.676,
+          "sd": 1.3388,
+          "min": 10.21,
+          "max": 16.363
+        }
+      },
+      "rpm_row_jump": {
+        "median": 37.8,
+        "p99": 215.5,
+        "max": 2386.7,
+        "n_over_500": 5
+      },
+      "segment_list": [
+        {
+          "start_row": 16000,
+          "rows": 2998,
+          "rpm_mean": 1536.1,
+          "speed_mean": 33.1,
+          "lambda_mean": 0.9928
+        },
+        {
+          "start_row": 18998,
+          "rows": 2000,
+          "rpm_mean": 2466.0,
+          "speed_mean": 53.1,
+          "lambda_mean": 1.0048
+        },
+        {
+          "start_row": 20998,
+          "rows": 2000,
+          "rpm_mean": 1707.1,
+          "speed_mean": 37.1,
+          "lambda_mean": 0.8586
+        },
+        {
+          "start_row": 22998,
+          "rows": 1000,
+          "rpm_mean": 2737.3,
+          "speed_mean": 59.0,
+          "lambda_mean": 0.9587
+        },
+        {
+          "start_row": 23998,
+          "rows": 2000,
+          "rpm_mean": 2083.4,
+          "speed_mean": 44.6,
+          "lambda_mean": 0.9046
+        },
+        {
+          "start_row": 25998,
+          "rows": 1000,
+          "rpm_mean": 4639.2,
+          "speed_mean": 100.0,
+          "lambda_mean": 0.7608
+        }
+      ]
+    },
+    "2": {
+      "label": "lean_mixture",
+      "rows": 15000,
+      "start_row": 26998,
+      "end_row_exclusive": 41998,
+      "sessions": 1,
+      "segments": 11,
+      "stats": {
+        "MAP": {
+          "mean": 1.7827,
+          "sd": 0.717,
+          "min": 0.453,
+          "max": 3.722
+        },
+        "TPS": {
+          "mean": 1.3804,
+          "sd": 0.8944,
+          "min": 0.494,
+          "max": 3.977
+        },
+        "Force": {
+          "mean": 253.0993,
+          "sd": 359.2364,
+          "min": 2.58,
+          "max": 1279.848
+        },
+        "Power": {
+          "mean": 6.2478,
+          "sd": 8.7457,
+          "min": 0.468,
+          "max": 33.946
+        },
+        "RPM": {
+          "mean": 2635.1538,
+          "sd": 926.7548,
+          "min": 1165.863,
+          "max": 4913.311
+        },
+        "Consumption L/H": {
+          "mean": 4.5175,
+          "sd": 1.8692,
+          "min": 1.994,
+          "max": 10.164
+        },
+        "Consumption L/100KM": {
+          "mean": 8.3239,
+          "sd": 3.3615,
+          "min": 5.187,
+          "max": 19.82
+        },
+        "Speed": {
+          "mean": 56.7895,
+          "sd": 20.1031,
+          "min": 24.923,
+          "max": 105.912
+        },
+        "CO": {
+          "mean": 1.3182,
+          "sd": 1.4045,
+          "min": 0.421,
+          "max": 6.587
+        },
+        "HC": {
+          "mean": 160.0639,
+          "sd": 47.6468,
+          "min": 2.179,
+          "max": 227.522
+        },
+        "CO2": {
+          "mean": 13.0408,
+          "sd": 0.7955,
+          "min": 9.749,
+          "max": 14.907
+        },
+        "O2": {
+          "mean": 0.5914,
+          "sd": 0.2369,
+          "min": 0.223,
+          "max": 1.14
+        },
+        "Lambda": {
+          "mean": 0.9818,
+          "sd": 0.0543,
+          "min": 0.75,
+          "max": 1.127
+        },
+        "AFR": {
+          "mean": 14.4318,
+          "sd": 0.7986,
+          "min": 11.023,
+          "max": 16.572
+        }
+      },
+      "rpm_row_jump": {
+        "median": 46.2,
+        "p99": 238.2,
+        "max": 2851.8,
+        "n_over_500": 10
+      },
+      "segment_list": [
+        {
+          "start_row": 26998,
+          "rows": 1000,
+          "rpm_mean": 3606.0,
+          "speed_mean": 77.8,
+          "lambda_mean": 1.0233
+        },
+        {
+          "start_row": 27998,
+          "rows": 1000,
+          "rpm_mean": 1858.5,
+          "speed_mean": 40.0,
+          "lambda_mean": 1.0173
+        },
+        {
+          "start_row": 28998,
+          "rows": 1000,
+          "rpm_mean": 1240.7,
+          "speed_mean": 26.8,
+          "lambda_mean": 1.0251
+        },
+        {
+          "start_row": 29998,
+          "rows": 1000,
+          "rpm_mean": 1855.2,
+          "speed_mean": 40.0,
+          "lambda_mean": 0.8295
+        },
+        {
+          "start_row": 30998,
+          "rows": 3000,
+          "rpm_mean": 2550.9,
+          "speed_mean": 55.0,
+          "lambda_mean": 0.9732
+        },
+        {
+          "start_row": 33998,
+          "rows": 2000,
+          "rpm_mean": 1930.0,
+          "speed_mean": 41.1,
+          "lambda_mean": 1.0036
+        },
+        {
+          "start_row": 35998,
+          "rows": 1000,
+          "rpm_mean": 3250.3,
+          "speed_mean": 69.9,
+          "lambda_mean": 0.9896
+        },
+        {
+          "start_row": 36998,
+          "rows": 1000,
+          "rpm_mean": 2146.1,
+          "speed_mean": 46.2,
+          "lambda_mean": 0.9368
+        },
+        {
+          "start_row": 37998,
+          "rows": 2000,
+          "rpm_mean": 3777.4,
+          "speed_mean": 81.6,
+          "lambda_mean": 1.0023
+        },
+        {
+          "start_row": 39998,
+          "rows": 1000,
+          "rpm_mean": 1887.8,
+          "speed_mean": 40.8,
+          "lambda_mean": 0.9824
+        },
+        {
+          "start_row": 40998,
+          "rows": 1000,
+          "rpm_mean": 4615.4,
+          "speed_mean": 99.9,
+          "lambda_mean": 0.9909
+        }
+      ]
+    },
+    "3": {
+      "label": "low_voltage",
+      "rows": 14001,
+      "start_row": 41998,
+      "end_row_exclusive": 55999,
+      "sessions": 1,
+      "segments": 11,
+      "stats": {
+        "MAP": {
+          "mean": 1.7956,
+          "sd": 0.7401,
+          "min": 0.453,
+          "max": 3.722
+        },
+        "TPS": {
+          "mean": 1.3999,
+          "sd": 0.9226,
+          "min": 0.494,
+          "max": 3.977
+        },
+        "Force": {
+          "mean": 265.6398,
+          "sd": 368.9571,
+          "min": 2.597,
+          "max": 1272.911
+        },
+        "Power": {
+          "mean": 6.5624,
+          "sd": 8.9645,
+          "min": 0.468,
+          "max": 33.896
+        },
+        "RPM": {
+          "mean": 2566.6286,
+          "sd": 920.9505,
+          "min": 1162.943,
+          "max": 5013.402
+        },
+        "Consumption L/H": {
+          "mean": 4.527,
+          "sd": 1.9333,
+          "min": 1.997,
+          "max": 10.144
+        },
+        "Consumption L/100KM": {
+          "mean": 8.5128,
+          "sd": 3.4024,
+          "min": 5.201,
+          "max": 20.043
+        },
+        "Speed": {
+          "mean": 55.2996,
+          "sd": 19.97,
+          "min": 25.112,
+          "max": 106.308
+        },
+        "CO": {
+          "mean": 1.3616,
+          "sd": 1.4411,
+          "min": 0.423,
+          "max": 6.542
+        },
+        "HC": {
+          "mean": 160.7278,
+          "sd": 49.2693,
+          "min": 2.196,
+          "max": 228.557
+        },
+        "CO2": {
+          "mean": 12.9737,
+          "sd": 0.7784,
+          "min": 9.914,
+          "max": 14.497
+        },
+        "O2": {
+          "mean": 0.5564,
+          "sd": 0.2042,
+          "min": 0.227,
+          "max": 1.023
+        },
+        "Lambda": {
+          "mean": 0.9789,
+          "sd": 0.0542,
+          "min": 0.76,
+          "max": 1.126
+        },
+        "AFR": {
+          "mean": 14.39,
+          "sd": 0.797,
+          "min": 11.179,
+          "max": 16.554
+        }
+      },
+      "rpm_row_jump": {
+        "median": 44.9,
+        "p99": 236.0,
+        "max": 2776.2,
+        "n_over_500": 10
+      },
+      "segment_list": [
+        {
+          "start_row": 41998,
+          "rows": 1000,
+          "rpm_mean": 1856.1,
+          "speed_mean": 40.0,
+          "lambda_mean": 1.0172
+        },
+        {
+          "start_row": 42998,
+          "rows": 1000,
+          "rpm_mean": 1242.0,
+          "speed_mean": 26.8,
+          "lambda_mean": 1.0217
+        },
+        {
+          "start_row": 43998,
+          "rows": 1000,
+          "rpm_mean": 1857.1,
+          "speed_mean": 40.0,
+          "lambda_mean": 0.8299
+        },
+        {
+          "start_row": 44998,
+          "rows": 3000,
+          "rpm_mean": 2552.3,
+          "speed_mean": 55.0,
+          "lambda_mean": 0.9733
+        },
+        {
+          "start_row": 47998,
+          "rows": 2000,
+          "rpm_mean": 1928.8,
+          "speed_mean": 41.1,
+          "lambda_mean": 1.0043
+        },
+        {
+          "start_row": 49998,
+          "rows": 1000,
+          "rpm_mean": 3249.5,
+          "speed_mean": 70.1,
+          "lambda_mean": 0.9889
+        },
+        {
+          "start_row": 50998,
+          "rows": 1000,
+          "rpm_mean": 2147.3,
+          "speed_mean": 46.2,
+          "lambda_mean": 0.9376
+        },
+        {
+          "start_row": 51998,
+          "rows": 2000,
+          "rpm_mean": 3776.0,
+          "speed_mean": 81.7,
+          "lambda_mean": 1.0031
+        },
+        {
+          "start_row": 53998,
+          "rows": 1000,
+          "rpm_mean": 1892.5,
+          "speed_mean": 40.8,
+          "lambda_mean": 0.9829
+        },
+        {
+          "start_row": 54998,
+          "rows": 523,
+          "rpm_mean": 4619.3,
+          "speed_mean": 99.8,
+          "lambda_mean": 0.9909
+        },
+        {
+          "start_row": 55521,
+          "rows": 478,
+          "rpm_mean": 4620.0,
+          "speed_mean": 99.7,
+          "lambda_mean": 0.9925
+        }
+      ]
+    }
+  }
+}

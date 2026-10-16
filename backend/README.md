@@ -44,7 +44,7 @@ Pick a scenario with `S720_SCENARIO=<name>` before starting, or switch while run
 | Scenario | What happens |
 |---|---|
 | `healthy` | NORMAL throughout |
-| `misfire` | Healthy 2 s → misfire cyl 3, both witnesses → ALARM on the 2nd window, latched until ACK + 2 healthy windows |
+| `misfire` | Healthy 2 s → misfire cyl 3, both witnesses → ALARM on the 2nd window, latched until ACK + 2 windows without a misfire match |
 | `knock` | Same, knock on cyl 2 |
 | `injector_clog` | Same, cyl 1; asset health MAINTENANCE_REQUIRED |
 | `advisory` | Classifier says knock, physics rule quiet → ADVISORY, never ALARM |
@@ -76,7 +76,15 @@ Pick a scenario with `S720_SCENARIO=<name>` before starting, or switch while run
 
 ## OPC UA (`opcua_bridge.py`)
 
-An asyncua server starts with the backend at **`opc.tcp://127.0.0.1:4840/720/`** (no security, anonymous: local demo only). `S720_OPCUA=0` turns it off and `S720_OPCUA_ENDPOINT` moves it. If it can't start (port taken), the backend logs the error and the dashboard keeps working; `GET /health` reports `"opcua": null`.
+An asyncua server starts with the backend at **`opc.tcp://127.0.0.1:4840/720/`** (no security, anonymous: local demo only). `S720_OPCUA=0` turns it off and `S720_OPCUA_ENDPOINT` moves it.
+
+**On a LAN** (UaExpert on another laptop): start with `S720_OPCUA_HOST=0.0.0.0` (listen on every interface; the default 127.0.0.1 is reachable from this machine only). At startup the backend prints `OPC UA reachable at opc.tcp://<lan-ip>:4840/720/` for each address; dial that one. The server is still **no security, anonymous**, so do this only on a network you trust. **Windows firewall:** the first start on 0.0.0.0 makes Windows ask whether Python may accept connections; allow it on *Private* networks only. If you missed the prompt, allow inbound TCP 4840 from an admin PowerShell:
+
+```powershell
+New-NetFirewallRule -DisplayName "720 OPC UA" -Direction Inbound -Protocol TCP -LocalPort 4840 -Action Allow -Profile Private
+```
+
+Some clients read the endpoint URL the server advertises (`opc.tcp://0.0.0.0:4840/720/`) and try to reconnect to it; in UaExpert, answer "use the discovery URL" (or set `S720_OPCUA_ENDPOINT=opc.tcp://<lan-ip>:4840/720/` so the advertised URL is the LAN address). If it can't start (port taken), the backend logs the error and the dashboard keeps working; `GET /health` reports `"opcua": null`.
 
 It mirrors the same `state`/`obd` broadcast the dashboard gets and decides nothing. An ACK through OPC UA goes through the same `Runtime.ack()` as a dashboard ACK, so both always show the same alarm state.
 
@@ -125,7 +133,7 @@ Each window is assessed on its own (match / conflict / unclassified / advisory /
 
 - **ALARM** after 2 consecutive windows where the classifier majority (Baseline excluded, mean p ≥ 0.6) and the physics rule name the same fault. The first such window is ADVISORY.
 - The alarm stays latched until acknowledged, even if the fault clears first. **ACK only marks it acknowledged.**
-- **Reset to NORMAL** on the first window evaluation where the alarm is acknowledged and the last 2 consecutive windows were healthy. An ACK after the fault has already cleared resets on the next window, never inside the ACK itself.
+- **Reset** on the first window evaluation where the alarm is acknowledged and the last 2 consecutive windows were not a two-witness `match` for the alarm's own fault (D124; it was "2 healthy windows"). Whatever remains then shows as itself (UNCLASSIFIED, ADVISORY or NORMAL). An ACK after the fault has already cleared resets on the next window, never inside the ACK itself.
 - A new episode gets a new `alarm_id` (`a_0001`, `a_0002`, …), never reused while the server runs, even across scenario switches. One alarm is active at a time.
 - While latched, `decision` reports the evidence that raised it (`witnesses: [physics, classifier]`, `consecutive_windows` ≥ 2, live while the fault still matches).
 - NE 107 asset health: misfire/knock alarm and UNCLASSIFIED → OFF_SPEC, injector clog alarm → MAINTENANCE_REQUIRED, everything else NORMAL. Sensor health comes from the watchdog.

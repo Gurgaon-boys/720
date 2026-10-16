@@ -75,7 +75,7 @@ def classifier_false_faults(split: str) -> dict:
     r = c["carobd_heldout"]
     return rate_from(r["levels"]["4_classifier_false_faults"]["episodes"], r["files"], split,
                      "eval/obd_classifier_carobd.json", unit="episodes (runs of consecutive 30 s windows)",
-                     note="OBD-only classifier trained on SIMULATED OBD (D105, D106), run on real held-out carOBD: "
+                     note="OBD-only classifier trained on SIMULATED OBD (D125, D126), run on real held-out carOBD: "
                           "a sim-to-real test, NOT part of the deployed OBD branch, whose other levels are shown here. "
                           f"With it in the chain: ADVISORY {r['levels']['3_advisories']['episodes']['per_hour']}/h, "
                           f"ALARM {r['levels']['5_alarms']['per_hour']}/h.")
@@ -139,6 +139,25 @@ def column_a() -> dict:
     return out
 
 
+def operator_projection() -> dict:
+    # carOBD alarms are structurally zero (no classifier on OBD), so the projection uses the simulated
+    # third soak, where both witnesses run (Dipen, eval/alarm_budget.py, DECISIONS D104)
+    ab = load("results/alarm_budget.json")
+    if ab is None:
+        return {"engines": 50, "value": None, "unit": "alarms per hour", "basis": None,
+                "assumptions": None, "column": "C", "split": "held-out files"}
+    p, sim = ab["operator_projection"], ab["healthy"]["sim"]
+    return {"engines": p["engines"], "value": p["fleet_per_hour"], "upper_95": p["fleet_upper_95_per_hour"],
+            "unit": "operator notifications per hour (ALARM + UNCLASSIFIED episodes)",
+            "basis": f"{p['per_engine_operator_notifications']['events']} episodes in {sim['hours']:.1f} engine-h "
+                     f"x {p['engines']} engines ({sim['label']}, {sim['split']}); exact Poisson 95 % upper "
+                     f"{p['fleet_upper_95_per_hour']:.1f} per hour; guidance per operator ~6/h acceptable, ~12/h manageable. "
+                     f"REAL carOBD held-out: {p['by_source']['real_carobd']['fleet_per_hour']:.1f} per hour "
+                     f"(95 % upper {p['by_source']['real_carobd']['fleet_upper_95_per_hour']:.1f}), UNCLASSIFIED only",
+            "guidance_per_operator_hour": p["guidance_per_operator_hour"], "assumptions": "; ".join(p["assumptions"]),
+            "column": "A", "split": sim["split"], "source": "eval/results/alarm_budget.json"}
+
+
 def column_b() -> dict:
     t = load("table_b.json")
     split = "5 folds by source clip (vetted P2, >= 8 kHz)"
@@ -182,9 +201,7 @@ def main() -> None:
         "source_commit": commit,
         "produced_by": "python -m eval.build_eval_json",
         "false_positives": {"headline": headline_fp(), "secondary": secondary_fp()},
-        # alarms are structurally zero without a classifier witness, so a fleet projection would mislead
-        "operator_projection": {"engines": 50, "value": None, "unit": "alarms per hour", "basis": None,
-                                "assumptions": None, "column": "C", "split": "held-out files"},
+        "operator_projection": operator_projection(),
         "column_a": column_a(),
         "column_b": column_b(),
         "column_c": column_c(),
@@ -192,7 +209,11 @@ def main() -> None:
                               "misfire-only slice (eval/table_a_misfire.json, D63) is an earlier result",
                   "column_c": "headline = the pre-registered OBD branch v1 (eval/obd_carobd.json, D55-D58). A second, "
                               "later read of the same held-out files with a different OBD model (eval/results/column_c.json) "
-                              "is a secondary analysis and not on the panel"},
+                              "is a secondary analysis and not on the panel",
+                  "l3": "L3 (Dipen, D99-D105): UNCLASSIFIED needs 2 windows and the healthy-model threshold comes from "
+                        "engine-to-engine spread on validation engines; the third untouched soak and the alarm budget are "
+                        "in eval/results/soak_l3_fresh3.json and alarm_budget.json. The pre-registered carOBD headline "
+                        "(OBD branch v1) is unchanged"},
     }
     OUT.write_text(json.dumps(d, indent=2) + "\n")
     FRONTEND_COPY.parent.mkdir(parents=True, exist_ok=True)

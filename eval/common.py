@@ -34,18 +34,25 @@ SEEDS = {
     # fresh soak engines (L2 stage 2): never used for calibration, training, tuning or any earlier evaluation
     "soak_fresh": (list(range(900, 940)), 40000),
     "soak_fresh2": (list(range(940, 980)), 41000),   # after the start-up enable condition (D89)
+    # L3: a THIRD untouched soak range, read only after the healthy-model threshold was fixed on validation
+    "soak_fresh3": (list(range(1100, 1140)), 42000),
+    # L3 follow-up: a FOURTH untouched range for the long soak (>= 20 engine-hours, final thresholds)
+    "soak_long": (list(range(1300, 1400)), 43000),
+    # L3: extra VALIDATION engines for the healthy-model threshold (engine-to-engine spread); tuning allowed here
+    "val_thr": (list(range(1200, 1280)), 50000),
     # OBD-only classifier trained on simulated OBD (models/obd/sim_classifier.py, Diljit)
     "obd_clf_train": (list(range(2000, 2060)), 60000),
     "obd_clf_val": (list(range(2060, 2075)), 61000),
 }
 _used = [e for k, (es, _) in SEEDS.items() for e in es]
 assert len(_used) == len(set(_used)), "seed ranges overlap"
-EVAL_RANGES = ("soak", "robustness", "held_out_region", "soak_fresh", "soak_fresh2")
+EVAL_RANGES = ("soak", "robustness", "held_out_region", "soak_fresh", "soak_fresh2", "soak_fresh3", "soak_long")
+VALIDATION_RANGES = ("val_thr",)       # simulated like evaluation runs, but used for tuning (never reported as evidence)
 
 
 def eval_engine(kind: str, i: int) -> tuple[EngineParams, int]:
     """(params, run seed) for the i-th engine of an evaluation range; held_out_region uses the 'test' region."""
-    if kind not in EVAL_RANGES:
+    if kind not in EVAL_RANGES + VALIDATION_RANGES:
         raise ValueError(f"{kind!r} is not an evaluation range")
     engines, off = SEEDS[kind]
     e = engines[i % len(engines)]

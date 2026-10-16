@@ -35,6 +35,7 @@ from dsp.windows import CycleWindower
 from models.features import StreamFeatures
 from models.witness import ClassifierWitness
 from sim import FS, EngineParams, EngineSim
+from sim.engine import CHANNEL_CALIBRATION
 from sim.params import Regimes
 
 CHUNK_S = 0.05            # simulator step, s
@@ -43,7 +44,8 @@ DISPLAY_GAIN = {"mic": 8.0, "accel": 6.0}   # the synthesised signals peak near 
 KEEP_S = 2.0              # 4 kHz display history kept for signal frames
 DROPOUT_KEEP_S = 30.0
 OBD_UNITS = {"rpm": "rev/min", "load_pct": "%", "throttle_pct": "%", "map_kpa": "kPa", "coolant_c": "degC",
-             "stft_pct": "%", "ltft_pct": "%", "spark_adv_deg": "deg", "lambda": "1"}
+             "stft_pct": "%", "ltft_pct": "%", "spark_adv_deg": "deg", "lambda": "1",
+             "intake_air_temp_c": "degC", "battery_v": "V", "baro_kpa": "kPa"}
 _RUNNING = Phase()        # the source itself never goes "offline"; sensors drop out individually
 
 
@@ -51,8 +53,9 @@ class SimSource:
     name = "sim"
     description = "Physics-informed simulator v2, live"
     source = "simulated"
-    sensors = ("mic", "accel", "obd", "crank")
-    polled_sensors = ("crank",)   # no stream of its own: the runtime feeds the watchdog on state ticks
+    sensors = ("mic", "accel", "obd", "crank", "cam")
+    polled_sensors = ("crank", "cam")   # no stream of their own: the runtime feeds the watchdog on state ticks
+    channel_calibration = CHANNEL_CALIBRATION   # obd channel -> real_calibrated | sim_only (contract 1.5)
     real = False
     period = None
 

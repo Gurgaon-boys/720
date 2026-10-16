@@ -1,0 +1,80 @@
+{
+  "created_at": "2026-10-16T15:08:35Z",
+  "git_commit": "ee12a5b796f99888229b7c541d765cd61534a76b",
+  "seed": 720,
+  "produced_by": "data/enginefaultdb_split.py",
+  "source": "https://github.com/Leo-Thomas/EngineFaultDB (EngineFaultDB_Final.csv)",
+  "rows": 55999,
+  "temporal": {
+    "method": "inside each class block: first 70% train, 5% gap (unused), last 25% test; row ranges [start, end) in file order",
+    "ranges": {
+      "0": {
+        "train": [
+          0,
+          11200
+        ],
+        "gap": [
+          11200,
+          12000
+        ],
+        "test": [
+          12000,
+          16000
+        ]
+      },
+      "1": {
+        "train": [
+          16000,
+          23698
+        ],
+        "gap": [
+          23698,
+          24249
+        ],
+        "test": [
+          24249,
+          26998
+        ]
+      },
+      "2": {
+        "train": [
+          26998,
+          37498
+        ],
+        "gap": [
+          37498,
+          38248
+        ],
+        "test": [
+          38248,
+          41998
+        ]
+      },
+      "3": {
+        "train": [
+          41998,
+          51798
+        ],
+        "gap": [
+          51798,
+          52499
+        ],
+        "test": [
+          52499,
+          55999
+        ]
+      }
+    },
+    "rows": {
+      "train": 39198,
+      "gap": 2802,
+      "test": 13999
+    }
+  },
+  "random": {
+    "method": "rows shuffled (numpy default_rng(seed)), 25% test per class; rest train",
+    "test_rows": 14000,
+    "test_rows_sha256": "df3354bf0f44d4c77d90390deb298495585ce7f1f253a4736a5b2b3c7384bffb"
+  },
+  "warning": "each class is one recording session: neither split separates fault from session"
+}

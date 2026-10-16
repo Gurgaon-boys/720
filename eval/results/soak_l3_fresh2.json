@@ -1,0 +1,1150 @@
+{
+ "created_at": "2026-10-16T13:58:23+00:00",
+ "sim_version": "2.1.1",
+ "label": "SIM 2.1",
+ "column": "A",
+ "split": "soak_fresh2 engines 940-979 (unseen)",
+ "runs": 40,
+ "run_s_counted": 180.0,
+ "window": "4-cycle windows, 50 % overlap",
+ "configs": {
+  "before": {
+   "healthy_thresholds": "checkpoint (pooled val windows)",
+   "unclassified_windows_required": 1,
+   "hours": 2.0,
+   "windows": 49675,
+   "levels": {
+    "anomaly_flags": {
+     "windows": {
+      "events": 106,
+      "hours": 2.0,
+      "per_hour": 53.0,
+      "lower_95": 43.832409746069125,
+      "upper_95": 64.08004487928191,
+      "method": "Wilson on per-window proportion"
+     },
+     "episodes": {
+      "events": 83,
+      "exposure_hours": 2.0,
+      "per_hour": 41.5,
+      "upper_95_per_hour": 49.81104423232935,
+      "bound_method": "poisson_exact_one_sided_95"
+     }
+    },
+    "classifier_false_faults": {
+     "windows": {
+      "events": 2,
+      "hours": 2.0,
+      "per_hour": 1.0,
+      "lower_95": 0.27423205338748635,
+      "upper_95": 3.6462647562643724,
+      "method": "Wilson on per-window proportion"
+     },
+     "episodes": {
+      "events": 2,
+      "exposure_hours": 2.0,
+      "per_hour": 1.0,
+      "upper_95_per_hour": 3.147896810935994,
+      "bound_method": "poisson_exact_one_sided_95"
+     }
+    },
+    "physics_windows": {
+     "windows": {
+      "events": 55,
+      "hours": 2.0,
+      "per_hour": 27.5,
+      "lower_95": 21.131700630008833,
+      "upper_95": 35.78469775879741,
+      "method": "Wilson on per-window proportion"
+     },
+     "episodes": {
+      "events": 34,
+      "exposure_hours": 2.0,
+      "per_hour": 17.0,
+      "upper_95_per_hour": 22.632806358720163,
+      "bound_method": "poisson_exact_one_sided_95"
+     }
+    },
+    "advisory": {
+     "windows": {
+      "events": 53,
+      "hours": 2.0,
+      "per_hour": 26.5,
+      "lower_95": 20.263747094766213,
+      "upper_95": 34.65280595143043,
+      "method": "Wilson on per-window proportion"
+     },
+     "episodes": {
+      "events": 33,
+      "exposure_hours": 2.0,
+      "per_hour": 16.5,
+      "upper_95_per_hour": 22.06254110546853,
+      "bound_method": "poisson_exact_one_sided_95"
+     }
+    },
+    "unclassified": {
+     "windows": {
+      "events": 106,
+      "hours": 2.0,
+      "per_hour": 53.0,
+      "lower_95": 43.832409746069125,
+      "upper_95": 64.08004487928191,
+      "method": "Wilson on per-window proportion"
+     },
+     "episodes": {
+      "events": 83,
+      "exposure_hours": 2.0,
+      "per_hour": 41.5,
+      "upper_95_per_hour": 49.81104423232935,
+      "bound_method": "poisson_exact_one_sided_95"
+     }
+    },
+    "alarm": {
+     "windows": {
+      "events": 0,
+      "hours": 2.0,
+      "per_hour": 0.0,
+      "upper_95": 1.5,
+      "method": "rule of three (3/T)"
+     },
+     "episodes": {
+      "events": 0,
+      "exposure_hours": 2.0,
+      "per_hour": 0.0,
+      "upper_95_per_hour": 1.4978661367769948,
+      "bound_method": "poisson_exact_one_sided_95"
+     }
+    },
+    "advisory_persist2": {
+     "windows": {
+      "events": 20,
+      "hours": 2.0,
+      "per_hour": 10.0,
+      "lower_95": 6.474073353025234,
+      "upper_95": 15.445031540113018,
+      "method": "Wilson on per-window proportion"
+     },
+     "episodes": {
+      "events": 20,
+      "exposure_hours": 2.0,
+      "per_hour": 10.0,
+      "upper_95_per_hour": 14.531009420217007,
+      "bound_method": "poisson_exact_one_sided_95"
+     }
+    },
+    "alarms_raised": {
+     "windows": {
+      "events": 0,
+      "hours": 2.0,
+      "per_hour": 0.0,
+      "upper_95": 1.5,
+      "method": "rule of three (3/T)"
+     },
+     "episodes": {
+      "events": 0,
+      "exposure_hours": 2.0,
+      "per_hour": 0.0,
+      "upper_95_per_hour": 1.4978661367769948,
+      "bound_method": "poisson_exact_one_sided_95"
+     }
+    },
+    "alarms_raised_startup": {
+     "windows": {
+      "events": 0,
+      "hours": 2.0,
+      "per_hour": 0.0,
+      "upper_95": 1.5,
+      "method": "rule of three (3/T)"
+     },
+     "episodes": {
+      "events": 0,
+      "exposure_hours": 2.0,
+      "per_hour": 0.0,
+      "upper_95_per_hour": 1.4978661367769948,
+      "bound_method": "poisson_exact_one_sided_95"
+     }
+    }
+   },
+   "unclassified_episodes_per_run": [
+    0,
+    0,
+    0,
+    2,
+    0,
+    51,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    28,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "persist2": {
+   "healthy_thresholds": "checkpoint (pooled val windows)",
+   "unclassified_windows_required": 2,
+   "hours": 2.0,
+   "windows": 49675,
+   "levels": {
+    "anomaly_flags": {
+     "windows": {
+      "events": 106,
+      "hours": 2.0,
+      "per_hour": 53.0,
+      "lower_95": 43.832409746069125,
+      "upper_95": 64.08004487928191,
+      "method": "Wilson on per-window proportion"
+     },
+     "episodes": {
+      "events": 83,
+      "exposure_hours": 2.0,
+      "per_hour": 41.5,
+      "upper_95_per_hour": 49.81104423232935,
+      "bound_method": "poisson_exact_one_sided_95"
+     }
+    },
+    "classifier_false_faults": {
+     "windows": {
+      "events": 2,
+      "hours": 2.0,
+      "per_hour": 1.0,
+      "lower_95": 0.27423205338748635,
+      "upper_95": 3.6462647562643724,
+      "method": "Wilson on per-window proportion"
+     },
+     "episodes": {
+      "events": 2,
+      "exposure_hours": 2.0,
+      "per_hour": 1.0,
+      "upper_95_per_hour": 3.147896810935994,
+      "bound_method": "poisson_exact_one_sided_95"
+     }
+    },
+    "physics_windows": {
+     "windows": {
+      "events": 55,
+      "hours": 2.0,
+      "per_hour": 27.5,
+      "lower_95": 21.131700630008833,
+      "upper_95": 35.78469775879741,
+      "method": "Wilson on per-window proportion"
+     },
+     "episodes": {
+      "events": 34,
+      "exposure_hours": 2.0,
+      "per_hour": 17.0,
+      "upper_95_per_hour": 22.632806358720163,
+      "bound_method": "poisson_exact_one_sided_95"
+     }
+    },
+    "advisory": {
+     "windows": {
+      "events": 57,
+      "hours": 2.0,
+      "per_hour": 28.5,
+      "lower_95": 22.001999945595863,
+      "upper_95": 36.91424378581996,
+      "method": "Wilson on per-window proportion"
+     },
+     "episodes": {
+      "events": 36,
+      "exposure_hours": 2.0,
+      "per_hour": 18.0,
+      "upper_95_per_hour": 23.77036666731081,
+      "bound_method": "poisson_exact_one_sided_95"
+     }
+    },
+    "unclassified": {
+     "windows": {
+      "events": 23,
+      "hours": 2.0,
+      "per_hour": 11.5,
+      "lower_95": 7.663836026113621,
+      "upper_95": 17.255036880939027,
+      "method": "Wilson on per-window proportion"
+     },
+     "episodes": {
+      "events": 21,
+      "exposure_hours": 2.0,
+      "per_hour": 10.5,
+      "upper_95_per_hour": 15.120221645584111,
+      "bound_method": "poisson_exact_one_sided_95"
+     }
+    },
+    "alarm": {
+     "windows": {
+      "events": 0,
+      "hours": 2.0,
+      "per_hour": 0.0,
+      "upper_95": 1.5,
+      "method": "rule of three (3/T)"
+     },
+     "episodes": {
+      "events": 0,
+      "exposure_hours": 2.0,
+      "per_hour": 0.0,
+      "upper_95_per_hour": 1.4978661367769948,
+      "bound_method": "poisson_exact_one_sided_95"
+     }
+    },
+    "advisory_persist2": {
+     "windows": {
+      "events": 24,
+      "hours": 2.0,
+      "per_hour": 12.0,
+      "lower_95": 8.064796029047542,
+      "upper_95": 17.853999549309908,
+      "method": "Wilson on per-window proportion"
+     },
+     "episodes": {
+      "events": 24,
+      "exposure_hours": 2.0,
+      "per_hour": 12.0,
+      "upper_95_per_hour": 16.8762016373853,
+      "bound_method": "poisson_exact_one_sided_95"
+     }
+    },
+    "alarms_raised": {
+     "windows": {
+      "events": 0,
+      "hours": 2.0,
+      "per_hour": 0.0,
+      "upper_95": 1.5,
+      "method": "rule of three (3/T)"
+     },
+     "episodes": {
+      "events": 0,
+      "exposure_hours": 2.0,
+      "per_hour": 0.0,
+      "upper_95_per_hour": 1.4978661367769948,
+      "bound_method": "poisson_exact_one_sided_95"
+     }
+    },
+    "alarms_raised_startup": {
+     "windows": {
+      "events": 0,
+      "hours": 2.0,
+      "per_hour": 0.0,
+      "upper_95": 1.5,
+      "method": "rule of three (3/T)"
+     },
+     "episodes": {
+      "events": 0,
+      "exposure_hours": 2.0,
+      "per_hour": 0.0,
+      "upper_95_per_hour": 1.4978661367769948,
+      "bound_method": "poisson_exact_one_sided_95"
+     }
+    }
+   },
+   "unclassified_episodes_per_run": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    13,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    8,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "after": {
+   "healthy_thresholds": {
+    "idle": 11.117164435396916,
+    "mid": 12.800446140811347,
+    "high": 13.791712034485002
+   },
+   "unclassified_windows_required": 2,
+   "hours": 2.0,
+   "windows": 49675,
+   "levels": {
+    "anomaly_flags": {
+     "windows": {
+      "events": 4,
+      "hours": 2.0,
+      "per_hour": 2.0,
+      "lower_95": 0.777759081400642,
+      "upper_95": 5.142583070860816,
+      "method": "Wilson on per-window proportion"
+     },
+     "episodes": {
+      "events": 3,
+      "exposure_hours": 2.0,
+      "per_hour": 1.5,
+      "upper_95_per_hour": 3.876828263966363,
+      "bound_method": "poisson_exact_one_sided_95"
+     }
+    },
+    "classifier_false_faults": {
+     "windows": {
+      "events": 2,
+      "hours": 2.0,
+      "per_hour": 1.0,
+      "lower_95": 0.27423205338748635,
+      "upper_95": 3.6462647562643724,
+      "method": "Wilson on per-window proportion"
+     },
+     "episodes": {
+      "events": 2,
+      "exposure_hours": 2.0,
+      "per_hour": 1.0,
+      "upper_95_per_hour": 3.147896810935994,
+      "bound_method": "poisson_exact_one_sided_95"
+     }
+    },
+    "physics_windows": {
+     "windows": {
+      "events": 55,
+      "hours": 2.0,
+      "per_hour": 27.5,
+      "lower_95": 21.131700630008833,
+      "upper_95": 35.78469775879741,
+      "method": "Wilson on per-window proportion"
+     },
+     "episodes": {
+      "events": 34,
+      "exposure_hours": 2.0,
+      "per_hour": 17.0,
+      "upper_95_per_hour": 22.632806358720163,
+      "bound_method": "poisson_exact_one_sided_95"
+     }
+    },
+    "advisory": {
+     "windows": {
+      "events": 57,
+      "hours": 2.0,
+      "per_hour": 28.5,
+      "lower_95": 22.001999945595863,
+      "upper_95": 36.91424378581996,
+      "method": "Wilson on per-window proportion"
+     },
+     "episodes": {
+      "events": 36,
+      "exposure_hours": 2.0,
+      "per_hour": 18.0,
+      "upper_95_per_hour": 23.77036666731081,
+      "bound_method": "poisson_exact_one_sided_95"
+     }
+    },
+    "unclassified": {
+     "windows": {
+      "events": 1,
+      "hours": 2.0,
+      "per_hour": 0.5,
+      "lower_95": 0.08826022666307158,
+      "upper_95": 2.832313911683987,
+      "method": "Wilson on per-window proportion"
+     },
+     "episodes": {
+      "events": 1,
+      "exposure_hours": 2.0,
+      "per_hour": 0.5,
+      "upper_95_per_hour": 2.3719322591952885,
+      "bound_method": "poisson_exact_one_sided_95"
+     }
+    },
+    "alarm": {
+     "windows": {
+      "events": 0,
+      "hours": 2.0,
+      "per_hour": 0.0,
+      "upper_95": 1.5,
+      "method": "rule of three (3/T)"
+     },
+     "episodes": {
+      "events": 0,
+      "exposure_hours": 2.0,
+      "per_hour": 0.0,
+      "upper_95_per_hour": 1.4978661367769948,
+      "bound_method": "poisson_exact_one_sided_95"
+     }
+    },
+    "advisory_persist2": {
+     "windows": {
+      "events": 21,
+      "hours": 2.0,
+      "per_hour": 10.5,
+      "lower_95": 6.868328574285461,
+      "upper_95": 16.050698990157592,
+      "method": "Wilson on per-window proportion"
+     },
+     "episodes": {
+      "events": 21,
+      "exposure_hours": 2.0,
+      "per_hour": 10.5,
+      "upper_95_per_hour": 15.120221645584111,
+      "bound_method": "poisson_exact_one_sided_95"
+     }
+    },
+    "alarms_raised": {
+     "windows": {
+      "events": 0,
+      "hours": 2.0,
+      "per_hour": 0.0,
+      "upper_95": 1.5,
+      "method": "rule of three (3/T)"
+     },
+     "episodes": {
+      "events": 0,
+      "exposure_hours": 2.0,
+      "per_hour": 0.0,
+      "upper_95_per_hour": 1.4978661367769948,
+      "bound_method": "poisson_exact_one_sided_95"
+     }
+    },
+    "alarms_raised_startup": {
+     "windows": {
+      "events": 0,
+      "hours": 2.0,
+      "per_hour": 0.0,
+      "upper_95": 1.5,
+      "method": "rule of three (3/T)"
+     },
+     "episodes": {
+      "events": 0,
+      "exposure_hours": 2.0,
+      "per_hour": 0.0,
+      "upper_95_per_hour": 1.4978661367769948,
+      "bound_method": "poisson_exact_one_sided_95"
+     }
+    }
+   },
+   "unclassified_episodes_per_run": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  }
+ },
+ "runs_detail": [
+  {
+   "range": "soak_fresh2",
+   "i": 0,
+   "seed": 41940,
+   "rpm": 2345.6,
+   "load_nm": 4.84,
+   "fault": null,
+   "cylinder": 0,
+   "severity": 0.0,
+   "warmup_s": 30.0,
+   "run_s": 180.0,
+   "inject_t": null
+  },
+  {
+   "range": "soak_fresh2",
+   "i": 1,
+   "seed": 41941,
+   "rpm": 2394.5,
+   "load_nm": 16.58,
+   "fault": null,
+   "cylinder": 0,
+   "severity": 0.0,
+   "warmup_s": 30.0,
+   "run_s": 180.0,
+   "inject_t": null
+  },
+  {
+   "range": "soak_fresh2",
+   "i": 2,
+   "seed": 41942,
+   "rpm": 736.9,
+   "load_nm": 14.57,
+   "fault": null,
+   "cylinder": 0,
+   "severity": 0.0,
+   "warmup_s": 30.0,
+   "run_s": 180.0,
+   "inject_t": null
+  },
+  {
+   "range": "soak_fresh2",
+   "i": 3,
+   "seed": 41943,
+   "rpm": 1543.7,
+   "load_nm": 10.36,
+   "fault": null,
+   "cylinder": 0,
+   "severity": 0.0,
+   "warmup_s": 30.0,
+   "run_s": 180.0,
+   "inject_t": null
+  },
+  {
+   "range": "soak_fresh2",
+   "i": 4,
+   "seed": 41944,
+   "rpm": 1272.1,
+   "load_nm": 39.42,
+   "fault": null,
+   "cylinder": 0,
+   "severity": 0.0,
+   "warmup_s": 30.0,
+   "run_s": 180.0,
+   "inject_t": null
+  },
+  {
+   "range": "soak_fresh2",
+   "i": 5,
+   "seed": 41945,
+   "rpm": 1294.4,
+   "load_nm": 29.56,
+   "fault": null,
+   "cylinder": 0,
+   "severity": 0.0,
+   "warmup_s": 30.0,
+   "run_s": 180.0,
+   "inject_t": null
+  },
+  {
+   "range": "soak_fresh2",
+   "i": 6,
+   "seed": 41946,
+   "rpm": 2694.8,
+   "load_nm": 28.6,
+   "fault": null,
+   "cylinder": 0,
+   "severity": 0.0,
+   "warmup_s": 30.0,
+   "run_s": 180.0,
+   "inject_t": null
+  },
+  {
+   "range": "soak_fresh2",
+   "i": 7,
+   "seed": 41947,
+   "rpm": 2557.8,
+   "load_nm": 15.89,
+   "fault": null,
+   "cylinder": 0,
+   "severity": 0.0,
+   "warmup_s": 30.0,
+   "run_s": 180.0,
+   "inject_t": null
+  },
+  {
+   "range": "soak_fresh2",
+   "i": 8,
+   "seed": 41948,
+   "rpm": 1584.3,
+   "load_nm": 43.85,
+   "fault": null,
+   "cylinder": 0,
+   "severity": 0.0,
+   "warmup_s": 30.0,
+   "run_s": 180.0,
+   "inject_t": null
+  },
+  {
+   "range": "soak_fresh2",
+   "i": 9,
+   "seed": 41949,
+   "rpm": 1977.2,
+   "load_nm": 44.14,
+   "fault": null,
+   "cylinder": 0,
+   "severity": 0.0,
+   "warmup_s": 30.0,
+   "run_s": 180.0,
+   "inject_t": null
+  },
+  {
+   "range": "soak_fresh2",
+   "i": 10,
+   "seed": 41950,
+   "rpm": 2147.7,
+   "load_nm": 10.98,
+   "fault": null,
+   "cylinder": 0,
+   "severity": 0.0,
+   "warmup_s": 30.0,
+   "run_s": 180.0,
+   "inject_t": null
+  },
+  {
+   "range": "soak_fresh2",
+   "i": 11,
+   "seed": 41951,
+   "rpm": 1940.5,
+   "load_nm": 28.78,
+   "fault": null,
+   "cylinder": 0,
+   "severity": 0.0,
+   "warmup_s": 30.0,
+   "run_s": 180.0,
+   "inject_t": null
+  },
+  {
+   "range": "soak_fresh2",
+   "i": 12,
+   "seed": 41952,
+   "rpm": 861.4,
+   "load_nm": 32.41,
+   "fault": null,
+   "cylinder": 0,
+   "severity": 0.0,
+   "warmup_s": 30.0,
+   "run_s": 180.0,
+   "inject_t": null
+  },
+  {
+   "range": "soak_fresh2",
+   "i": 13,
+   "seed": 41953,
+   "rpm": 837.3,
+   "load_nm": 34.79,
+   "fault": null,
+   "cylinder": 0,
+   "severity": 0.0,
+   "warmup_s": 30.0,
+   "run_s": 180.0,
+   "inject_t": null
+  },
+  {
+   "range": "soak_fresh2",
+   "i": 14,
+   "seed": 41954,
+   "rpm": 754.5,
+   "load_nm": 28.5,
+   "fault": null,
+   "cylinder": 0,
+   "severity": 0.0,
+   "warmup_s": 30.0,
+   "run_s": 180.0,
+   "inject_t": null
+  },
+  {
+   "range": "soak_fresh2",
+   "i": 15,
+   "seed": 41955,
+   "rpm": 1418.5,
+   "load_nm": 15.02,
+   "fault": null,
+   "cylinder": 0,
+   "severity": 0.0,
+   "warmup_s": 30.0,
+   "run_s": 180.0,
+   "inject_t": null
+  },
+  {
+   "range": "soak_fresh2",
+   "i": 16,
+   "seed": 41956,
+   "rpm": 911.9,
+   "load_nm": 9.72,
+   "fault": null,
+   "cylinder": 0,
+   "severity": 0.0,
+   "warmup_s": 30.0,
+   "run_s": 180.0,
+   "inject_t": null
+  },
+  {
+   "range": "soak_fresh2",
+   "i": 17,
+   "seed": 41957,
+   "rpm": 893.3,
+   "load_nm": 16.71,
+   "fault": null,
+   "cylinder": 0,
+   "severity": 0.0,
+   "warmup_s": 30.0,
+   "run_s": 180.0,
+   "inject_t": null
+  },
+  {
+   "range": "soak_fresh2",
+   "i": 18,
+   "seed": 41958,
+   "rpm": 1947.0,
+   "load_nm": 14.85,
+   "fault": null,
+   "cylinder": 0,
+   "severity": 0.0,
+   "warmup_s": 30.0,
+   "run_s": 180.0,
+   "inject_t": null
+  },
+  {
+   "range": "soak_fresh2",
+   "i": 19,
+   "seed": 41959,
+   "rpm": 1165.9,
+   "load_nm": 42.11,
+   "fault": null,
+   "cylinder": 0,
+   "severity": 0.0,
+   "warmup_s": 30.0,
+   "run_s": 180.0,
+   "inject_t": null
+  },
+  {
+   "range": "soak_fresh2",
+   "i": 20,
+   "seed": 41960,
+   "rpm": 727.6,
+   "load_nm": 14.7,
+   "fault": null,
+   "cylinder": 0,
+   "severity": 0.0,
+   "warmup_s": 30.0,
+   "run_s": 180.0,
+   "inject_t": null
+  },
+  {
+   "range": "soak_fresh2",
+   "i": 21,
+   "seed": 41961,
+   "rpm": 2230.1,
+   "load_nm": 28.12,
+   "fault": null,
+   "cylinder": 0,
+   "severity": 0.0,
+   "warmup_s": 30.0,
+   "run_s": 180.0,
+   "inject_t": null
+  },
+  {
+   "range": "soak_fresh2",
+   "i": 22,
+   "seed": 41962,
+   "rpm": 1577.4,
+   "load_nm": 37.18,
+   "fault": null,
+   "cylinder": 0,
+   "severity": 0.0,
+   "warmup_s": 30.0,
+   "run_s": 180.0,
+   "inject_t": null
+  },
+  {
+   "range": "soak_fresh2",
+   "i": 23,
+   "seed": 41963,
+   "rpm": 1200.7,
+   "load_nm": 43.27,
+   "fault": null,
+   "cylinder": 0,
+   "severity": 0.0,
+   "warmup_s": 30.0,
+   "run_s": 180.0,
+   "inject_t": null
+  },
+  {
+   "range": "soak_fresh2",
+   "i": 24,
+   "seed": 41964,
+   "rpm": 1111.2,
+   "load_nm": 3.29,
+   "fault": null,
+   "cylinder": 0,
+   "severity": 0.0,
+   "warmup_s": 30.0,
+   "run_s": 180.0,
+   "inject_t": null
+  },
+  {
+   "range": "soak_fresh2",
+   "i": 25,
+   "seed": 41965,
+   "rpm": 2643.0,
+   "load_nm": 5.83,
+   "fault": null,
+   "cylinder": 0,
+   "severity": 0.0,
+   "warmup_s": 30.0,
+   "run_s": 180.0,
+   "inject_t": null
+  },
+  {
+   "range": "soak_fresh2",
+   "i": 26,
+   "seed": 41966,
+   "rpm": 832.7,
+   "load_nm": 25.7,
+   "fault": null,
+   "cylinder": 0,
+   "severity": 0.0,
+   "warmup_s": 30.0,
+   "run_s": 180.0,
+   "inject_t": null
+  },
+  {
+   "range": "soak_fresh2",
+   "i": 27,
+   "seed": 41967,
+   "rpm": 2657.7,
+   "load_nm": 3.84,
+   "fault": null,
+   "cylinder": 0,
+   "severity": 0.0,
+   "warmup_s": 30.0,
+   "run_s": 180.0,
+   "inject_t": null
+  },
+  {
+   "range": "soak_fresh2",
+   "i": 28,
+   "seed": 41968,
+   "rpm": 1827.0,
+   "load_nm": 10.67,
+   "fault": null,
+   "cylinder": 0,
+   "severity": 0.0,
+   "warmup_s": 30.0,
+   "run_s": 180.0,
+   "inject_t": null
+  },
+  {
+   "range": "soak_fresh2",
+   "i": 29,
+   "seed": 41969,
+   "rpm": 2145.2,
+   "load_nm": 38.84,
+   "fault": null,
+   "cylinder": 0,
+   "severity": 0.0,
+   "warmup_s": 30.0,
+   "run_s": 180.0,
+   "inject_t": null
+  },
+  {
+   "range": "soak_fresh2",
+   "i": 30,
+   "seed": 41970,
+   "rpm": 2372.5,
+   "load_nm": 24.51,
+   "fault": null,
+   "cylinder": 0,
+   "severity": 0.0,
+   "warmup_s": 30.0,
+   "run_s": 180.0,
+   "inject_t": null
+  },
+  {
+   "range": "soak_fresh2",
+   "i": 31,
+   "seed": 41971,
+   "rpm": 1780.2,
+   "load_nm": 42.22,
+   "fault": null,
+   "cylinder": 0,
+   "severity": 0.0,
+   "warmup_s": 30.0,
+   "run_s": 180.0,
+   "inject_t": null
+  },
+  {
+   "range": "soak_fresh2",
+   "i": 32,
+   "seed": 41972,
+   "rpm": 2079.8,
+   "load_nm": 27.52,
+   "fault": null,
+   "cylinder": 0,
+   "severity": 0.0,
+   "warmup_s": 30.0,
+   "run_s": 180.0,
+   "inject_t": null
+  },
+  {
+   "range": "soak_fresh2",
+   "i": 33,
+   "seed": 41973,
+   "rpm": 748.9,
+   "load_nm": 4.19,
+   "fault": null,
+   "cylinder": 0,
+   "severity": 0.0,
+   "warmup_s": 30.0,
+   "run_s": 180.0,
+   "inject_t": null
+  },
+  {
+   "range": "soak_fresh2",
+   "i": 34,
+   "seed": 41974,
+   "rpm": 1717.3,
+   "load_nm": 24.13,
+   "fault": null,
+   "cylinder": 0,
+   "severity": 0.0,
+   "warmup_s": 30.0,
+   "run_s": 180.0,
+   "inject_t": null
+  },
+  {
+   "range": "soak_fresh2",
+   "i": 35,
+   "seed": 41975,
+   "rpm": 791.0,
+   "load_nm": 18.56,
+   "fault": null,
+   "cylinder": 0,
+   "severity": 0.0,
+   "warmup_s": 30.0,
+   "run_s": 180.0,
+   "inject_t": null
+  },
+  {
+   "range": "soak_fresh2",
+   "i": 36,
+   "seed": 41976,
+   "rpm": 1965.8,
+   "load_nm": 9.73,
+   "fault": null,
+   "cylinder": 0,
+   "severity": 0.0,
+   "warmup_s": 30.0,
+   "run_s": 180.0,
+   "inject_t": null
+  },
+  {
+   "range": "soak_fresh2",
+   "i": 37,
+   "seed": 41977,
+   "rpm": 1588.9,
+   "load_nm": 9.04,
+   "fault": null,
+   "cylinder": 0,
+   "severity": 0.0,
+   "warmup_s": 30.0,
+   "run_s": 180.0,
+   "inject_t": null
+  },
+  {
+   "range": "soak_fresh2",
+   "i": 38,
+   "seed": 41978,
+   "rpm": 2946.7,
+   "load_nm": 15.69,
+   "fault": null,
+   "cylinder": 0,
+   "severity": 0.0,
+   "warmup_s": 30.0,
+   "run_s": 180.0,
+   "inject_t": null
+  },
+  {
+   "range": "soak_fresh2",
+   "i": 39,
+   "seed": 41979,
+   "rpm": 2113.6,
+   "load_nm": 37.44,
+   "fault": null,
+   "cylinder": 0,
+   "severity": 0.0,
+   "warmup_s": 30.0,
+   "run_s": 180.0,
+   "inject_t": null
+  }
+ ],
+ "reproduces": {
+  "file": "soak_l2_fresh2.json",
+  "windows_equal": {
+   "anomaly_flags": true,
+   "classifier_false_faults": true,
+   "physics_windows": true,
+   "advisory": true,
+   "unclassified": true,
+   "alarm": true,
+   "advisory_persist2": true
+  }
+ }
+}
