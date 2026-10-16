@@ -84,6 +84,38 @@ def clip_features(path) -> np.ndarray:
     return np.array([window_features(w) for w in ws]).reshape(len(ws), len(FEATURES))
 
 
+# ---- high-frequency features for column B (injected knock / valve tick), clips >= 8 kHz bandwidth
+HF_BANDS = ((4000, 6000), (6000, 8000), (8000, 10000), (10000, 12000), (12000, 14000))
+HF_FEATURES = [f"hf_{lo // 1000}_{hi // 1000}k_db" for lo, hi in HF_BANDS] + ["hf_env_kurtosis", "hf_crest_db"]
+FEATURES_B = FEATURES + HF_FEATURES
+
+
+def hf_window_features(w: np.ndarray, hf: np.ndarray) -> list[float]:
+    """w: the window; hf: the same window band-passed 5 kHz .. min(15 kHz, clip bandwidth)."""
+    seg = [w[i:i + NFFT] * np.hanning(NFFT) for i in range(0, len(w) - NFFT + 1, NFFT // 2)]
+    p = np.mean([np.abs(np.fft.rfft(s)) ** 2 for s in seg], axis=0) + 1e-20
+    low = p[_LOW].sum()
+    bands = [10 * np.log10(p[(_F >= lo) & (_F < hi)].sum() / low + 1e-12) for lo, hi in HF_BANDS]
+    rms = np.sqrt(np.mean(hf ** 2)) + 1e-12
+    return [*map(float, bands), float(kurtosis(np.abs(hilbert(hf)))), float(20 * np.log10(np.max(np.abs(hf)) / rms))]
+
+
+def features_b(x: np.ndarray, bandwidth_hz: float) -> tuple[np.ndarray, np.ndarray]:
+    """(features (n, len(FEATURES_B)), window start times (n,)) for an audio array; silence skipped."""
+    hi = min(15000.0, 0.95 * bandwidth_hz)
+    sos = butter(4, (5000.0, hi), btype="bandpass", fs=SR, output="sos")
+    xh = sosfiltfilt(sos, x)
+    w_n, h_n = int(WIN_S * SR), int(HOP_S * SR)
+    rows, starts = [], []
+    for i in range(0, len(x) - w_n + 1, h_n):
+        w = x[i:i + w_n]
+        if np.sqrt(np.mean(w ** 2)) <= SILENCE_RMS:
+            continue
+        rows.append(window_features(w) + hf_window_features(w, xh[i:i + w_n]))
+        starts.append(i / SR)
+    return np.array(rows).reshape(len(rows), len(FEATURES_B)), np.array(starts)
+
+
 _KNOCK_SOS = butter(4, KNOCK_BAND, btype="bandpass", fs=SR, output="sos")
 
 
