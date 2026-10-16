@@ -1,8 +1,8 @@
 {
   "eval_version": "0.1",
   "placeholder": false,
-  "generated_at": "2026-10-16T14:13:26Z",
-  "source_commit": "6d0789b",
+  "generated_at": "2026-10-16T14:13:38Z",
+  "source_commit": "f88a2e1",
   "produced_by": "python -m eval.build_eval_json",
   "false_positives": {
     "headline": {
@@ -119,12 +119,7 @@
       "very likely acceptable (1 per 10 min)": 6.0,
       "maximum manageable (2 per 10 min)": 12.0
     },
-    "assumptions": [
-      "50 engines like the SIM 2.1 healthy third-soak fleet, independent, steady operation",
-      "every ALARM and every UNCLASSIFIED episode is one operator notification; ADVISORY is logged, not annunciated",
-      "nuisance load on a healthy fleet only (true fault alarms come on top)",
-      "guidance: EEMUA 191 / ANSI/ISA-18.2 average alarm rate per operator (6/h acceptable, 12/h max manageable)"
-    ],
+    "assumptions": "50 engines like the SIM 2.1 healthy third-soak fleet, independent, steady operation; every ALARM and every UNCLASSIFIED episode is one operator notification; ADVISORY is logged, not annunciated; nuisance load on a healthy fleet only (true fault alarms come on top); guidance: EEMUA 191 / ANSI/ISA-18.2 average alarm rate per operator (6/h acceptable, 12/h max manageable)",
     "column": "A",
     "split": "soak_fresh3 engines 1100-1139 (unseen)",
     "source": "eval/results/alarm_budget.json"
