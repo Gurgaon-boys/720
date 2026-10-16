@@ -1,0 +1,700 @@
+{
+  "created_at": "2026-10-16T18:06:11+00:00",
+  "git_commit": "1dc09d1d502ac0acda9782805c3a6322b3e1a0eb",
+  "produced_by": "python -m eval.operating_map",
+  "derived_from": {
+    "file": "eval/results/soak_l3_long.json",
+    "created_at": "2026-10-16T14:57:01+00:00"
+  },
+  "sim_version": "2.1.1",
+  "label": "SIM 2.1",
+  "column": "A",
+  "split": "soak_long engines 1300-1399 (unseen)",
+  "metric": "healthy UNCLASSIFIED episodes per engine-hour (every one is a false alert: no fault is present)",
+  "unit": "episodes per engine-hour",
+  "bound_method": "poisson_exact_one_sided_95 (episodes within one run are not independent: optimistic)",
+  "run_s_counted": 180.0,
+  "rpm_edges": [
+    700,
+    1100,
+    1500,
+    2000,
+    2500,
+    2950
+  ],
+  "load_nm_edges": [
+    3,
+    13.5,
+    24,
+    34.5,
+    45
+  ],
+  "configs": {
+    "before": "checkpoint healthy thresholds, 1-window UNCLASSIFIED (before L3)",
+    "persist2": "checkpoint healthy thresholds, 2-window UNCLASSIFIED (D100)",
+    "after": "D101 validation thresholds + 2-window UNCLASSIFIED: the committed setting (D106)"
+  },
+  "not_measured": "fuel use or efficiency: the simulator soak records no fuel flow, so this is not an efficiency map",
+  "cells": [
+    {
+      "rpm": [
+        700,
+        1100
+      ],
+      "load_nm": [
+        3,
+        13.5
+      ],
+      "runs": 14,
+      "engine_hours": 0.7,
+      "before": {
+        "count": 0,
+        "hours": 0.7,
+        "per_hour": 0.0,
+        "upper95_per_hour": 4.2796,
+        "runs_with_any": 0
+      },
+      "persist2": {
+        "count": 0,
+        "hours": 0.7,
+        "per_hour": 0.0,
+        "upper95_per_hour": 4.2796,
+        "runs_with_any": 0
+      },
+      "after": {
+        "count": 0,
+        "hours": 0.7,
+        "per_hour": 0.0,
+        "upper95_per_hour": 4.2796,
+        "runs_with_any": 0
+      }
+    },
+    {
+      "rpm": [
+        700,
+        1100
+      ],
+      "load_nm": [
+        13.5,
+        24
+      ],
+      "runs": 19,
+      "engine_hours": 0.95,
+      "before": {
+        "count": 0,
+        "hours": 0.95,
+        "per_hour": 0.0,
+        "upper95_per_hour": 3.1534,
+        "runs_with_any": 0
+      },
+      "persist2": {
+        "count": 0,
+        "hours": 0.95,
+        "per_hour": 0.0,
+        "upper95_per_hour": 3.1534,
+        "runs_with_any": 0
+      },
+      "after": {
+        "count": 0,
+        "hours": 0.95,
+        "per_hour": 0.0,
+        "upper95_per_hour": 3.1534,
+        "runs_with_any": 0
+      }
+    },
+    {
+      "rpm": [
+        700,
+        1100
+      ],
+      "load_nm": [
+        24,
+        34.5
+      ],
+      "runs": 16,
+      "engine_hours": 0.8,
+      "before": {
+        "count": 29,
+        "hours": 0.8,
+        "per_hour": 36.25,
+        "upper95_per_hour": 49.4262,
+        "runs_with_any": 2
+      },
+      "persist2": {
+        "count": 5,
+        "hours": 0.8,
+        "per_hour": 6.25,
+        "upper95_per_hour": 13.1413,
+        "runs_with_any": 1
+      },
+      "after": {
+        "count": 5,
+        "hours": 0.8,
+        "per_hour": 6.25,
+        "upper95_per_hour": 13.1413,
+        "runs_with_any": 1
+      }
+    },
+    {
+      "rpm": [
+        700,
+        1100
+      ],
+      "load_nm": [
+        34.5,
+        45
+      ],
+      "runs": 16,
+      "engine_hours": 0.8,
+      "before": {
+        "count": 35,
+        "hours": 0.8,
+        "per_hour": 43.75,
+        "upper95_per_hour": 58.0052,
+        "runs_with_any": 3
+      },
+      "persist2": {
+        "count": 6,
+        "hours": 0.8,
+        "per_hour": 7.5,
+        "upper95_per_hour": 14.803,
+        "runs_with_any": 1
+      },
+      "after": {
+        "count": 7,
+        "hours": 0.8,
+        "per_hour": 8.75,
+        "upper95_per_hour": 16.4351,
+        "runs_with_any": 1
+      }
+    },
+    {
+      "rpm": [
+        1100,
+        1500
+      ],
+      "load_nm": [
+        3,
+        13.5
+      ],
+      "runs": 21,
+      "engine_hours": 1.05,
+      "before": {
+        "count": 3,
+        "hours": 1.05,
+        "per_hour": 2.8571,
+        "upper95_per_hour": 7.3844,
+        "runs_with_any": 2
+      },
+      "persist2": {
+        "count": 0,
+        "hours": 1.05,
+        "per_hour": 0.0,
+        "upper95_per_hour": 2.8531,
+        "runs_with_any": 0
+      },
+      "after": {
+        "count": 0,
+        "hours": 1.05,
+        "per_hour": 0.0,
+        "upper95_per_hour": 2.8531,
+        "runs_with_any": 0
+      }
+    },
+    {
+      "rpm": [
+        1100,
+        1500
+      ],
+      "load_nm": [
+        13.5,
+        24
+      ],
+      "runs": 12,
+      "engine_hours": 0.6,
+      "before": {
+        "count": 2,
+        "hours": 0.6,
+        "per_hour": 3.3333,
+        "upper95_per_hour": 10.493,
+        "runs_with_any": 1
+      },
+      "persist2": {
+        "count": 0,
+        "hours": 0.6,
+        "per_hour": 0.0,
+        "upper95_per_hour": 4.9929,
+        "runs_with_any": 0
+      },
+      "after": {
+        "count": 0,
+        "hours": 0.6,
+        "per_hour": 0.0,
+        "upper95_per_hour": 4.9929,
+        "runs_with_any": 0
+      }
+    },
+    {
+      "rpm": [
+        1100,
+        1500
+      ],
+      "load_nm": [
+        24,
+        34.5
+      ],
+      "runs": 21,
+      "engine_hours": 1.05,
+      "before": {
+        "count": 88,
+        "hours": 1.05,
+        "per_hour": 83.8095,
+        "upper95_per_hour": 100.0618,
+        "runs_with_any": 10
+      },
+      "persist2": {
+        "count": 19,
+        "hours": 1.05,
+        "per_hour": 18.0952,
+        "upper95_per_hour": 26.5517,
+        "runs_with_any": 5
+      },
+      "after": {
+        "count": 0,
+        "hours": 1.05,
+        "per_hour": 0.0,
+        "upper95_per_hour": 2.8531,
+        "runs_with_any": 0
+      }
+    },
+    {
+      "rpm": [
+        1100,
+        1500
+      ],
+      "load_nm": [
+        34.5,
+        45
+      ],
+      "runs": 21,
+      "engine_hours": 1.05,
+      "before": {
+        "count": 450,
+        "hours": 1.05,
+        "per_hour": 428.5714,
+        "upper95_per_hour": 463.3244,
+        "runs_with_any": 16
+      },
+      "persist2": {
+        "count": 167,
+        "hours": 1.05,
+        "per_hour": 159.0476,
+        "upper95_per_hour": 180.8314,
+        "runs_with_any": 10
+      },
+      "after": {
+        "count": 2,
+        "hours": 1.05,
+        "per_hour": 1.9048,
+        "upper95_per_hour": 5.996,
+        "runs_with_any": 1
+      }
+    },
+    {
+      "rpm": [
+        1500,
+        2000
+      ],
+      "load_nm": [
+        3,
+        13.5
+      ],
+      "runs": 25,
+      "engine_hours": 1.25,
+      "before": {
+        "count": 1,
+        "hours": 1.25,
+        "per_hour": 0.8,
+        "upper95_per_hour": 3.7951,
+        "runs_with_any": 1
+      },
+      "persist2": {
+        "count": 0,
+        "hours": 1.25,
+        "per_hour": 0.0,
+        "upper95_per_hour": 2.3966,
+        "runs_with_any": 0
+      },
+      "after": {
+        "count": 0,
+        "hours": 1.25,
+        "per_hour": 0.0,
+        "upper95_per_hour": 2.3966,
+        "runs_with_any": 0
+      }
+    },
+    {
+      "rpm": [
+        1500,
+        2000
+      ],
+      "load_nm": [
+        13.5,
+        24
+      ],
+      "runs": 15,
+      "engine_hours": 0.75,
+      "before": {
+        "count": 4,
+        "hours": 0.75,
+        "per_hour": 5.3333,
+        "upper95_per_hour": 12.2047,
+        "runs_with_any": 4
+      },
+      "persist2": {
+        "count": 0,
+        "hours": 0.75,
+        "per_hour": 0.0,
+        "upper95_per_hour": 3.9943,
+        "runs_with_any": 0
+      },
+      "after": {
+        "count": 0,
+        "hours": 0.75,
+        "per_hour": 0.0,
+        "upper95_per_hour": 3.9943,
+        "runs_with_any": 0
+      }
+    },
+    {
+      "rpm": [
+        1500,
+        2000
+      ],
+      "load_nm": [
+        24,
+        34.5
+      ],
+      "runs": 25,
+      "engine_hours": 1.25,
+      "before": {
+        "count": 69,
+        "hours": 1.25,
+        "per_hour": 55.2,
+        "upper95_per_hour": 67.4452,
+        "runs_with_any": 11
+      },
+      "persist2": {
+        "count": 3,
+        "hours": 1.25,
+        "per_hour": 2.4,
+        "upper95_per_hour": 6.2029,
+        "runs_with_any": 1
+      },
+      "after": {
+        "count": 0,
+        "hours": 1.25,
+        "per_hour": 0.0,
+        "upper95_per_hour": 2.3966,
+        "runs_with_any": 0
+      }
+    },
+    {
+      "rpm": [
+        1500,
+        2000
+      ],
+      "load_nm": [
+        34.5,
+        45
+      ],
+      "runs": 22,
+      "engine_hours": 1.1,
+      "before": {
+        "count": 102,
+        "hours": 1.1,
+        "per_hour": 92.7273,
+        "upper95_per_hour": 109.3112,
+        "runs_with_any": 10
+      },
+      "persist2": {
+        "count": 14,
+        "hours": 1.1,
+        "per_hour": 12.7273,
+        "upper95_per_hour": 19.8968,
+        "runs_with_any": 1
+      },
+      "after": {
+        "count": 1,
+        "hours": 1.1,
+        "per_hour": 0.9091,
+        "upper95_per_hour": 4.3126,
+        "runs_with_any": 1
+      }
+    },
+    {
+      "rpm": [
+        2000,
+        2500
+      ],
+      "load_nm": [
+        3,
+        13.5
+      ],
+      "runs": 23,
+      "engine_hours": 1.15,
+      "before": {
+        "count": 3,
+        "hours": 1.15,
+        "per_hour": 2.6087,
+        "upper95_per_hour": 6.7423,
+        "runs_with_any": 3
+      },
+      "persist2": {
+        "count": 0,
+        "hours": 1.15,
+        "per_hour": 0.0,
+        "upper95_per_hour": 2.605,
+        "runs_with_any": 0
+      },
+      "after": {
+        "count": 0,
+        "hours": 1.15,
+        "per_hour": 0.0,
+        "upper95_per_hour": 2.605,
+        "runs_with_any": 0
+      }
+    },
+    {
+      "rpm": [
+        2000,
+        2500
+      ],
+      "load_nm": [
+        13.5,
+        24
+      ],
+      "runs": 17,
+      "engine_hours": 0.85,
+      "before": {
+        "count": 2,
+        "hours": 0.85,
+        "per_hour": 2.3529,
+        "upper95_per_hour": 7.4068,
+        "runs_with_any": 2
+      },
+      "persist2": {
+        "count": 0,
+        "hours": 0.85,
+        "per_hour": 0.0,
+        "upper95_per_hour": 3.5244,
+        "runs_with_any": 0
+      },
+      "after": {
+        "count": 0,
+        "hours": 0.85,
+        "per_hour": 0.0,
+        "upper95_per_hour": 3.5244,
+        "runs_with_any": 0
+      }
+    },
+    {
+      "rpm": [
+        2000,
+        2500
+      ],
+      "load_nm": [
+        24,
+        34.5
+      ],
+      "runs": 21,
+      "engine_hours": 1.05,
+      "before": {
+        "count": 1,
+        "hours": 1.05,
+        "per_hour": 0.9524,
+        "upper95_per_hour": 4.518,
+        "runs_with_any": 1
+      },
+      "persist2": {
+        "count": 0,
+        "hours": 1.05,
+        "per_hour": 0.0,
+        "upper95_per_hour": 2.8531,
+        "runs_with_any": 0
+      },
+      "after": {
+        "count": 0,
+        "hours": 1.05,
+        "per_hour": 0.0,
+        "upper95_per_hour": 2.8531,
+        "runs_with_any": 0
+      }
+    },
+    {
+      "rpm": [
+        2000,
+        2500
+      ],
+      "load_nm": [
+        34.5,
+        45
+      ],
+      "runs": 24,
+      "engine_hours": 1.2,
+      "before": {
+        "count": 13,
+        "hours": 1.2,
+        "per_hour": 10.8333,
+        "upper95_per_hour": 17.2238,
+        "runs_with_any": 3
+      },
+      "persist2": {
+        "count": 4,
+        "hours": 1.2,
+        "per_hour": 3.3333,
+        "upper95_per_hour": 7.6279,
+        "runs_with_any": 2
+      },
+      "after": {
+        "count": 0,
+        "hours": 1.2,
+        "per_hour": 0.0,
+        "upper95_per_hour": 2.4964,
+        "runs_with_any": 0
+      }
+    },
+    {
+      "rpm": [
+        2500,
+        2950
+      ],
+      "load_nm": [
+        3,
+        13.5
+      ],
+      "runs": 20,
+      "engine_hours": 1.0,
+      "before": {
+        "count": 1,
+        "hours": 1.0,
+        "per_hour": 1.0,
+        "upper95_per_hour": 4.7439,
+        "runs_with_any": 1
+      },
+      "persist2": {
+        "count": 0,
+        "hours": 1.0,
+        "per_hour": 0.0,
+        "upper95_per_hour": 2.9957,
+        "runs_with_any": 0
+      },
+      "after": {
+        "count": 0,
+        "hours": 1.0,
+        "per_hour": 0.0,
+        "upper95_per_hour": 2.9957,
+        "runs_with_any": 0
+      }
+    },
+    {
+      "rpm": [
+        2500,
+        2950
+      ],
+      "load_nm": [
+        13.5,
+        24
+      ],
+      "runs": 28,
+      "engine_hours": 1.4,
+      "before": {
+        "count": 0,
+        "hours": 1.4,
+        "per_hour": 0.0,
+        "upper95_per_hour": 2.1398,
+        "runs_with_any": 0
+      },
+      "persist2": {
+        "count": 0,
+        "hours": 1.4,
+        "per_hour": 0.0,
+        "upper95_per_hour": 2.1398,
+        "runs_with_any": 0
+      },
+      "after": {
+        "count": 0,
+        "hours": 1.4,
+        "per_hour": 0.0,
+        "upper95_per_hour": 2.1398,
+        "runs_with_any": 0
+      }
+    },
+    {
+      "rpm": [
+        2500,
+        2950
+      ],
+      "load_nm": [
+        24,
+        34.5
+      ],
+      "runs": 21,
+      "engine_hours": 1.05,
+      "before": {
+        "count": 1,
+        "hours": 1.05,
+        "per_hour": 0.9524,
+        "upper95_per_hour": 4.518,
+        "runs_with_any": 1
+      },
+      "persist2": {
+        "count": 0,
+        "hours": 1.05,
+        "per_hour": 0.0,
+        "upper95_per_hour": 2.8531,
+        "runs_with_any": 0
+      },
+      "after": {
+        "count": 0,
+        "hours": 1.05,
+        "per_hour": 0.0,
+        "upper95_per_hour": 2.8531,
+        "runs_with_any": 0
+      }
+    },
+    {
+      "rpm": [
+        2500,
+        2950
+      ],
+      "load_nm": [
+        34.5,
+        45
+      ],
+      "runs": 19,
+      "engine_hours": 0.95,
+      "before": {
+        "count": 22,
+        "hours": 0.95,
+        "per_hour": 23.1579,
+        "upper95_per_hour": 33.0682,
+        "runs_with_any": 11
+      },
+      "persist2": {
+        "count": 13,
+        "hours": 0.95,
+        "per_hour": 13.6842,
+        "upper95_per_hour": 21.7564,
+        "runs_with_any": 8
+      },
+      "after": {
+        "count": 5,
+        "hours": 0.95,
+        "per_hour": 5.2632,
+        "upper95_per_hour": 11.0664,
+        "runs_with_any": 4
+      }
+    }
+  ]
+}

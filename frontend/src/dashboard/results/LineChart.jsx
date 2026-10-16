@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
-// Small SVG line chart for the Results tab: linear x, y = a share (0–1), one line per series,
+// Small SVG line chart for the Results tab: linear x, y = a share (0–1) unless yDomain/yTicks/yFmt
+// say otherwise, optional horizontal reference lines (refLines), one line per series,
 // optional 95 % interval whiskers per point, distinct marker shapes (identity is never colour
 // alone), end-of-line labels pushed apart, and a hover/focus tooltip with the exact numbers.
 // It only draws what it is given.
@@ -14,12 +15,13 @@ export function Marker({ shape, x, y, color, r = 4 }) {
 
 export default function LineChart({
   series, xDomain, xTicks, yTitle, xTitle, width = 520, height = 260, compact = false, labelEnds = true, ariaLabel,
+  yDomain = [0, 1], yTicks: yTickValues, yFmt = (p) => `${Math.round(p * 100)}%`, refLines = [],
 }) {
   const [tip, setTip] = useState(null);
   const M = compact ? { l: 34, r: 10, t: 10, b: 30 } : { l: 52, r: labelEnds ? 120 : 16, t: 14, b: xTitle ? 56 : 40 };
   const xOf = (v) => M.l + ((v - xDomain[0]) / (xDomain[1] - xDomain[0])) * (width - M.l - M.r);
-  const yOf = (p) => M.t + (1 - p) * (height - M.t - M.b);
-  const yTicks = compact ? [0, 0.5, 1] : [0, 0.25, 0.5, 0.75, 1];
+  const yOf = (v) => M.t + (1 - (v - yDomain[0]) / (yDomain[1] - yDomain[0])) * (height - M.t - M.b);
+  const yTicks = yTickValues ?? (compact ? [0, 0.5, 1] : [0, 0.25, 0.5, 0.75, 1]);
 
   const ends = labelEnds && !compact
     ? series.filter((s) => s.points.length).map((s) => {
@@ -48,7 +50,7 @@ export default function LineChart({
         {yTicks.map((p) => (
           <g key={p}>
             <line x1={M.l} x2={width - M.r} y1={yOf(p)} y2={yOf(p)} className="rs-grid" />
-            <text x={M.l - 6} y={yOf(p)} className="rs-axis" textAnchor="end" dominantBaseline="middle">{Math.round(p * 100)}%</text>
+            <text x={M.l - 6} y={yOf(p)} className="rs-axis" textAnchor="end" dominantBaseline="middle">{yFmt(p)}</text>
           </g>
         ))}
         {shownTicks.map((t) => (
@@ -63,6 +65,12 @@ export default function LineChart({
           <text x={12} y={(M.t + height - M.b) / 2} className="rs-axis-title" textAnchor="middle" transform={`rotate(-90 12 ${(M.t + height - M.b) / 2})`}>{yTitle}</text>
         )}
 
+        {refLines.map((r) => (
+          <g key={`ref-${r.y}`}>
+            <line x1={M.l} x2={width - M.r} y1={yOf(r.y)} y2={yOf(r.y)} className="rs-ref" />
+            <text x={M.l + 4} y={yOf(r.y) + 14} className="rs-ref-label">{r.label}</text>
+          </g>
+        ))}
         {series.map((s) => (
           <g key={s.key}>
             {s.points.map((p) => (Array.isArray(p.ci) ? (

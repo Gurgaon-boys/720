@@ -18,6 +18,9 @@ export const RESULT_FILES = [
   'column_a.json',
   'robustness_v2.json',
   'clog_sweep.json',
+  'operating_map.json',
+  'column_c_detail.json',
+  'soak_l3_long.json',
 ];
 
 mkdirSync(DST, { recursive: true });

@@ -116,10 +116,37 @@
   font-size: 12px; color: var(--text); white-space: nowrap;
 }
 
+/* reference line (LineChart refLines) */
+.rs-ref { stroke: var(--rs-limit); stroke-width: 1.5; stroke-dasharray: 5 4; }
+.rs-ref-label { fill: var(--rs-limit); font-size: 11px; }
+
+/* section divider */
+.rs-group { margin: 8px 0 -4px; font-family: var(--display); font-weight: 600; font-size: 15px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-2); }
+
+/* operating map */
+.rs-toggle { display: inline-flex; gap: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; align-self: flex-start; }
+.rs-toggle-btn { background: transparent; color: var(--text-2); border: 0; padding: 6px 12px; font: inherit; font-size: 13px; cursor: pointer; }
+.rs-toggle-btn + .rs-toggle-btn { border-left: 1px solid var(--line); }
+.rs-toggle-btn.on { background: rgba(74, 134, 216, 0.18); color: var(--text); }
+.rs-toggle-btn:focus-visible { outline: 2px solid var(--text); outline-offset: -2px; }
+.rs-map-row { display: grid; grid-template-columns: minmax(0, 640px) minmax(200px, 260px); gap: 20px; align-items: start; }
+.rs-map g[tabindex]:focus { outline: none; }
+.rs-map g[tabindex]:focus rect { stroke: var(--text); stroke-width: 1.5; }
+.rs-cell-main { font-family: var(--mono); font-size: 14px; font-weight: 600; }
+.rs-cell-sub { font-family: var(--mono); font-size: 11px; }
+.rs-map-side { display: flex; flex-direction: column; gap: 6px; }
+.rs-map-side .eyebrow { margin: 6px 0 0; }
+.rs-scale { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--text-2); }
+.rs-scale li { display: flex; align-items: center; gap: 8px; }
+.rs-scale i { display: inline-block; width: 22px; height: 12px; border-radius: 3px; border: 1px solid var(--line); }
+
 /* table views */
 .rs-table table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
 .rs-table th, .rs-table td { text-align: left; padding: 4px 6px; border-bottom: 1px solid var(--line); }
 .rs-table thead th { color: var(--muted); font-weight: 400; }
+@media (max-width: 900px) {
+  .rs-map-row { grid-template-columns: 1fr; }
+}
 @media (max-width: 720px) {
   .rs-row { grid-template-columns: 1fr auto; }
   .rs-row-label { grid-column: 1 / 3; }
