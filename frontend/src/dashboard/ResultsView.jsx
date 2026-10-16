@@ -10,6 +10,7 @@ import BeforeAfter from './results/BeforeAfter.jsx';
 import OperatingMap, { RealCoverage } from './results/OperatingMap.jsx';
 import Signature from './results/Signature.jsx';
 import Latency from './results/Latency.jsx';
+import InjectedAudio from './results/InjectedAudio.jsx';
 import './results/results.css';
 
 // Results tab: the team's committed results, drawn from eval/results/*.json (copied at dev/build).
@@ -19,7 +20,7 @@ import './results/results.css';
 // except drawing: no new thresholds, no blended numbers.
 
 const FILES = ['alarm_budget.json', 'valve_tick_cost.json', 'model_comparison.json', 'column_a.json', 'robustness_v2.json', 'clog_sweep.json',
-  'operating_map.json', 'column_c_detail.json', 'soak_l3_long.json'];
+  'operating_map.json', 'column_c_detail.json', 'soak_l3_long.json', 'table_b.json'];
 
 export default function ResultsView() {
   const [files, setFiles] = useState({});
@@ -45,6 +46,7 @@ export default function ResultsView() {
           <span><i className="rs-dot" style={{ background: 'var(--rs-watch)' }} />watch</span>
           <span><i className="rs-dot alarm" />ALARM</span>
           <span><i className="rs-dot unclass" />unclassified</span>
+          <span><i className="rs-dot" style={{ background: 'var(--rs-inj)' }} />injected into real audio</span>
         </div>
       </header>
       <FalseAlarms loaded={files['alarm_budget.json']} />
@@ -52,6 +54,7 @@ export default function ResultsView() {
       <Projection loaded={files['alarm_budget.json']} />
       <DetectionTable loaded={files['alarm_budget.json']} />
       <Tradeoff loaded={files['valve_tick_cost.json']} />
+      <InjectedAudio loaded={files['table_b.json']} />
       <Models comparison={files['model_comparison.json']} columnA={files['column_a.json']} />
       <h3 className="rs-group">Across operating conditions</h3>
       <OperatingMap loaded={files['operating_map.json']} />

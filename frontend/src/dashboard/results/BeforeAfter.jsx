@@ -72,7 +72,7 @@ export default function BeforeAfter({ real, sim }) {
     <ChartFrame
       title="False Unclassified alerts: before and after the fix"
       lede="On healthy engines every Unclassified alert is false. Real and simulated are measured separately, each on its own scale."
-      file="column_c_detail.json, eval/results/soak_l3_long.json"
+      srcPath="eval/results/column_c_detail.json, eval/results/soak_l3_long.json"
       loaded={ok ? { status: 'loaded' } : (real ?? sim)}
       about={(
         <>

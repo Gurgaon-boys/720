@@ -14,15 +14,15 @@ export function contextLine(parts) {
   return parts.filter(Boolean).join(' · ');
 }
 
-// column → badge: REAL (C) teal, SIMULATED (A) blue, INJECTED (B) neutral
+// column → badge: REAL (C) teal, SIMULATED (A) blue, INJECTED (B) neutral light grey
 export function SourceTag({ column, children }) {
   const c = String(column ?? '').trim().charAt(0).toUpperCase();
-  const kind = c === 'C' ? 'real' : c === 'A' ? 'sim' : 'other';
+  const kind = c === 'C' ? 'real' : c === 'A' ? 'sim' : c === 'B' ? 'inj' : 'other';
   const name = c === 'C' ? 'REAL' : c === 'A' ? 'SIMULATED' : c === 'B' ? 'INJECTED' : String(column ?? '');
   return <span className={`rs-tag ${kind}`}>{name}{children ? <span className="rs-tag-sub"> · {children}</span> : null}</span>;
 }
 
-export default function ChartFrame({ title, lede, file, loaded, column, tagNote, about, table, children }) {
+export default function ChartFrame({ title, lede, file, srcPath, loaded, column, tagNote, about, table, children }) {
   const ok = loaded?.status === 'loaded';
   return (
     <section className="panel rs-frame" aria-label={title}>
@@ -39,7 +39,7 @@ export default function ChartFrame({ title, lede, file, loaded, column, tagNote,
               <summary className="eyebrow">About this data</summary>
               <div className="rs-about-body">
                 {about}
-                <p className="rs-src mono">source: eval/results/{file}</p>
+                <p className="rs-src mono">source: {srcPath ?? `eval/results/${file}`}</p>
               </div>
             </details>
             {table && (

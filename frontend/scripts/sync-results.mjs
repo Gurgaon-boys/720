@@ -22,6 +22,10 @@ export const RESULT_FILES = [
   'column_c_detail.json',
   'soak_l3_long.json',
 ];
+// committed result files that live directly in eval/ (published path -> source under eval/)
+export const EVAL_FILES = {
+  'table_b.json': 'table_b.json',
+};
 
 mkdirSync(DST, { recursive: true });
 const missing = [];
@@ -30,5 +34,11 @@ for (const f of RESULT_FILES) {
   if (existsSync(from)) copyFileSync(from, join(DST, f));
   else missing.push(f);
 }
-console.log(`[sync-results] ${RESULT_FILES.length - missing.length}/${RESULT_FILES.length} result files copied from eval/results/`);
+for (const [to, from] of Object.entries(EVAL_FILES)) {
+  const src = join(SRC, '..', from);
+  if (existsSync(src)) copyFileSync(src, join(DST, to));
+  else missing.push(`eval/${from}`);
+}
+const total = RESULT_FILES.length + Object.keys(EVAL_FILES).length;
+console.log(`[sync-results] ${total - missing.length}/${total} result files copied from eval/results/ and eval/`);
 if (missing.length) console.warn(`[sync-results] not found (the Results tab will say "not available"): ${missing.join(', ')}`);

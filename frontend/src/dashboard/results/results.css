@@ -5,6 +5,7 @@
      yellow = watch (advisory)           red  = ALARM        magenta = Unclassified (2D token)
    Ordered values (RPM, severity) use one blue ramp, darker = lower. Text stays in text colours. */
 .results {
+  --rs-inj: #c3cbd6; /* column B: neither real nor simulated, so no hue (ISA-101 neutral) */
   --rs-real: #22a98f;
   --rs-sim: #4a86d8;
   --rs-muted: #5d6878;
@@ -42,6 +43,9 @@
 .rs-tag.real { color: var(--rs-real); }
 .rs-tag.sim { color: var(--rs-sim); }
 .rs-tag.other { color: var(--text-2); }
+.rs-tag.inj { color: var(--rs-inj); }
+.rs-inj-banner { margin: 0; align-self: flex-start; padding: 6px 12px; border: 2px solid var(--rs-inj); border-radius: 6px; font-size: 14px; color: var(--text-2); }
+.rs-inj-banner strong { font-family: var(--mono); letter-spacing: 0.08em; color: var(--text); }
 .rs-tag-sub { font-weight: 400; letter-spacing: 0; color: var(--text-2); }
 
 /* source cards: a thin coloured edge says real or simulated before you read a word */
@@ -50,6 +54,8 @@
 .rs-card { padding: 12px 14px; border-radius: 10px; background: rgba(255, 255, 255, 0.02); border-left: 3px solid var(--line); }
 .rs-card.real { border-left-color: var(--rs-real); }
 .rs-card.sim { border-left-color: var(--rs-sim); }
+.rs-card.inj { border-left-color: var(--rs-inj); }
+.rs-pair { display: flex; flex-direction: column; gap: 4px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
 .rs-mtitle { margin: 0 0 2px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 14px; color: var(--text); }
 
 /* bar rows */
@@ -60,6 +66,7 @@
 .rs-bar.real { background: var(--rs-real); }
 .rs-bar.sim { background: var(--rs-sim); }
 .rs-bar.muted { background: var(--rs-muted); }
+.rs-bar.inj { background: var(--rs-inj); }
 .rs-whisker { position: absolute; top: 50%; height: 0; border-top: 1.5px solid var(--text); }
 .rs-whisker::after { content: ''; position: absolute; right: -1px; top: -5px; height: 9px; border-right: 1.5px solid var(--text); }
 .rs-whisker-sym { position: absolute; top: 50%; height: 0; border-top: 1.5px solid var(--text); }

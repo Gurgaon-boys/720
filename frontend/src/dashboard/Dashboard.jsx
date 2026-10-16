@@ -9,6 +9,7 @@ import SignalStrip from './SignalStrip.jsx';
 import SourceBadge from './SourceBadge.jsx';
 import HealthChips from './HealthChips.jsx';
 import AlarmBanner from './AlarmBanner.jsx';
+import EventTimeline from './EventTimeline.jsx';
 import SoundControls from './SoundControls.jsx';
 import OfflineBanner from './OfflineBanner.jsx';
 import PanelBoundary from './PanelBoundary.jsx';
@@ -18,7 +19,7 @@ import './dashboard.css';
 
 const STALE_S = 3; // a data stream silent this long gets a panel notice (same limit as the UI watchdog)
 
-export default function Dashboard({ state, obd, signal, error, scenarioError, links, apiUrl, ages, scenarios, scenarioId, onSelectScenario, onAck, onStartInjection, onStopInjection, ackError, offline, lastStateAt, sound, onToggleSound, audioKind, mock }) {
+export default function Dashboard({ state, obd, signal, error, scenarioError, links, apiUrl, ages, scenarios, scenarioId, onSelectScenario, onAck, onStartInjection, onStopInjection, ackError, events, offline, lastStateAt, sound, onToggleSound, audioKind, mock }) {
   const color = decisionColor(state?.decision);
   const run = state?.run_id; // a new run clears any panel error
 
@@ -92,6 +93,12 @@ export default function Dashboard({ state, obd, signal, error, scenarioError, li
       {state && (
         <PanelBoundary name="Alarm banner" variant="banner" resetKey={run}>
           <AlarmBanner key={state.run_id} state={state} onAck={onAck} ackError={ackError} offline={offline} />
+        </PanelBoundary>
+      )}
+      {/* no resetKey: the session's events outlive a run change */}
+      {state && (
+        <PanelBoundary name="Event timeline" variant="banner">
+          <EventTimeline events={events} offline={offline} />
         </PanelBoundary>
       )}
 

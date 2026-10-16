@@ -3,11 +3,18 @@
 export const FAULTS = {
   // ISA-101: normal is grey, never green
   healthy: { name: 'Healthy', short: 'OK', color: '#8e9aab', title: () => 'Running clean', sub: 'All cylinders firing evenly' },
-  misfire: { name: 'Misfire', short: 'NO FIRE', color: '#ffa94d', title: (c) => (c ? `Misfire · Cyl ${c}` : 'Misfire'), sub: 'Combustion missing on one cylinder' },
-  knock: { name: 'Knock', short: 'KNOCK', color: '#ff5a6e', title: (c) => (c ? `Knock · Cyl ${c}` : 'Knock'), sub: 'Pressure ringing just after top dead centre' },
-  injector_clog: { name: 'Injector clog', short: 'CLOG', color: '#f783ac', title: (c) => (c ? `Injector clog · Cyl ${c}` : 'Injector clog'), sub: 'Less fuel delivered; the ECU trims to compensate' },
-  valve_tick: { name: 'Valve tick', short: 'TICK', color: '#b197fc', title: (c) => (c ? `Valve-train · Cyl ${c}` : 'Valve-train wear'), sub: 'Extra impacts at valve-closing angles' },
+  misfire: { name: 'Misfire', short: 'NO FIRE', color: '#ffa94d', title: (c) => (c ? `Misfire · ${cylLabel(c)}` : 'Misfire'), sub: 'Combustion missing on one cylinder' },
+  knock: { name: 'Knock', short: 'KNOCK', color: '#ff5a6e', title: (c) => (c ? `Knock · ${cylLabel(c)}` : 'Knock'), sub: 'Pressure ringing just after top dead centre' },
+  injector_clog: { name: 'Injector clog', short: 'CLOG', color: '#f783ac', title: (c) => (c ? `Injector clog · ${cylLabel(c)}` : 'Injector clog'), sub: 'Less fuel delivered; the ECU trims to compensate' },
+  valve_tick: { name: 'Valve tick', short: 'TICK', color: '#b197fc', title: (c) => (c ? `Valve-train · ${cylLabel(c)}` : 'Valve-train wear'), sub: 'Extra impacts at valve-closing angles' },
 };
+
+// One location label for every view ("Cyl 3"): banner, decision card, guidance, cylinder bank,
+// fingerprint and 3D view, so a fault can be followed across the screen. Only data with cylinder
+// geometry has one: on real clips (localisation "none") there is no cylinder and no firing slot
+// (the firing-slot idea is retired), so locatedCyl() returns null and no label is shown.
+export const cylLabel = (n) => `Cyl ${n}`;
+export const locatedCyl = (loc, localisation) => (localisation === 'cylinder' && Number.isInteger(loc) ? loc : null);
 
 export function fault(label) {
   return FAULTS[label] || FAULTS.healthy;
@@ -44,10 +51,12 @@ export function state3d(state) {
 // name different faults (rule layer: no alarm on a conflict).
 //   kind   banner tag          title  headline            panelTitle  decision-panel headline
 //   tag    short label (intro card)                       sub         one-line explanation
-export function decisionText(d) {
+// `localisation` is state.localisation: without "cylinder" the titles carry no cylinder number.
+export function decisionText(d, localisation) {
   const f = fault(d.fault);
+  const cyl = locatedCyl(d.location, localisation);
   if (d.state === 'ALARM') {
-    return { kind: 'ALARM', title: f.title(d.location), panelTitle: f.title(d.location), tag: f.short, sub: f.sub };
+    return { kind: 'ALARM', title: f.title(cyl), panelTitle: f.title(cyl), tag: f.short, sub: f.sub };
   }
   if (d.state === 'ADVISORY') {
     if (!d.fault) {
@@ -58,7 +67,7 @@ export function decisionText(d) {
         sub: disagree ? 'Classifier and physics rule name different faults. Not an alarm.' : 'One witness only. Not an alarm.',
       };
     }
-    return { kind: 'WATCH', title: f.title(d.location), panelTitle: `Watch · ${f.title(d.location)}`, tag: `WATCH · ${f.short}`, sub: 'One witness only. Not an alarm.' };
+    return { kind: 'WATCH', title: f.title(cyl), panelTitle: `Watch · ${f.title(cyl)}`, tag: `WATCH · ${f.short}`, sub: 'One witness only. Not an alarm.' };
   }
   if (d.state === 'UNCLASSIFIED') {
     return { kind: 'INSPECT', title: DECISION_STATES.UNCLASSIFIED.name, panelTitle: DECISION_STATES.UNCLASSIFIED.name, tag: 'UNCLASSIFIED', sub: 'The classifiers cannot name this pattern.' };

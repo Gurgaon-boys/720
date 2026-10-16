@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { CameraControls, Edges, Html } from '@react-three/drei';
 import { AdditiveBlending, DoubleSide } from 'three';
+import { cylLabel } from '../../lib/faults.js';
 import {
   BORE_R, CRANK_R, DECK_Y, LINER_BOTTOM, N_CYL, PISTON_H, PIN_OFFSET, PITCH, ROD_L,
   advance, cylX, flashLevel, slider, throwDeg,
@@ -227,7 +228,7 @@ export default function EngineScene({ live, glows, glowColor, flashAlarmColor, c
           glow={glows[cyl - 1] ?? 0}
           glowColor={glowColor}
           flashRef={(el) => { flashes.current[cyl] = el; }}
-          label={cylLabels && label?.cyl !== cyl ? `CYL ${cyl}` : null}
+          label={cylLabels && label?.cyl !== cyl ? cylLabel(cyl) : null}
         />
       ))}
       {CYLS.map((cyl) => (

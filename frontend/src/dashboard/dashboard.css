@@ -194,6 +194,25 @@ details summary { cursor: pointer; }
 .witnesses { display: inline-flex; gap: 10px; }
 .witnesses .yes { color: var(--text); }
 .witnesses .no { color: var(--faint); }
+/* operator action from the rule layer (decision.guidance), on the ACK row */
+.banner-guidance { flex: 1 1 320px; margin: 0; display: flex; align-items: baseline; gap: 10px; font-size: 15px; font-weight: 500; color: var(--text); }
+.banner-guidance .eyebrow { flex: none; }
+.banner-guidance.none { font-size: 13px; font-weight: 400; color: var(--muted); font-style: italic; }
+
+/* events observed this session (from broadcasts only) */
+.timeline { display: flex; flex-direction: column; gap: 6px; padding: 8px 18px; border-radius: var(--radius); border: 1px solid var(--line); background: var(--panel); }
+.timeline-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.timeline-head small { color: var(--muted); font-size: 11px; }
+.timeline-list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 8px; font-size: 12px; }
+.timeline-list li { display: inline-flex; align-items: baseline; gap: 6px; padding: 2px 8px; border-radius: 4px; border: 1px solid var(--line); color: var(--text-2); }
+.timeline-list .t { color: var(--muted); }
+.timeline-list .k { font-weight: 700; letter-spacing: 0.06em; color: var(--text); }
+.timeline-list .raised { border-color: var(--c, var(--line)); }
+.timeline-list .raised .k { color: var(--c, var(--text)); }
+.timeline-list .gap { border-style: dashed; color: var(--muted); }
+.timeline-list .arrow { border: 0; padding: 2px 0; color: var(--faint); }
+.timeline-empty { margin: 0; font-size: 12px; color: var(--muted); }
+
 /* ISA-18.2: an unacknowledged alarm blinks; acknowledged is steady (reduced motion: no blink) */
 .banner-active.unacked { animation: alarm-blink 1s steps(1) infinite; }
 @keyframes alarm-blink { 50% { border-color: var(--line-2); } }

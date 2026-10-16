@@ -62,7 +62,7 @@ export default function OperatingMap({ loaded }) {
 
   return (
     <ChartFrame
-      title="Where healthy running stays quiet"
+      title="Operating sweet spot: where healthy engines raise no false alerts"
       lede="Each cell is an RPM × load range of healthy simulated engines. Colour = false alerts per engine-hour: darker means fewer, and an empty cell means none were seen. This measures how trustworthy the monitor is at each operating point, not fuel efficiency."
       file="operating_map.json"
       loaded={loaded}
