@@ -131,7 +131,7 @@ def test_misfire_cyl3_fires_on_cyl3_quickly(capsys):
         print("\n" f"  misfire cyl 3 p=0.5 injected at {inject_t:.1f} s: rule fired on cyl 3 in window {n} counted from "
               f"the first window holding a misfire ({hit + 1} windows after injection); {latency_ms:.0f} ms from "
               f"injection to the end of that window")
-    # v1's half-order ratio needed <= 3 windows here; v2's half-order energy (D50) is slower on a
+    # v1's half-order ratio needed <= 3 windows here; v2's half-order energy (D58) is slower on a
     # p = 0.5 misfire at idle (it is not divided by a 2nd order that can vanish); eval/ reports the stats
     assert n <= 5
 

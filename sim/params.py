@@ -70,7 +70,7 @@ class Regimes:
 
     @classmethod
     def eval(cls, **overrides) -> "Regimes":
-        """The evaluation regime (DECISIONS.md D53): jitter, torsional flex and dropouts all on."""
+        """The evaluation regime (DECISIONS.md D61): jitter, torsional flex and dropouts all on."""
         base = dict(tooth_jitter_s=2.0e-6, torsional_deg_at_1000=0.02, load_noise_nm=1.0, dropout_per_min=0.3)
         base.update(overrides)
         return cls(**base)

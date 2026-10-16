@@ -1,0 +1,221 @@
+{
+  "created_at": "2026-10-15T19:36:17Z",
+  "git_commit": "97ff431e8ea60f8f6ea05f81070c831f8ce84c02",
+  "seed": 720,
+  "produced_by": "data/carobd_split.py",
+  "method": "by file, stratified by type, greedy toward 30% of each type's rows held out, >= 1 held-out file per type",
+  "source": "https://github.com/eron93br/carOBD (obdiidata/*.csv)",
+  "calibration": [
+    "drive1.csv",
+    "drive4.csv",
+    "drive6.csv",
+    "drive8.csv",
+    "drive10.csv",
+    "drive12.csv",
+    "drive13.csv",
+    "idle1.csv",
+    "idle2.csv",
+    "idle3.csv",
+    "idle4.csv",
+    "idle5.csv",
+    "idle6.csv",
+    "idle9.csv",
+    "idle11.csv",
+    "idle12.csv",
+    "idle14.csv",
+    "idle16.csv",
+    "idle17.csv",
+    "idle18.csv",
+    "idle20.csv",
+    "idle22.csv",
+    "idle23.csv",
+    "idle24.csv",
+    "idle25.csv",
+    "idle27.csv",
+    "idle30.csv",
+    "idle32.csv",
+    "idle33.csv",
+    "idle34.csv",
+    "idle35.csv",
+    "idle36.csv",
+    "idle37.csv",
+    "idle38.csv",
+    "idle39.csv",
+    "idle40.csv",
+    "idle41.csv",
+    "idle43.csv",
+    "idle44.csv",
+    "idle47.csv",
+    "live2.csv",
+    "live3.csv",
+    "live4.csv",
+    "live5.csv",
+    "live6.csv",
+    "live8.csv",
+    "live9.csv",
+    "live10.csv",
+    "live11.csv",
+    "live12.csv",
+    "live13.csv",
+    "live16.csv",
+    "live17.csv",
+    "live18.csv",
+    "live21.csv",
+    "live22.csv",
+    "live24.csv",
+    "live27.csv",
+    "live28.csv",
+    "live29.csv",
+    "live30.csv",
+    "live31.csv",
+    "live33.csv",
+    "live35.csv",
+    "live36.csv",
+    "live37.csv",
+    "live38.csv",
+    "live39.csv",
+    "long1.csv",
+    "long3.csv",
+    "long5.csv",
+    "long6.csv",
+    "long7.csv",
+    "long9.csv",
+    "long10.csv",
+    "long11.csv",
+    "long12.csv",
+    "ufpe1.csv",
+    "ufpe2.csv",
+    "ufpe3.csv",
+    "ufpe4.csv",
+    "ufpe5.csv",
+    "ufpe7.csv",
+    "ufpe10.csv",
+    "ufpe11.csv",
+    "ufpe12.csv",
+    "ufpe13.csv",
+    "ufpe15.csv",
+    "ufpe17.csv",
+    "ufpe18.csv"
+  ],
+  "heldout": [
+    "drive2.csv",
+    "drive3.csv",
+    "drive5.csv",
+    "drive7.csv",
+    "drive9.csv",
+    "drive11.csv",
+    "idle7.csv",
+    "idle8.csv",
+    "idle10.csv",
+    "idle13.csv",
+    "idle15.csv",
+    "idle19.csv",
+    "idle21.csv",
+    "idle26.csv",
+    "idle28.csv",
+    "idle29.csv",
+    "idle31.csv",
+    "idle42.csv",
+    "idle45.csv",
+    "idle46.csv",
+    "live1.csv",
+    "live7.csv",
+    "live14.csv",
+    "live15.csv",
+    "live19.csv",
+    "live20.csv",
+    "live23.csv",
+    "live25.csv",
+    "live26.csv",
+    "live32.csv",
+    "live34.csv",
+    "long2.csv",
+    "long4.csv",
+    "long8.csv",
+    "ufpe6.csv",
+    "ufpe8.csv",
+    "ufpe9.csv",
+    "ufpe14.csv",
+    "ufpe16.csv"
+  ],
+  "totals": {
+    "calibration": {
+      "files": 90,
+      "rows": 212450,
+      "hours": 29.119
+    },
+    "heldout": {
+      "files": 39,
+      "rows": 91849,
+      "hours": 12.545
+    },
+    "heldout_row_frac": 0.302
+  },
+  "by_type": {
+    "idle": {
+      "calibration": {
+        "files": 33,
+        "rows": 50185,
+        "hours": 6.827
+      },
+      "heldout": {
+        "files": 14,
+        "rows": 22041,
+        "hours": 3.0
+      },
+      "heldout_row_frac": 0.305
+    },
+    "drive": {
+      "calibration": {
+        "files": 7,
+        "rows": 26746,
+        "hours": 3.65
+      },
+      "heldout": {
+        "files": 6,
+        "rows": 13033,
+        "hours": 1.776
+      },
+      "heldout_row_frac": 0.328
+    },
+    "live": {
+      "calibration": {
+        "files": 28,
+        "rows": 68235,
+        "hours": 9.464
+      },
+      "heldout": {
+        "files": 11,
+        "rows": 29046,
+        "hours": 3.986
+      },
+      "heldout_row_frac": 0.299
+    },
+    "ufpe": {
+      "calibration": {
+        "files": 13,
+        "rows": 23868,
+        "hours": 3.25
+      },
+      "heldout": {
+        "files": 5,
+        "rows": 10198,
+        "hours": 1.389
+      },
+      "heldout_row_frac": 0.299
+    },
+    "long": {
+      "calibration": {
+        "files": 9,
+        "rows": 43416,
+        "hours": 5.928
+      },
+      "heldout": {
+        "files": 3,
+        "rows": 17531,
+        "hours": 2.394
+      },
+      "heldout_row_frac": 0.288
+    }
+  }
+}

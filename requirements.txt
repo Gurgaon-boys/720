@@ -15,3 +15,5 @@ yt-dlp
 tqdm
 pytest
 httpx
+pyarrow
+huggingface_hub
