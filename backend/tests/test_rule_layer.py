@@ -89,7 +89,7 @@ def test_ack_marks_acknowledged_without_clearing_active_fault():
     assert d["consecutive_windows"] == 12
 
 
-def test_reset_only_after_ack_plus_two_healthy_windows():
+def test_reset_only_after_ack_plus_two_windows_without_its_fault_matching():
     layer = RuleLayer()
     run(layer, MISFIRE, MISFIRE)
     layer.ack("a_0001", "judge", 1.0)
@@ -97,12 +97,41 @@ def test_reset_only_after_ack_plus_two_healthy_windows():
     assert one["state"] == "ALARM"
     assert two["state"] == "NORMAL" and two["alarm_id"] is None and not two["latched"]
 
-    # a non-healthy window in between restarts the count
+    # a window where its fault matches again restarts the count
     layer = RuleLayer()
     run(layer, MISFIRE, MISFIRE)
     layer.ack("a_0001", "judge", 1.0)
-    states = [d["state"] for d in run(layer, HEALTHY, PHYSICS_ONLY, HEALTHY, HEALTHY)]
+    states = [d["state"] for d in run(layer, HEALTHY, MISFIRE, HEALTHY, HEALTHY)]
     assert states == ["ALARM", "ALARM", "ALARM", "NORMAL"]
+
+
+def test_acked_alarm_resets_while_an_anomaly_remains_and_shows_it():
+    """D124: after ACK, an alarm whose own fault no longer matches resets even if the engine isn't
+    healthy yet (e.g. the ECU still recovering): the remaining anomaly shows as UNCLASSIFIED."""
+    anomalous = Evidence(models("healthy", 0.45), [rule("misfire", False)], 0.9, 0.6)
+    layer = RuleLayer()
+    run(layer, MISFIRE, MISFIRE)
+    layer.ack("a_0001", "judge", 1.0)
+    states = [d["state"] for d in run(layer, anomalous, anomalous, anomalous)]
+    assert states == ["ALARM", "UNCLASSIFIED", "UNCLASSIFIED"]
+
+
+def test_one_witness_of_its_fault_does_not_hold_an_acked_alarm():
+    """Only a two-witness match holds the latch; one witness left over shows as ADVISORY."""
+    layer = RuleLayer()
+    run(layer, MISFIRE, MISFIRE)
+    layer.ack("a_0001", "judge", 1.0)
+    one, two = run(layer, PHYSICS_ONLY, PHYSICS_ONLY)
+    assert one["state"] == "ALARM" and two["state"] == "ADVISORY" and two["fault"] == "misfire"
+
+
+def test_unacked_alarm_never_resets_and_a_new_fault_shows_once_the_acked_one_resets():
+    layer = RuleLayer()
+    run(layer, MISFIRE, MISFIRE)
+    assert all(d["state"] == "ALARM" and d["fault"] == "misfire" for d in run(layer, *[KNOCK] * 6))   # not acked: stays
+    layer.ack("a_0001", "judge", 1.0)
+    d = run(layer, KNOCK, KNOCK)                 # misfire no longer matching: resets, knock raises its own alarm
+    assert d[-1]["state"] == "ALARM" and d[-1]["fault"] == "knock" and d[-1]["alarm_id"] == "a_0002"
 
 
 def test_ack_after_fault_cleared_resets_on_next_evaluation_not_on_ack():

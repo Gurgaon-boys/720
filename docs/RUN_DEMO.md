@@ -24,7 +24,9 @@ Without the checkpoint the backend still starts, but the classifier witness is o
 (it needs two witnesses), the anomaly score is null and nothing becomes UNCLASSIFIED.
 
 **Option A: copy it** from the laptop that has it (same scikit-learn version: the file was written with
-scikit-learn 1.9.0 and NumPy 2.4.6) into `models\checkpoints\fast_v1.pkl`.
+scikit-learn 1.9.0 and NumPy 2.4.6) into `models\checkpoints\fast_v1.pkl`. `requirements.txt` pins
+scikit-learn 1.9.0 for this reason: with 1.9.1 the backend logs `InconsistentVersionWarning` ("might lead to invalid
+results") when it loads the file. Tested: the file loads without warnings on scikit-learn 1.9.0 with NumPy 2.5.4.
 
 **Option B: rebuild it** from the committed manifest (simulates the whole sim 2.1 dataset, then trains; long, run
 it the day before, not on stage):
@@ -99,7 +101,7 @@ Use the injection console. Each step starts from a healthy engine.
 | 1 | Nothing (healthy) | NORMAL, grey; SVM says healthy; no alarm |
 | 2 | Inject **misfire, cylinder 3, severity 1.0** | ADVISORY, then **ALARM misfire cyl 3** in about 1 s; guidance "Reduce load; inspect coil and plug on cyl 3"; 3D tab: cylinder 3 glows |
 | 3 | **ACK** on the dashboard | Acked by the operator; UaExpert shows `Acked = true` with the same AlarmId; the alarm stays latched while the fault is active |
-| 4 | **Clear** faults | NORMAL once 2 healthy windows follow the ACK. The ECU trims can take up to ~30 s to settle after a misfire |
+| 4 | **Clear** faults | The acknowledged alarm resets once 2 windows no longer match misfire (about 1 s). If the ECU trims are still settling, the dashboard may show UNCLASSIFIED or ADVISORY for a while before NORMAL |
 | 5 | Inject **valve tick** (any cylinder, 1.0) | **UNCLASSIFIED** ("abnormal, unclassified: inspect") in about 1 s, never a named fault: valve tick was never trained. Clear |
 | 6 | Inject **injector clog, cylinder 1, severity 0.5** | ADVISORY first, **ALARM injector_clog** after about 22 s (the 30 s fuel-trim window), asset health **MAINTENANCE_REQUIRED**, guidance "Schedule injector inspection; safe to run". ACK, clear |
 | 7 | Inject **knock, cylinder 2, severity 1.0** — **last** | **ALARM knock cyl 2** in about 1 s. ACK and stop here |

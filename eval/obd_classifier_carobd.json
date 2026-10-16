@@ -1,0 +1,412 @@
+{
+  "created_at": "2026-10-16T16:47:39Z",
+  "git_commit": "65808e33da29e1cc94ac52b2a6add211a78728bc",
+  "produced_by": "python -m models.obd.sim_classifier",
+  "what": "OBD-only classifier trained on SIMULATED OBD (sim 2.1), false faults on REAL held-out carOBD (plan 10.1)",
+  "columns": {
+    "sim_validation": "A (simulated)",
+    "carobd_heldout": "C (real; every fault named is false)"
+  },
+  "sim_version": "2.1.0",
+  "features": [
+    "stft_mean",
+    "stft_std",
+    "stft_slope",
+    "ltft_mean",
+    "ltft_slope",
+    "timing_mean",
+    "timing_std",
+    "map_resid_mean",
+    "map_resid_std",
+    "coolant_mean",
+    "rpm_mean",
+    "load_mean",
+    "retard_events",
+    "total_trim"
+  ],
+  "p_min": 0.6,
+  "sim_data": {
+    "runs": 225,
+    "train_windows": 3357,
+    "val_windows": 840,
+    "train_engines": [
+      2000,
+      2059
+    ],
+    "val_engines": [
+      2060,
+      2074
+    ],
+    "warmup_s": 60.0,
+    "fault_s": 300.0,
+    "operating_point_every_s": 45.0
+  },
+  "healthy_model_and_rules": "pre-registered OBD branch v1 (models/thresholds/obd_branch.json)",
+  "sim_validation": {
+    "engines": [
+      2060,
+      2074
+    ],
+    "windows": 840,
+    "macro_f1": 0.8127,
+    "recall": {
+      "healthy": 0.7606,
+      "injector_clog": 0.8941,
+      "knock": 0.7765
+    },
+    "confusion_rows_true_cols_pred": {
+      "labels": [
+        "healthy",
+        "injector_clog",
+        "knock"
+      ],
+      "matrix": [
+        [
+          251,
+          2,
+          77
+        ],
+        [
+          4,
+          228,
+          23
+        ],
+        [
+          57,
+          0,
+          198
+        ]
+      ]
+    },
+    "false_fault_on_healthy_windows_at_p_min": {
+      "k": 36,
+      "n": 330,
+      "rate": 0.10909,
+      "wilson95": [
+        0.07985,
+        0.14733
+      ]
+    }
+  },
+  "carobd_heldout": {
+    "files": 39,
+    "hours": 12.545,
+    "windows": 2960,
+    "levels": {
+      "1_anomaly_flags": {
+        "windows": {
+          "k": 33,
+          "n": 2960,
+          "rate": 0.01115,
+          "wilson95": [
+            0.00795,
+            0.01562
+          ]
+        },
+        "episodes": {
+          "count": 29,
+          "hours": 12.545,
+          "per_hour": 2.3117,
+          "upper95_per_hour": 3.152
+        }
+      },
+      "2_unclassified": {
+        "windows": {
+          "k": 0,
+          "n": 2960,
+          "rate": 0.0,
+          "wilson95": [
+            0.0,
+            0.0013
+          ]
+        },
+        "episodes": {
+          "count": 0,
+          "hours": 12.545,
+          "per_hour": 0.0,
+          "upper95_per_hour": 0.2388
+        }
+      },
+      "3_advisories": {
+        "windows": {
+          "k": 2132,
+          "n": 2960,
+          "rate": 0.72027,
+          "wilson95": [
+            0.70382,
+            0.73615
+          ]
+        },
+        "episodes": {
+          "count": 356,
+          "hours": 12.545,
+          "per_hour": 28.3785,
+          "upper95_per_hour": 30.9801
+        }
+      },
+      "4_classifier_false_faults": {
+        "windows": {
+          "k": 2175,
+          "n": 2960,
+          "rate": 0.7348,
+          "wilson95": [
+            0.7186,
+            0.75039
+          ]
+        },
+        "episodes": {
+          "count": 358,
+          "hours": 12.545,
+          "per_hour": 28.5379,
+          "upper95_per_hour": 31.1465
+        },
+        "by_fault": {
+          "injector_clog": 2063,
+          "knock": 112
+        }
+      },
+      "5_alarms": {
+        "count": 2,
+        "hours": 12.545,
+        "per_hour": 0.1594,
+        "upper95_per_hour": 0.5019
+      }
+    },
+    "per_file": [
+      {
+        "file": "drive2.csv",
+        "windows": 75,
+        "clf_fault_windows": 56,
+        "alarms": 0
+      },
+      {
+        "file": "drive3.csv",
+        "windows": 94,
+        "clf_fault_windows": 73,
+        "alarms": 0
+      },
+      {
+        "file": "drive5.csv",
+        "windows": 19,
+        "clf_fault_windows": 19,
+        "alarms": 0
+      },
+      {
+        "file": "drive7.csv",
+        "windows": 17,
+        "clf_fault_windows": 17,
+        "alarms": 0
+      },
+      {
+        "file": "drive9.csv",
+        "windows": 108,
+        "clf_fault_windows": 79,
+        "alarms": 0
+      },
+      {
+        "file": "drive11.csv",
+        "windows": 106,
+        "clf_fault_windows": 91,
+        "alarms": 0
+      },
+      {
+        "file": "idle7.csv",
+        "windows": 62,
+        "clf_fault_windows": 41,
+        "alarms": 0
+      },
+      {
+        "file": "idle8.csv",
+        "windows": 24,
+        "clf_fault_windows": 24,
+        "alarms": 0
+      },
+      {
+        "file": "idle10.csv",
+        "windows": 46,
+        "clf_fault_windows": 22,
+        "alarms": 0
+      },
+      {
+        "file": "idle13.csv",
+        "windows": 40,
+        "clf_fault_windows": 32,
+        "alarms": 0
+      },
+      {
+        "file": "idle15.csv",
+        "windows": 38,
+        "clf_fault_windows": 18,
+        "alarms": 0
+      },
+      {
+        "file": "idle19.csv",
+        "windows": 44,
+        "clf_fault_windows": 15,
+        "alarms": 0
+      },
+      {
+        "file": "idle21.csv",
+        "windows": 24,
+        "clf_fault_windows": 5,
+        "alarms": 0
+      },
+      {
+        "file": "idle26.csv",
+        "windows": 46,
+        "clf_fault_windows": 27,
+        "alarms": 1
+      },
+      {
+        "file": "idle28.csv",
+        "windows": 74,
+        "clf_fault_windows": 27,
+        "alarms": 0
+      },
+      {
+        "file": "idle29.csv",
+        "windows": 91,
+        "clf_fault_windows": 55,
+        "alarms": 0
+      },
+      {
+        "file": "idle31.csv",
+        "windows": 43,
+        "clf_fault_windows": 42,
+        "alarms": 0
+      },
+      {
+        "file": "idle42.csv",
+        "windows": 45,
+        "clf_fault_windows": 9,
+        "alarms": 0
+      },
+      {
+        "file": "idle45.csv",
+        "windows": 44,
+        "clf_fault_windows": 40,
+        "alarms": 0
+      },
+      {
+        "file": "idle46.csv",
+        "windows": 80,
+        "clf_fault_windows": 50,
+        "alarms": 0
+      },
+      {
+        "file": "live1.csv",
+        "windows": 125,
+        "clf_fault_windows": 99,
+        "alarms": 0
+      },
+      {
+        "file": "live7.csv",
+        "windows": 86,
+        "clf_fault_windows": 70,
+        "alarms": 0
+      },
+      {
+        "file": "live14.csv",
+        "windows": 41,
+        "clf_fault_windows": 34,
+        "alarms": 0
+      },
+      {
+        "file": "live15.csv",
+        "windows": 74,
+        "clf_fault_windows": 59,
+        "alarms": 0
+      },
+      {
+        "file": "live19.csv",
+        "windows": 86,
+        "clf_fault_windows": 52,
+        "alarms": 0
+      },
+      {
+        "file": "live20.csv",
+        "windows": 77,
+        "clf_fault_windows": 66,
+        "alarms": 0
+      },
+      {
+        "file": "live23.csv",
+        "windows": 99,
+        "clf_fault_windows": 83,
+        "alarms": 0
+      },
+      {
+        "file": "live25.csv",
+        "windows": 123,
+        "clf_fault_windows": 98,
+        "alarms": 0
+      },
+      {
+        "file": "live26.csv",
+        "windows": 59,
+        "clf_fault_windows": 50,
+        "alarms": 0
+      },
+      {
+        "file": "live32.csv",
+        "windows": 102,
+        "clf_fault_windows": 81,
+        "alarms": 0
+      },
+      {
+        "file": "live34.csv",
+        "windows": 70,
+        "clf_fault_windows": 57,
+        "alarms": 0
+      },
+      {
+        "file": "long2.csv",
+        "windows": 245,
+        "clf_fault_windows": 151,
+        "alarms": 0
+      },
+      {
+        "file": "long4.csv",
+        "windows": 191,
+        "clf_fault_windows": 144,
+        "alarms": 0
+      },
+      {
+        "file": "long8.csv",
+        "windows": 135,
+        "clf_fault_windows": 104,
+        "alarms": 0
+      },
+      {
+        "file": "ufpe6.csv",
+        "windows": 35,
+        "clf_fault_windows": 23,
+        "alarms": 0
+      },
+      {
+        "file": "ufpe8.csv",
+        "windows": 86,
+        "clf_fault_windows": 83,
+        "alarms": 1
+      },
+      {
+        "file": "ufpe9.csv",
+        "windows": 61,
+        "clf_fault_windows": 57,
+        "alarms": 0
+      },
+      {
+        "file": "ufpe14.csv",
+        "windows": 86,
+        "clf_fault_windows": 75,
+        "alarms": 0
+      },
+      {
+        "file": "ufpe16.csv",
+        "windows": 59,
+        "clf_fault_windows": 47,
+        "alarms": 0
+      }
+    ]
+  }
+}
