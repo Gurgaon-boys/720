@@ -136,11 +136,10 @@ def test_fault_takes_effect_at_cycle_boundary_and_clears():
 
 # ---------------------------------------------------------------- API guards and hooks
 
-def test_planned_and_unknown_faults_rejected():
+def test_unknown_faults_rejected():
+    # v1 also asserted knock / injector_clog / valve_tick raised NotImplementedError; sim v2 implements
+    # them (tests in test_engine_v2.py), so only the validation part of this test still applies.
     sim = _sim()
-    for f in ("knock", "injector_clog", "valve_tick"):
-        with pytest.raises(NotImplementedError):
-            sim.inject(f, cylinder=1, severity=0.5)
     with pytest.raises(ValueError):
         sim.inject("banana", cylinder=1, severity=0.5)
     with pytest.raises(ValueError):

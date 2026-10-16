@@ -29,7 +29,11 @@ export default function StatePanel({ state }) {
       </div>
 
       <div className="verdict-block">
-        <div className="eyebrow">Anomaly · score {anomaly.score.toFixed(2)} / threshold {anomaly.threshold.toFixed(2)}</div>
+        <div className="eyebrow">
+          {anomaly.score === null
+            ? 'Anomaly · no healthy model yet (score null, schema 1.5)'
+            : `Anomaly · score ${anomaly.score.toFixed(2)} / threshold ${anomaly.threshold.toFixed(2)}`}
+        </div>
         {localisation === 'cylinder' && <p className="panel-note">Per-cylinder scores are shown under each cylinder in the bank.</p>}
       </div>
 

@@ -40,7 +40,7 @@ class Evidence:
 
     models: list[dict]
     physics_rules: list[dict]
-    anomaly_score: float
+    anomaly_score: float | None  # None (schema 1.5): no healthy model, so no anomaly witness
     anomaly_threshold: float
     severity: float | None = None
 
@@ -90,7 +90,7 @@ def assess(ev: Evidence) -> Assessment:
     cls = classifier_label(ev.models)
     fired = [r for r in ev.physics_rules if r["fired"]]
     cls_fault = cls in TRAINED_FAULTS
-    anomaly_high = ev.anomaly_score > ev.anomaly_threshold
+    anomaly_high = ev.anomaly_score is not None and ev.anomaly_score > ev.anomaly_threshold
 
     if cls_fault:
         same = [r for r in fired if r["rule"] == cls]

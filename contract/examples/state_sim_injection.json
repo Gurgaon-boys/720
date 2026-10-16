@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.4",
+  "schema_version": "1.5",
   "sent_at": 1760551251.2,
   "units": {
     "t": "s",
@@ -26,7 +26,7 @@
     "half_order_ratio": 9.8
   },
   "anomaly": {
-    "score": 0.0,
+    "score": null,
     "threshold": 0.6,
     "per_location": [
       0.0,

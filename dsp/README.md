@@ -34,8 +34,33 @@ Every rule that fires reports `rule_basis` (see `contract/`).
 
 **Detection (sim, idle, misfire cyl 3 p = 0.5):** fires on cyl 3 in the 2nd window that holds a misfire, 1.24 s after injection (a fault starts at the next unplanned cycle, and a 4-cycle window lasts 0.6 s at idle). A single misfire in a 4-cycle window often stays under the half-order threshold while roughness already flags it: a candidate second firing condition.
 
+## Sim v2 (D47–D56)
+
+The L1 numbers above are sim v1 and kept for the record (`models/thresholds/misfire_half_order_v1.json`). On sim v2 (reciprocating inertia, regimes on), the misfire rule changed:
+
+- **Feature:** `half_order_energy` = 0.5-order amplitude of crank speed × mean rpm / 10⁶, replacing the half-order *ratio*. Once inertia torque is modelled, the 2nd order cancels near 2,000 rpm and the ratio blows up on healthy engines: its healthy maximum is 0.56 at idle, 38 at mid speed and 108 at high speed. `half_order_ratio` is still computed and shown as `features_summary.half_order_ratio_v1`.
+- **Per-rpm-band thresholds** for idle (<1,100), mid (1,100–2,000) and high (2,000–3,000 rpm): 1.25 × the healthy 99.9th percentile, on calibration engines 0–11 at 5/25/45 N·m with regimes on; validated on engines 50–53.
+
+| Band | half_order_energy | roughness | Validation FP |
+|---|---|---|---|
+| idle | 0.00898 | 0.0235 | 0 / 3,614 |
+| mid | 0.01029 | 0.0094 | 0 / 6,514 |
+| high | 0.01131 | 0.0113 | 1 / 10,788 |
+
+- The rule does not fire when a crank dropout leaves too few teeth (`crank_valid`).
+- `window_features` also returns `map_kpa`; `CycleWindow` carries `accel`.
+
+**Evidence (`eval/`, evaluation engines only, regimes on):**
+
+- `healthy_soak.py`: 10.0 h on unseen engines, 269,761 windows. Fired windows 3.9/h, ADVISORY 3.6/h (Wilson 2.6–5.0), ALARM 0 (structural: no classifier yet).
+- `robustness_v2.py`: detection, localisation, SNR and crank-noise sweeps, and latency. Results are in `eval/results/robustness_v2.json` and `docs/figures/robustness_v2.png`.
+
+The SNR sweep is flat by construction, because the rule reads the crank, not the mic.
+
 ```bash
-python -m dsp.calibrate_misfire     # ~2.5 min
+python -m dsp.calibrate_misfire     # v2: ~6 min, 12 engines x 9 conditions, Pool
+python -m eval.healthy_soak         # ~30 min
+python -m eval.robustness_v2        # ~15 min
 python -m pytest dsp/tests
 ```
 

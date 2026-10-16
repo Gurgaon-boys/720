@@ -15,4 +15,4 @@ Trained classes: `healthy`, `misfire`, `knock`, `injector_clog`. **`valve_tick` 
 All models use identical grouped splits (by run, by source clip) across several seeds. Thresholds are fixed on validation data, never on test data.
 Checkpoints (`*.pt`, `*.pkl`, `*.onnx`) are not committed.
 
-`thresholds/`: calibrated rule thresholds with their calibration metadata (committed; JSON, small). `misfire_half_order.json` comes from `python -m dsp.calibrate_misfire`.
+`thresholds/`: calibrated rule thresholds with their calibration metadata (committed; JSON, small). `misfire_half_order.json` (v2: `half_order_energy`, per rpm band, sim v2 with regimes) comes from `python -m dsp.calibrate_misfire`. `misfire_half_order_v1.json` is the L1 sim-v1 file (half-order ratio), kept for comparison.

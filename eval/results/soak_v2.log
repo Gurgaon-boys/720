@@ -1,0 +1,29 @@
+  20/144 runs  (556 s)
+  40/144 runs  (962 s)
+  60/144 runs  (1287 s)
+  80/144 runs  (1505 s)
+  100/144 runs  (1670 s)
+  120/144 runs  (1773 s)
+  140/144 runs  (1805 s)
+  144/144 runs  (1809 s)
+MAIN (train region, unseen engines): 10.00 h, 269761 windows
+    window      39 events = 3.900/h  (95% CI 2.853-5.331/h)
+    advisory    36 events = 3.600/h  (95% CI 2.601-4.984/h)
+    alarm        0 events = 0.000/h  (95% upper 0.300/h)
+  band high: 4.00 h, 152905 windows
+    window      23 events = 5.750/h  (95% CI 3.832-8.628/h)
+    advisory    20 events = 5.000/h  (95% CI 3.237-7.723/h)
+    alarm        0 events = 0.000/h  (95% upper 0.750/h)
+  band idle: 2.00 h, 23952 windows
+    window       3 events = 1.500/h  (95% CI 0.510-4.410/h)
+    advisory     3 events = 1.500/h  (95% CI 0.510-4.410/h)
+    alarm        0 events = 0.000/h  (95% upper 1.500/h)
+  band mid: 4.00 h, 92904 windows
+    window      13 events = 3.250/h  (95% CI 1.899-5.561/h)
+    advisory    13 events = 3.250/h  (95% CI 1.899-5.561/h)
+    alarm        0 events = 0.000/h  (95% upper 0.750/h)
+HELD-OUT REGION (3100-3400 rpm, test engines): 2.00 h, 97450 windows
+    window      30 events = 15.000/h  (95% CI 10.508-21.412/h)
+    advisory     6 events = 3.000/h  (95% CI 1.375-6.546/h)
+    alarm        0 events = 0.000/h  (95% upper 1.500/h)
+wrote C:\Users\sdipe\HackHive-26\eval\results\soak_v2.json  (1810 s)

@@ -1,4 +1,4 @@
-# `signal` binary frame (schema_version 1.4)
+# `signal` binary frame (schema_version 1.5)
 
 The fast channel carries waveforms and spectrogram columns as **binary WebSocket messages**, downsampled on the server. Each message is one frame for one channel:
 
@@ -15,7 +15,7 @@ The total frame length is `4 + header_len + 4 * n_samples` bytes. If needed, the
 
 | Field | Type | Meaning |
 |---|---|---|
-| `schema_version` | string | `"1.4"` |
+| `schema_version` | string | `"1.5"` |
 | `sent_at` | number | unix seconds; also feeds the UI's 3 s "diagnostics offline" watchdog |
 | `channel` | string | `mic`, `accel`, `crank_speed`, `mic_stft`, `accel_stft`, … |
 | `kind` | `waveform` \| `spectrogram` | how to read the payload |

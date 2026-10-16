@@ -21,8 +21,6 @@ import time
 
 from backend import messages
 from backend.rule_layer import AckResult, RuleLayer, asset_ne107
-from backend.scenarios import OBD_S, SCENARIOS, SIGNAL_S, WINDOW_S, obd_sample, signal_frames, window
-from backend.rule_layer import RuleLayer, asset_ne107
 from backend.scenarios import OBD_S, SIGNAL_S, WINDOW_S
 from backend.sources import make_source
 from backend.signal_frame import encode_frame
@@ -147,6 +145,13 @@ class Runtime:
         w = self.scenario.window(k)
         if w is None or w.phase.offline:
             return  # no window yet, or offline: nothing goes out (offline trips the UI's 3 s watchdog)
+        # sensors without a stream of their own (the simulator's crank) are fed here while live
+        polled = getattr(self.scenario, "polled_sensors", ())
+        if polled:
+            now, live = self.clock(), self.scenario.live_sensors(k * WINDOW_S)
+            for s in polled:
+                if s in live:
+                    self.watchdog.feed(s, now)
         if w.fresh:
             for ev in w.backlog:
                 self.rules.step(ev)

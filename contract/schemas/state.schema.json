@@ -18,7 +18,7 @@
     "number_array": { "type": "array", "items": { "type": "number" } }
   },
   "properties": {
-    "schema_version": { "const": "1.4" },
+    "schema_version": { "const": "1.5" },
     "sent_at": { "type": "number", "description": "unix seconds" },
     "units": { "type": "object", "additionalProperties": { "type": "string" } },
     "run_id": { "type": "string", "minLength": 1 },
@@ -44,7 +44,7 @@
       "additionalProperties": false,
       "required": ["score", "threshold", "per_location"],
       "properties": {
-        "score": { "type": "number" },
+        "score": { "type": ["number", "null"], "description": "1.5: null = no healthy (anomaly) model behind it; never a placeholder number" },
         "threshold": { "type": "number" },
         "per_location": { "$ref": "#/$defs/number_array" }
       }

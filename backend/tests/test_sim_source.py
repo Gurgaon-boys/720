@@ -60,14 +60,17 @@ def test_every_sim_message_validates():
         assert m["physics_rules"][0]["rule_basis"] == "crank_angle"
     for m in r.out["obd"]:
         assert messages.errors("obd", m) == []
-        assert set(m["channels"]) == {"rpm", "map_kpa", "load_pct"}
+        assert set(m["channels"]) == {"rpm", "load_pct", "throttle_pct", "map_kpa", "coolant_c", "stft_pct",
+                                      "ltft_pct", "spark_adv_deg", "lambda"}
+        assert all(c["source"] == "simulator" for c in m["channels"].values())
     channels = set()
     for buf in r.out["signal"]:
         h, data = decode_frame(buf)
         assert messages.errors("signal_header", h) == []
         assert np.all(np.isfinite(data))
         channels.add(h["channel"])
-    assert channels == {"mic", "mic_stft"}
+    assert channels == {"mic", "mic_stft", "accel"}
+    assert all(m["anomaly"]["score"] is None for m in r.states)     # schema 1.5: no model, no number
 
 
 def test_inject_endpoints():
@@ -81,6 +84,34 @@ def test_inject_endpoints():
         assert "sim" in [s["name"] for s in c.get("/scenarios").json()["scenarios"]]
         assert c.post("/scenario/sim").json() == {"current": "sim"}
         assert c.post("/inject", json=body).status_code == 200
-        assert c.post("/inject", json={**body, "fault": "knock"}).status_code == 501
+        for fault in ("knock", "injector_clog", "valve_tick"):                # all in sim v2
+            assert c.post("/inject", json={**body, "fault": fault}).status_code == 200
+        assert c.post("/inject", json={**body, "fault": "banana"}).status_code == 422
         assert c.post("/inject", json={**body, "cylinder": 9}).status_code == 422
         assert c.post("/clear_faults").status_code == 200
+
+
+def test_sim_dropout_shows_in_sensor_health():
+    """A mic dropout longer than the 3 s watchdog turns health.sensors.mic to FAILURE, then back."""
+    from backend.sources.sim_source import SimSource
+    from sim.params import Regimes
+
+    r = Run("healthy")
+    src = SimSource(regimes=Regimes(dropout_per_min=8.0, dropout_s=(4.0, 5.0), dropout_channels=("mic", "crank")))
+    r.rt.select("sim", src)
+    r.advance(60.0)
+    mic = [m["health"]["sensors"]["mic"] for m in r.states]
+    crank = [m["health"]["sensors"]["crank"] for m in r.states]
+    assert mic.count("FAILURE") < len(mic)                             # it recovers between dropouts
+    assert "FAILURE" in mic and "FAILURE" in crank
+    assert all(m["health"]["sensors"]["accel"] == "NORMAL" for m in r.states)
+    assert all(messages.errors("state", m) == [] for m in r.states)
+
+
+def test_knock_and_clog_reach_obd_through_the_backend():
+    r = Run("sim").advance(3.0)
+    r.rt.inject("injector_clog", 1, 0.4)
+    r.advance(25.0)
+    stft = [m["channels"]["stft_pct"]["v"][0] + m["channels"]["ltft_pct"]["v"][0] for m in r.out["obd"]]
+    assert stft[1] < 2.0 and stft[-1] > 7.0                            # trim heads for s/(4-s) = 11 %
+    assert r.states[-1]["injection"]["fault"] == "injector_clog"

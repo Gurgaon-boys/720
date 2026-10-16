@@ -1,14 +1,19 @@
-"""Live simulator source (demo level L1): EngineSim -> 4-cycle windows -> features -> physics rule.
+"""Live simulator source: EngineSim (v2) -> 4-cycle windows -> features -> physics rule.
 
 The simulator is stepped lazily, in 50 ms chunks, up to whatever stream time the runtime's ticks
 ask for, so it runs in real time. Windows of 4 whole cycles with 50% overlap finish every
 2 cycles (300 ms at idle); the rule layer is stepped once per finished window, and the state
 ticks in between resend the last decision (`fresh=False`).
 
-Witnesses in L1: the physics rule only. There is no classifier yet, so `models` is empty and the
-rule layer can raise ADVISORY but never ALARM. There is no healthy (anomaly) model yet either, so
-`anomaly.score` is a placeholder 0.0; `anomaly.per_location` carries the calibrated crank
-roughness for the per-cylinder bars, and `anomaly.threshold` is the bars' limit.
+Witnesses: the physics (misfire) rule only. There is no classifier yet, so `models` is empty and
+the rule layer can raise ADVISORY but never ALARM. There is no healthy (anomaly) model either, so
+`anomaly.score` is null (schema 1.5); `anomaly.per_location` carries the calibrated crank roughness
+for the per-cylinder bars, and `anomaly.threshold` is the bars' limit.
+
+Channels: `signal` carries mic and accel (4 kHz display streams) and the mic STFT; `obd` carries
+the simulator's ECU values at 1 Hz (rpm, load, throttle, MAP, coolant, STFT, LTFT, spark advance,
+lambda; lambda is simulator-only, carOBD has no O2). With S720_SIM_REGIMES=eval, sensor dropouts
+stop a channel's output, so the backend watchdog marks it FAILURE after 3 s (crank included).
 """
 
 from __future__ import annotations
@@ -25,58 +30,67 @@ from dsp.features import fingerprint, window_features
 from dsp.rules import PER_LOCATION_THRESHOLD, load_thresholds, misfire_half_order, per_location
 from dsp.windows import CycleWindower
 from sim import FS, EngineParams, EngineSim
+from sim.params import Regimes
 
 CHUNK_S = 0.05            # simulator step, s
 DECIMATE = FS // SIGNAL_RATE_HZ
-MIC_DISPLAY_GAIN = 8.0    # the synthesised mic peaks near 0.06; scale the display stream towards +-0.5
-KEEP_S = 2.0              # 4 kHz mic history kept for signal frames
-_RUNNING = Phase()        # the simulator is never "offline"; sensor dropouts come later
+DISPLAY_GAIN = {"mic": 8.0, "accel": 6.0}   # the synthesised signals peak near 0.06-0.08; scale towards +-0.5
+KEEP_S = 2.0              # 4 kHz display history kept for signal frames
+DROPOUT_KEEP_S = 30.0
+OBD_UNITS = {"rpm": "rev/min", "load_pct": "%", "throttle_pct": "%", "map_kpa": "kPa", "coolant_c": "degC",
+             "stft_pct": "%", "ltft_pct": "%", "spark_adv_deg": "deg", "lambda": "1"}
+_RUNNING = Phase()        # the source itself never goes "offline"; sensors drop out individually
 
 
 class SimSource:
     name = "sim"
-    description = "Physics-informed simulator v1 at idle, live"
+    description = "Physics-informed simulator v2, live"
     source = "simulated"
-    sensors = ("mic", "obd")
+    sensors = ("mic", "accel", "obd", "crank")
+    polled_sensors = ("crank",)   # no stream of its own: the runtime feeds the watchdog on state ticks
     real = False
     period = None
 
-    def __init__(self, params: EngineParams | None = None, seed: int = 0, thresholds: dict | None = None):
+    def __init__(self, params: EngineParams | None = None, seed: int = 0, thresholds: dict | None = None,
+                 regimes: Regimes | None = None):
         if FS % SIGNAL_RATE_HZ or round(CHUNK_S * FS) % DECIMATE:
             raise ValueError("chunk length must be a whole number of display samples")
         self.params = params or EngineParams()
         self.seed = seed
         self.thresholds = thresholds or load_thresholds()
-        self.sim = EngineSim(self.params, seed)
+        self.sim = EngineSim(self.params, seed, regimes=regimes, purpose="demo")
         self.windower = CycleWindower(4, 0.5)
         self.stream_t = 0.0
-        self.injections: list[dict] = []
         self._ready: list[Window] = []
         self._last: Window | None = None
         self._lp = sps.butter(8, 0.45 * SIGNAL_RATE_HZ, fs=FS, output="sos")
-        self._lp_zi = np.zeros((self._lp.shape[0], 2))
-        self._mic = np.zeros(0, dtype=np.float32)   # 4 kHz display mic
-        self._mic_t0 = 0.0                          # stream time of self._mic[0]
-        self._obd = []                              # (t_end, mean rpm, MAP Pa) per chunk
+        self._lp_zi = {ch: np.zeros((self._lp.shape[0], 2)) for ch in DISPLAY_GAIN}
+        self._disp = {ch: np.zeros(0, dtype=np.float32) for ch in DISPLAY_GAIN}   # 4 kHz display streams
+        self._disp_t0 = 0.0                                                       # stream time of index 0
+        self._obd: list[dict] = []
+        self._drops: list[tuple] = []                                            # (channel, t0, t1)
         self._centres, self._baseline = healthy_fingerprint(self.params, self.seed)
 
     @classmethod
     def from_env(cls) -> "SimSource":
         """S720_SIM_SEED: run seed (default 0). S720_SIM_ENGINE: engine seed for a randomised engine
-        (default: the reference EngineParams)."""
+        (default: the reference EngineParams). S720_SIM_REGIMES=eval: harder regimes incl. dropouts."""
         engine = os.environ.get("S720_SIM_ENGINE")
         params = EngineParams.randomised(int(engine)) if engine else None
-        return cls(params, seed=int(os.environ.get("S720_SIM_SEED", "0")))
+        regimes = Regimes.eval() if os.environ.get("S720_SIM_REGIMES") == "eval" else None
+        return cls(params, seed=int(os.environ.get("S720_SIM_SEED", "0")), regimes=regimes)
 
-    # ------------------------------------------------------------ control
+    # ------------------------------------------------------------ control (the injection console)
 
     def inject(self, fault: str, cylinder: int, severity: float) -> None:
+        """One injection at a time, like the console: a new request replaces the previous one.
+        Raises ValueError for an unknown fault or out-of-range values (the sim validates).
+        The runtime records the accepted request for state.injection (D46)."""
+        self.sim.clear_faults()
         self.sim.inject(fault, cylinder=cylinder, severity=severity)
-        self.injections.append({"t": self.stream_t, "fault": fault, "cylinder": cylinder, "severity": severity})
 
     def clear_faults(self) -> None:
         self.sim.clear_faults()
-        self.injections.append({"t": self.stream_t, "fault": None})
 
     # ------------------------------------------------------------ source interface
 
@@ -84,7 +98,11 @@ class SimSource:
         return _RUNNING
 
     def live_sensors(self, t: float) -> set[str]:
-        return set(self.sensors)
+        """Sensors with data at stream time t: a channel inside a dropout span is not live.
+        Advances just past t, so the chunk that starts at t (and its dropout spans) exists."""
+        self._advance(t + 1e-6)
+        down = {ch for ch, a, b in self._drops if a <= t < b}
+        return set(self.sensors) - down
 
     def window(self, k: int) -> Window | None:
         self._advance(k * WINDOW_S)
@@ -101,30 +119,31 @@ class SimSource:
     def signal_frames(self, j: int, live: set[str]) -> list[tuple[dict, np.ndarray]]:
         t0 = round(j * SIGNAL_S, 6)
         self._advance(t0 + SIGNAL_S)
-        if "mic" not in live:
-            return []
         n = int(SIGNAL_RATE_HZ * SIGNAL_S)
-        i0 = int(round((t0 - self._mic_t0) * SIGNAL_RATE_HZ))
-        mic = np.zeros(n, dtype=np.float32)
-        seg = self._mic[max(i0, 0): i0 + n]
-        mic[: seg.size] = seg
-        spec = np.abs(np.fft.rfft(mic * np.hanning(n))) / (n / 4)
-        db = np.clip(20 * np.log10(spec + 1e-6), -90, 0).astype(np.float32)
-        return [
-            ({"channel": "mic", "kind": "waveform", "t0": t0, "sample_rate_hz": SIGNAL_RATE_HZ, "n_samples": n}, mic),
-            ({"channel": "mic_stft", "kind": "spectrogram", "t0": t0, "sample_rate_hz": 1 / SIGNAL_S,
-              "n_samples": db.size, "n_bins": db.size, "n_frames": 1, "f_max_hz": SIGNAL_RATE_HZ / 2}, db),
-        ]
+        i0 = int(round((t0 - self._disp_t0) * SIGNAL_RATE_HZ))
+        out = []
+        for ch in ("mic", "accel"):
+            if ch not in live:
+                continue
+            x = np.zeros(n, dtype=np.float32)
+            seg = self._disp[ch][max(i0, 0): i0 + n]
+            x[: seg.size] = seg
+            out.append(({"channel": ch, "kind": "waveform", "t0": t0, "sample_rate_hz": SIGNAL_RATE_HZ, "n_samples": n}, x))
+            if ch == "mic":
+                spec = np.abs(np.fft.rfft(x * np.hanning(n))) / (n / 4)
+                db = np.clip(20 * np.log10(spec + 1e-6), -90, 0).astype(np.float32)
+                out.append(({"channel": "mic_stft", "kind": "spectrogram", "t0": t0, "sample_rate_hz": 1 / SIGNAL_S,
+                             "n_samples": db.size, "n_bins": db.size, "n_frames": 1, "f_max_hz": SIGNAL_RATE_HZ / 2}, db))
+        return out
 
     def obd_sample(self, i: int) -> dict:
-        """The simulator's own engine values at ~1 Hz (no ECU/OBD loops in sim v1 yet)."""
+        """The simulator's ECU values sampled at 1 Hz (sample and hold), name -> (value, unit)."""
         t = i * 1.0
-        self._advance(max(t, CHUNK_S))
-        recent = [o for o in self._obd if o[0] > t - 1.0] or self._obd[-1:]
-        rpm = float(np.mean([o[1] for o in recent]))
-        map_pa = recent[-1][2]
-        return {"rpm": (round(rpm, 1), "rev/min"), "map_kpa": (round(map_pa / 1e3, 2), "kPa"),
-                "load_pct": (round(100 * map_pa / 101_325, 1), "%")}
+        self._advance(t + CHUNK_S)
+        rec = next((o for o in reversed(self._obd) if o["t"] <= t + 1e-9), self._obd[0] if self._obd else None)
+        if rec is None:
+            return {}
+        return {k: (round(float(rec[k]), 3 if k == "lambda" else 2), u) for k, u in OBD_UNITS.items()}
 
     # ------------------------------------------------------------ internals
 
@@ -134,12 +153,16 @@ class SimSource:
             t_end = float(chunk["t"][-1]) + 1 / FS
             for win in self.windower.push(chunk):
                 self._ready.append(self._process(win))
-            y, self._lp_zi = sps.sosfilt(self._lp, chunk["mic"], zi=self._lp_zi)
-            self._mic = np.concatenate([self._mic, (MIC_DISPLAY_GAIN * y[::DECIMATE]).astype(np.float32)])
-            drop = max(self._mic.size - int(KEEP_S * SIGNAL_RATE_HZ), 0)
-            self._mic, self._mic_t0 = self._mic[drop:], self._mic_t0 + drop / SIGNAL_RATE_HZ
-            self._obd = [o for o in self._obd if o[0] > t_end - 2.0]
-            self._obd.append((t_end, float(chunk["rpm"].mean()), float(chunk["meta"]["map_pa"])))
+            for ch in DISPLAY_GAIN:
+                y, self._lp_zi[ch] = sps.sosfilt(self._lp, np.nan_to_num(chunk[ch]), zi=self._lp_zi[ch])
+                self._disp[ch] = np.concatenate([self._disp[ch], (DISPLAY_GAIN[ch] * y[::DECIMATE]).astype(np.float32)])
+            drop = max(self._disp["mic"].size - int(KEEP_S * SIGNAL_RATE_HZ), 0)
+            if drop:
+                self._disp = {ch: v[drop:] for ch, v in self._disp.items()}
+                self._disp_t0 += drop / SIGNAL_RATE_HZ
+            self._obd = [o for o in self._obd if o["t"] > t_end - 5.0] + chunk["obd"]
+            self._drops = [d for d in self._drops if d[2] > t_end - DROPOUT_KEEP_S]
+            self._drops += [(d["channel"], d["t0"], d["t1"]) for d in chunk["dropouts"]]
             self.stream_t = t_end
 
     def _process(self, win) -> Window:
@@ -158,17 +181,18 @@ class SimSource:
             "operating_point": {"rpm": round(f["rpm_mean"], 1), "load_pct": round(100 * map_pa / 101_325, 1),
                                 "regime": f["regime"]},
             "localisation": "cylinder",
-            "features_summary": {"half_order_ratio": round(f["half_order_ratio"], 4),
+            "features_summary": {"half_order_energy": round(f["half_order_energy"], 5),
+                                 "half_order_ratio_v1": round(f["half_order_ratio"], 4),
                                  "roughness_max": round(float(f["roughness"].max()), 5)},
-            "anomaly": {"score": 0.0, "threshold": PER_LOCATION_THRESHOLD,
-                        "per_location": per_location(f["roughness"], self.thresholds)},
+            "anomaly": {"score": None, "threshold": PER_LOCATION_THRESHOLD,
+                        "per_location": per_location(f["roughness"], self.thresholds, f["rpm_mean"], f["map_kpa"])},
             "models": [],
             "physics_rules": [rule],
             "signature": {"crank_deg": [round(float(c), 1) for c in self._centres],
                           "amplitude": [round(float(v), 3) for v in fp / scale],
                           "baseline_amplitude": [round(float(v), 3) for v in self._baseline / scale]},
         }
-        evidence = Evidence(models=[], physics_rules=[rule], anomaly_score=0.0,
+        evidence = Evidence(models=[], physics_rules=[rule], anomaly_score=None,
                             anomaly_threshold=PER_LOCATION_THRESHOLD, severity=None)
         return Window(round(win.t_end, 3), _RUNNING, evidence, fields)
 
@@ -177,7 +201,7 @@ class SimSource:
 def healthy_fingerprint(params: EngineParams, seed: int):
     """Healthy reference fingerprint for this engine: a separate healthy run, 3 s warm-up + 3 s.
     Cached per (engine, seed), so re-selecting the simulator is quick."""
-    ref = EngineSim(params, seed=seed + 10_000)
+    ref = EngineSim(params, seed=seed + 10_000, purpose="demo")
     w = CycleWindower(4, 0.5)
     fps = []
     for _ in range(12):

@@ -98,6 +98,19 @@ def half_order_ratio(win) -> float:
     return amplitude_at(o, s, 0.5) / max(amplitude_at(o, s, 2.0), 1e-9)
 
 
+def half_order_energy(win) -> float:
+    """Half-order crank-speed amplitude x mean speed / (1000 rpm)^2 (sim v2 misfire feature).
+
+    A missing firing takes energy out once per cycle: J * omega * d_omega is proportional to the lost
+    torque, so A_0.5 * rpm_mean barely depends on rpm for a given torque deficit. Unlike the v1
+    half-order ratio it isn't divided by the 2nd order, which gas and reciprocating-inertia torque
+    can cancel at some speeds (the ratio then explodes on a healthy engine).
+    """
+    ang, rpm = tooth_speed(win)
+    o, s = order_spectrum(rpm, ang, step_deg=1.0, start_deg=win.theta_start, n_periods=win.n_cycles)
+    return amplitude_at(o, s, 0.5) * float(np.mean(rpm)) / 1e6
+
+
 def roughness(win) -> np.ndarray:
     """Per-cylinder crank roughness: the speed drop after each cylinder's TDC. Index i = cylinder i + 1.
 
@@ -134,11 +147,21 @@ def roughness(win) -> np.ndarray:
 
 def fingerprint(win, bin_deg: float = 2.0):
     """720 deg fingerprint: RMS of the mic per crank-angle bin, averaged over the window's cycles.
+    Samples lost to a sensor dropout (NaN) are left out; a bin with no samples reads 0.
 
     Returns (crank_deg_centres, rms_per_bin).
     """
-    centres, energy = tsa_720(win.mic.astype(float) ** 2, win.crank_angle_deg, bin_deg)
+    ok = np.isfinite(win.mic)
+    centres, energy = tsa_720(win.mic[ok].astype(float) ** 2, win.crank_angle_deg[ok], bin_deg)
     return centres, np.sqrt(energy)
+
+
+def crank_valid(win, min_fraction: float = 0.97) -> bool:
+    """True when the window has (nearly) all its teeth: a crank dropout leaves gaps that would
+    otherwise read as huge speed swings."""
+    wheel = win.meta.get("wheel", {"teeth": 60, "missing": 2})
+    expected = win.n_cycles * 2 * (wheel["teeth"] - wheel["missing"])
+    return len(win.tooth_times) >= min_fraction * expected
 
 
 def regime(rpm: float) -> str:
@@ -147,11 +170,14 @@ def regime(rpm: float) -> str:
 
 def window_features(win) -> dict:
     """Everything the rule and the state message need from one window."""
-    rough = roughness(win)
     rpm = float(win.rpm.mean())
+    valid = crank_valid(win)
     return {
-        "half_order_ratio": half_order_ratio(win),
-        "roughness": rough,
+        "half_order_ratio": half_order_ratio(win) if valid else 0.0,     # v1 feature, kept for comparison
+        "half_order_energy": half_order_energy(win) if valid else 0.0,   # v2 rule feature
+        "roughness": roughness(win) if valid else np.zeros(4),
         "rpm_mean": rpm,
+        "map_kpa": float(win.meta["map_pa"]) / 1e3 if "map_pa" in win.meta else None,
         "regime": regime(rpm),
+        "crank_valid": valid,
     }

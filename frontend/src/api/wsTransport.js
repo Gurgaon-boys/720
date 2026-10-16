@@ -8,7 +8,7 @@
 import { decodeFrame, toUiFrame } from './signalFrame.js';
 
 // 1.3 = the agreed contract; 1.4 = 1.3 + state.injection (PROPOSED, docs/DATA_CONTRACT.md)
-const SUPPORTED_VERSIONS = ['1.3', '1.4'];
+const SUPPORTED_VERSIONS = ['1.3', '1.4', '1.5'];
 const CHANNELS = ['state', 'obd', 'signal', 'ack_error', 'status'];
 const BACKOFF_MS = [500, 1000, 2000, 4000];
 

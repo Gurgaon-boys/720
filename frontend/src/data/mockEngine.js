@@ -4,9 +4,9 @@
 
 import { FIRING_ORDER } from '../lib/geometry.js';
 
-// The mock speaks the PROPOSED 1.4 (1.3 + state.injection, docs/DATA_CONTRACT.md), so the
-// injection console can be demonstrated; the dashboard accepts both 1.3 and 1.4.
-export const SCHEMA_VERSION = '1.4';
+// The mock speaks 1.5 (= 1.4, i.e. 1.3 + state.injection, plus a nullable anomaly.score it never uses), so the
+// injection console can be demonstrated; the dashboard accepts 1.3, 1.4 and 1.5.
+export const SCHEMA_VERSION = '1.5';
 
 const UNITS = { t: 's', sent_at: 'unix s', rpm: 'rev/min', load_pct: '%', latency_ms: 'ms', severity: '0-1', crank_deg: 'deg' };
 const FIRE_DEG = [0, 180, 360, 540]; // crank angle where each cylinder in firing order fires
