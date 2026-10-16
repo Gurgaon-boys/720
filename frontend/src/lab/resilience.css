@@ -300,3 +300,8 @@
 .rl-left .lab-sensors li { flex: 1; min-height: 64px; align-content: center; }
 .rl-left .lab-sensor-name { font-size: 18px; }
 .s3-reset { position: absolute; top: 12px; right: 12px; min-height: 32px; padding: 4px 12px; font-size: 12px; background: rgba(10, 14, 21, 0.75); }
+/* Change fault: label and value on one line, the slider full width underneath (the value never overflows) */
+.inject-more label.lab-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 8px; align-items: center; }
+.inject-more label.lab-row input[type="range"] { grid-column: 1 / -1; grid-row: 2; width: 100%; min-width: 0; margin: 0; }
+.inject-more label.lab-row .lab-row-label { min-width: 0; }
+.inject-more .lab-row .lab-seg.small { min-width: 0; }
