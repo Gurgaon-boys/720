@@ -5,6 +5,9 @@ import Dashboard from './dashboard/Dashboard.jsx';
 import PanelBoundary from './dashboard/PanelBoundary.jsx';
 import ViewTabs, { panelId, tabId, useViewTab } from './dashboard/ViewTabs.jsx';
 import { audioContext, createAlarmTone, createEnginePlayer } from './lib/audio.js';
+import { DEMO_SOURCE, isDemoMode } from './lib/demoMode.js';
+
+const DEMO = isDemoMode();
 
 const OPERATOR = 'operator';
 const OBD_KEEP = 60; // samples per channel (~60 s at 1 Hz)
@@ -87,7 +90,16 @@ export default function App() {
     // and retry while state is arriving, i.e. once the backend is reachable (at most every 5 s)
     let listRetryAt = null; // null: loaded or loading
     const loadScenarios = () => transport.listScenarios()
-      .then((list) => { setScenarios(list); setScenarioId(transport.scenarioId); setScenarioError(null); })
+      .then((list) => {
+        setScenarios(list);
+        setScenarioId(transport.scenarioId);
+        setScenarioError(null);
+        // demo mode: start on the live simulator (once; a backend already on it is left alone)
+        if (DEMO && transport.scenarioId !== DEMO_SOURCE && list.some((x) => x.id === DEMO_SOURCE)) {
+          return transport.setScenario(DEMO_SOURCE).then(() => setScenarioId(DEMO_SOURCE));
+        }
+        return undefined;
+      })
       .catch((e) => {
         console.error('[720] scenario list unavailable', e);
         setScenarioError(`Scenario list unavailable: ${e.message}`);
@@ -228,7 +240,7 @@ export default function App() {
             links={links}
             apiUrl={apiUrl}
             ages={ages}
-            scenarios={scenarios}
+            scenarios={DEMO ? [] : scenarios /* demo mode: no fake-scenario row */}
             scenarioId={scenarioId}
             onSelectScenario={selectScenario}
             onAck={sendAck}
