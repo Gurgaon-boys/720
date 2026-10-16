@@ -14,12 +14,17 @@ import OfflineBanner from './OfflineBanner.jsx';
 import PanelBoundary from './PanelBoundary.jsx';
 import InjectionConsole from './InjectionConsole.jsx';
 import EvidencePanel from './EvidencePanel.jsx';
+import SourcePicker from './SourcePicker.jsx';
+import TrimTrend from './TrimTrend.jsx';
 import './dashboard.css';
 
 const STALE_S = 3; // a data stream silent this long gets a panel notice (same limit as the UI watchdog)
 
-export default function Dashboard({ state, obd, signal, error, scenarioError, links, apiUrl, ages, scenarios, scenarioId, onSelectScenario, onAck, onStartInjection, onStopInjection, ackError, offline, lastStateAt, sound, onToggleSound, audioKind, mock }) {
+export default function Dashboard({ state, obd, obdWindows, transport, signal, error, scenarioError, links, apiUrl, ages, scenarios, scenarioId, onSelectScenario, onAck, onStartInjection, onStopInjection, ackError, offline, lastStateAt, sound, onToggleSound, audioKind, mock }) {
   const color = decisionColor(state?.decision);
+  // REAL log replay (contract 1.6): no crank or audio, so the OBD panels lead and the cylinder,
+  // fingerprint and signal panels are hidden
+  const replay = state?.mode === 'replay' && state?.replay != null;
   const run = state?.run_id; // a new run clears any panel error
 
   // Panel data notices: a stream that delivered at least once this run and has now been silent
@@ -51,7 +56,7 @@ export default function Dashboard({ state, obd, signal, error, scenarioError, li
           </div>
           {state && (
             <PanelBoundary name="Source badge" variant="inline" resetKey={run}>
-              <SourceBadge source={state.source} pool={state.audioset_pool} size="large" />
+              <SourceBadge source={state.source} label={state.source_label} pool={state.audioset_pool} size="large" />
             </PanelBoundary>
           )}
           {state && (
@@ -85,6 +90,11 @@ export default function Dashboard({ state, obd, signal, error, scenarioError, li
             })}
           </div>
         )}
+        {transport?.listReplayFiles && (
+          <PanelBoundary name="Source picker" variant="inline">
+            <SourcePicker state={state} transport={transport} onSelectSim={onSelectScenario} />
+          </PanelBoundary>
+        )}
         {scenarioError && <p className="scenario-error" role="alert">{scenarioError}</p>}
       </header>
 
@@ -98,7 +108,35 @@ export default function Dashboard({ state, obd, signal, error, scenarioError, li
       {error && <div className="dash-error" role="alert">{error}</div>}
       {!state && !error && !offline && <div className="dash-loading">Waiting for the first state message…</div>}
 
-      {state && (
+      {state && replay && (
+        <>
+          {state.replay.note && <p className="replay-note mono" role="note">{state.replay.note}</p>}
+          <div className="dash-grid">
+            <PanelBoundary name="OBD" className="obd obd-wide" resetKey={run}>
+              <ObdPanel obd={obd} source={state.source} hasObd={'obd' in sensors} silentFor={obdSilent} windowS={300} />
+            </PanelBoundary>
+          </div>
+          <div className="dash-grid">
+            <PanelBoundary name="Trim trend" className="trend-panel" resetKey={run}>
+              <TrimTrend windows={obdWindows} state={state} />
+            </PanelBoundary>
+            <PanelBoundary name="Decision" className="verdict" resetKey={run}>
+              <Verdict state={state} />
+            </PanelBoundary>
+          </div>
+          <div className="dash-grid">
+            <PanelBoundary name="State" className="state-panel" resetKey={run}>
+              <StatePanel state={state} />
+            </PanelBoundary>
+          </div>
+          <PanelBoundary name="Injection console" className="inject" resetKey={run}>
+            <InjectionConsole key={state.run_id} state={state} offline={offline} mock={mock} onStart={onStartInjection} onStop={onStopInjection} />
+          </PanelBoundary>
+          <p className="panel-note">No crank signal in this data: the cylinder bank, 720° fingerprint and audio panels are hidden.</p>
+        </>
+      )}
+
+      {state && !replay && (
         <>
           <div className="dash-grid">
             <PanelBoundary name="Cylinder bank" className="bank" resetKey={run}>

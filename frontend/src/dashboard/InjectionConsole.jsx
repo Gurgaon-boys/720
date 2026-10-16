@@ -9,6 +9,9 @@ import SourceBadge from './SourceBadge.jsx';
 // For misfire the simulator reads it as the probability that the cylinder misfires on a cycle.
 
 const FAULT_IDS = ['misfire', 'knock', 'injector_clog', 'valve_tick'];
+// REAL carOBD replay (contract 1.6): only a bank-wide fuel-trim ramp can be added to a real log
+const REPLAY_FAULT_IDS = ['lean_drift'];
+const LEAN_DEFAULT = 0.5; // steady added trim s/(4-s) = 14 %, about twice the trim rule's limit
 const CYLINDERS = [1, 2, 3, 4];
 const CONFIRM_MS = 3000; // accepted request but no matching state.injection by then → error
 const DEFAULT_REQUEST = 1.0; // demo default: a misfire on every cycle (lower values stay selectable)
@@ -23,6 +26,7 @@ function unavailableReason(state, offline, mock) {
   if (!mock && !('injection' in state)) {
     return `Backend injection unavailable: this backend sends schema ${state.schema_version} without state.injection. The console needs the proposed 1.4 field so it can confirm what the simulator is injecting.`;
   }
+  if (state.mode === 'replay' && state.replay) return null; // lean drift onto the REAL replay
   if (state.mode !== 'live' || state.source !== 'simulated') {
     return `Injection runs only on the live simulator. This stream is ${state.source.toUpperCase()} · ${state.mode}.`;
   }
@@ -30,9 +34,11 @@ function unavailableReason(state, offline, mock) {
 }
 
 export default function InjectionConsole({ state, offline, mock, onStart, onStop }) {
-  const [fault, setFault] = useState('misfire');
-  const [cyl, setCyl] = useState(1);
-  const [severity, setSeverity] = useState(DEFAULT_REQUEST);
+  const onReplay = state.mode === 'replay' && state.replay != null;
+  const faultIds = onReplay ? REPLAY_FAULT_IDS : FAULT_IDS;
+  const [fault, setFault] = useState(onReplay ? 'lean_drift' : 'misfire');
+  const [cyl, setCyl] = useState(onReplay ? null : 1);
+  const [severity, setSeverity] = useState(onReplay ? LEAN_DEFAULT : DEFAULT_REQUEST);
   // pending: { kind: 'start' | 'stop', fault?, cylinder?, acceptedAt? } until the state confirms
   const [pending, setPending] = useState(null);
   const [error, setError] = useState(null);
@@ -87,9 +93,11 @@ export default function InjectionConsole({ state, offline, mock, onStart, onStop
       <div className="inject-head">
         <div className="panel-title">
           <h2 className="panel-label">INJECTION CONSOLE</h2>
-          <SourceBadge source="simulated" />
+          {onReplay ? <SourceBadge source="injected" label="real_replay_injected" /> : <SourceBadge source="simulated" />}
         </div>
-        <span className="mono inject-sub">Asks the simulator to add a fault; the rule layer decides what it is</span>
+        <span className="mono inject-sub">
+          {onReplay ? 'Adds a fuel-trim ramp to the real log; the rule layer decides what it is' : 'Asks the simulator to add a fault; the rule layer decides what it is'}
+        </span>
       </div>
 
       {reason && <p className="panel-note inject-reason">{reason}</p>}
@@ -97,20 +105,20 @@ export default function InjectionConsole({ state, offline, mock, onStart, onStop
       <div className={`inject-form${reason ? ' disabled' : ''}`}>
         <fieldset className="inject-group" disabled={locked}>
           <legend className="eyebrow">Fault</legend>
-          {FAULT_IDS.map((f) => (
+          {faultIds.map((f) => (
             <button key={f} type="button" className={`run-pill${fault === f ? ' on' : ''}`} aria-pressed={fault === f} onClick={() => setFault(f)}>
               {FAULTS[f].name}
             </button>
           ))}
         </fieldset>
-        <fieldset className="inject-group" disabled={locked}>
+        {!onReplay && <fieldset className="inject-group" disabled={locked}>
           <legend className="eyebrow">Cylinder</legend>
           {CYLINDERS.map((c) => (
             <button key={c} type="button" className={`run-pill${cyl === c ? ' on' : ''}`} aria-pressed={cyl === c} onClick={() => setCyl(c)}>
               {c}
             </button>
           ))}
-        </fieldset>
+        </fieldset>}
         <fieldset className="inject-group" disabled={locked}>
           <legend className="eyebrow">{requestLabel(fault)}</legend>
           <input
@@ -134,7 +142,14 @@ export default function InjectionConsole({ state, offline, mock, onStart, onStop
         </div>
       </div>
 
-      {!inj && (
+      {!inj && onReplay && (
+        <p className="panel-note">
+          Bank-wide, no cylinder. The added total trim ramps over 60 s of log time to s/(4−s) (the simulator&apos;s
+          injector-clog relation, {Math.round(1000 * severity / (4 - severity)) / 10} % here); the ECU&apos;s STFT carries it first and LTFT learns it.
+          The stream is labelled REAL + INJECTED while it runs.
+        </p>
+      )}
+      {!inj && !onReplay && (
         <p className="panel-note">
           {fault === 'misfire'
             ? 'The value is what we ask the simulator for: the chance that the cylinder misfires on each cycle. It is not a measured fault severity or a confidence; the rule layer decides what it sees.'
@@ -147,7 +162,7 @@ export default function InjectionConsole({ state, offline, mock, onStart, onStop
 
       {inj && (
         <p className="inject-status mono" role="status">
-          <strong>INJECTING</strong> {FAULTS[inj.fault]?.name ?? inj.fault} · cyl {inj.cylinder} · {requestLabel(inj.fault).toLowerCase()} {requestValue(inj.fault, inj.severity)} · for {runningFor.toFixed(0)} s
+          <strong>INJECTING</strong> {FAULTS[inj.fault]?.name ?? inj.fault}{inj.cylinder != null ? ` · cyl ${inj.cylinder}` : ' · bank-wide'} · {requestLabel(inj.fault).toLowerCase()} {requestValue(inj.fault, inj.severity)} · for {runningFor.toFixed(0)} s
         </p>
       )}
       {error && <p className="inject-error" role="alert">{error}</p>}

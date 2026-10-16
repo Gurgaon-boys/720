@@ -101,7 +101,8 @@ class Runtime:
         """Inject into the simulator source and record the accepted request for state.injection (1.4).
         The source's own errors (NotImplementedError, ValueError) pass through unrecorded."""
         self.scenario.inject(fault, cylinder, severity)
-        self.injection = {"active": True, "fault": fault, "cylinder": int(cylinder), "severity": float(severity),
+        self.injection = {"active": True, "fault": fault, "cylinder": None if cylinder is None else int(cylinder),
+                          "severity": float(severity),
                           "started_at": self.clock()}
         return self.injection
 
@@ -166,7 +167,8 @@ class Runtime:
         w = self.last_window
         now = self.clock()
         health = {"asset_ne107": asset_ne107(decision, self.maintenance_mode), "sensors": self.watchdog.status(now)}
-        decision = {**decision, "guidance": guidance(decision, health)}
+        cap = getattr(self.scenario, "guidance_capability", None)   # e.g. single-witness REAL replay (D135)
+        decision = {**decision, "guidance": guidance(decision, health, cap)}
         latency = round((time.perf_counter() - start) * 1000, 2)
         msg = messages.state_message(sent_at=now, decision=decision, health=health, latency_ms=latency,
                                      injection=self.injection, **w.fields)
@@ -178,12 +180,21 @@ class Runtime:
         if self._offline(t) or "obd" not in self.scenario.live_sensors(t):
             return
         now = self.clock()
+        label = getattr(self.scenario, "source_label", None)
+        if hasattr(self.scenario, "obd_channels"):      # REAL replay: values at their own file times
+            channels = self.scenario.obd_channels(i)
+            if channels is None:                        # nothing logged in this span (logger gap)
+                return
+            self.watchdog.feed("obd", now)
+            if channels:
+                self._send(self.obd_hub, "obd", messages.obd_message(sent_at=now, channels=channels, source_label=label))
+            return
         self.watchdog.feed("obd", now)
         cal = getattr(self.scenario, "channel_calibration", {})
         channels = {name: {"t": [t], "v": [v], "unit": unit, "source": "simulator",
                            **({"calibration": cal[name]} if name in cal else {})}
                     for name, (v, unit) in self.scenario.obd_sample(i).items()}
-        self._send(self.obd_hub, "obd", messages.obd_message(sent_at=now, channels=channels))
+        self._send(self.obd_hub, "obd", messages.obd_message(sent_at=now, channels=channels, source_label=label))
 
     def _tick_signal(self, j: int) -> None:
         t0 = j * SIGNAL_S
@@ -200,7 +211,7 @@ class Runtime:
 
     def _send(self, hub: Hub, schema: str, msg: dict) -> None:
         if self.validate and (errs := messages.errors(schema, msg)):
-            log.error("%s message violates contract 1.3: %s", schema, errs)
+            log.error("%s message violates contract %s: %s", schema, messages.SCHEMA_VERSION, errs)
         hub.publish(json.dumps(msg, separators=(",", ":")))
         for fn in self._listeners:
             try:

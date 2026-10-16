@@ -3,7 +3,7 @@
 // decodeFrame reads one; toUiFrame turns it into the plain objects SignalStrip already draws
 // (the same shapes the mock transport emits), so the panels don't care where frames come from.
 
-const SUPPORTED_VERSIONS = ['1.3', '1.4', '1.5']; // same as wsTransport.js; frames didn't change in 1.4
+const SUPPORTED_VERSIONS = ['1.3', '1.4', '1.5', '1.6']; // same as wsTransport.js; frames didn't change in 1.4
 const decoder = new TextDecoder();
 
 export function decodeFrame(buf) {

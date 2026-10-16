@@ -58,7 +58,7 @@ def test_injection_echo_on_the_simulator(server):
     host = server("sim")
     with connect(f"ws://{host}/ws/state") as ws:
         m = next_state(ws, lambda m: True)
-        assert m["schema_version"] == "1.5" and m["injection"] is None
+        assert m["schema_version"] == "1.6" and m["injection"] is None
 
         before = time.time()
         r = httpx.post(f"http://{host}/inject", json={"fault": "misfire", "cylinder": 3, "severity": 1.0})
@@ -88,4 +88,4 @@ def test_inject_refused_without_a_simulator(server):
         r = httpx.post(f"http://{host}/inject", json={"fault": "misfire", "cylinder": 3, "severity": 1.0})
         assert r.status_code == 409
         m = next_state(ws, lambda m: True)
-        assert m["schema_version"] == "1.5" and m["injection"] is None
+        assert m["schema_version"] == "1.6" and m["injection"] is None

@@ -8,7 +8,7 @@
 import { decodeFrame, toUiFrame } from './signalFrame.js';
 
 // 1.3 = the agreed contract; 1.4 = 1.3 + state.injection (PROPOSED, docs/DATA_CONTRACT.md)
-const SUPPORTED_VERSIONS = ['1.3', '1.4', '1.5'];
+const SUPPORTED_VERSIONS = ['1.3', '1.4', '1.5', '1.6'];
 const CHANNELS = ['state', 'obd', 'signal', 'ack_error', 'status'];
 const BACKOFF_MS = [500, 1000, 2000, 4000];
 
@@ -41,12 +41,13 @@ export function createWsTransport(apiUrl) {
     return false;
   };
 
-  // POST helper for the HTTP routes; a refusal becomes an Error with the backend's `detail`
-  async function post(path, body) {
+  // POST helper for the HTTP routes; a refusal becomes an Error with the backend's `detail`.
+  // Resolves with the JSON reply (or null). `raw` sends a File/Blob as the body instead of JSON.
+  async function post(path, body, raw) {
     const res = await fetch(`${http}${path}`, {
       method: 'POST',
-      headers: body ? { 'Content-Type': 'application/json' } : undefined,
-      body: body ? JSON.stringify(body) : undefined,
+      headers: raw ? { 'Content-Type': 'text/csv' } : body ? { 'Content-Type': 'application/json' } : undefined,
+      body: raw ?? (body ? JSON.stringify(body) : undefined),
     });
     if (!res.ok) {
       let detail = res.statusText;
@@ -56,7 +57,12 @@ export function createWsTransport(apiUrl) {
       } catch {
         // body wasn't JSON; keep the status text
       }
-      throw new Error(`POST ${path}: ${res.status} ${detail}`);
+      throw new Error(`POST ${path.split('?')[0]}: ${res.status} ${detail}`);
+    }
+    try {
+      return await res.json();
+    } catch {
+      return null;
     }
   }
 
@@ -154,6 +160,24 @@ export function createWsTransport(apiUrl) {
     },
     stopInjection() {
       return post('/clear_faults');
+    },
+
+    // REAL carOBD replay (contract 1.6): held-out files by type + uploads; file + speed; upload a log
+    async listReplayFiles() {
+      const res = await fetch(`${http}/replay/files`);
+      if (!res.ok) throw new Error(`GET /replay/files: ${res.status}`);
+      return res.json();
+    },
+    async startReplay(file, speed) {
+      const r = await post('/replay', { file, speed });
+      scenarioId = 'carobd_replay';
+      return r;
+    },
+    setReplaySpeed(speed) {
+      return post('/replay/speed', { speed });
+    },
+    uploadObd(file) {
+      return post(`/upload_obd?filename=${encodeURIComponent(file.name)}`, null, file);
     },
 
     get scenarioId() {
