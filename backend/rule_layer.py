@@ -22,6 +22,20 @@ corroborates it; the classifier still hasn't named it, so it is one witness, not
 needs a hold with no named fault. The valve-tick rule is not a named fault here (valve tick is never
 trained), so it stays a hint on UNCLASSIFIED. Applies to every source.
 
+Post-misfire recovery (docs/decisions_pending/post_misfire_recovery.md): a misfire makes the O2 sensor read
+lean, so the ECU trims rich; after the misfire stops, the trims take tens of seconds to re-adapt and the trim-drift
+rule's 30 s window still holds the misfire period, which looks like an injector clog. Like OBD-II, which suspends
+fuel-trim monitoring around a misfire, a confirmed misfire (a two-witness `match`) arms a recovery window that lasts
+until the trims have settled (Evidence.trims, dsp.rules.trim_recovery; not before RECOVERY_MIN_S, while the 30 s OBD
+window still holds the misfire) or RECOVERY_MAX_S after the last misfire match. In it the injector_clog rule is ignored for the first RECOVERY_BLIND_S, then while the ECU is removing fuel
+(STFT <= 0: re-adapting back; a clog makes it add fuel), and an anomaly, a lone clog witness or nothing at all shows as a recovery ADVISORY (fault null,
+no witness), never UNCLASSIFIED. Other faults (knock, a new misfire) go through as usual. The window is armed only
+by a confirmed misfire, not by the misfire rule alone: in the simulator a clog starves its cylinder and fires the
+misfire rule in ~95 % of windows, so gating on the rule alone would switch clog detection off.
+
+Bank-wide faults: when the physics rule names no cylinder (trims are bank-wide) and the classifier names different
+cylinders in the windows of the streak, the ALARM's location is null ("bank"), not whichever cylinder came last.
+
 Latch (decided by Nishant, 2026-10-16):
   - ALARM after 2 consecutive `match` windows for the same fault. The first one is ADVISORY.
   - The alarm stays latched until it is acknowledged and its own fault has stopped matching,
@@ -45,6 +59,11 @@ RAISE_WINDOWS = 2  # consecutive two-witness windows before ALARM
 CLEAR_WINDOWS = 2  # consecutive windows without a match for the alarm's own fault (after ACK) before reset
 UNCLASSIFIED_WINDOWS = 2  # consecutive anomalous, unnamed windows before UNCLASSIFIED
 CORROBORATE_WINDOWS = 3   # a trained-fault physics rule in this many recent windows turns an anomaly into its ADVISORY
+RECOVERY_MAX_S = 90.0     # longest post-misfire recovery window after the last confirmed misfire window
+RECOVERY_MIN_S = 30.0     # "settled" counts only once the 30 s OBD window (dsp.obd_window.WINDOW_S) no longer holds
+                          # the last confirmed misfire window: the classifier and healthy model read 30 s OBD features
+RECOVERY_BLIND_S = 10.0   # trim rule off regardless for this long after the last confirmed misfire window: the 5 s
+                          # STFT mean (dsp.obd_window.RECENT_S) still holds misfire-time samples plus O2 transport lag
 P_MIN = 0.6  # mean probability the classifier majority needs to count as a witness
 
 # NE 107 asset health for a latched alarm, by fault (DECISIONS.md D14)
@@ -61,6 +80,8 @@ class Evidence:
     anomaly_threshold: float
     severity: float | None = None
     classifier_location: int | None = None  # the classifier's cylinder (not in the contract's models[] entry)
+    t: float | None = None                  # window end, s (stream time); needed for the recovery window's time cap
+    trims: dict | None = None               # dsp.rules.trim_recovery: {"removing_fuel", "settled"}, None = unknown
 
 
 @dataclass
@@ -69,6 +90,7 @@ class Assessment:
     fault: str | None = None
     location: int | None = None
     witnesses: list[str] = field(default_factory=list)
+    bank: bool = False  # match on a physics rule that names no cylinder (bank-wide, e.g. the trim rule)
 
 
 @dataclass
@@ -114,8 +136,9 @@ def assess(ev: Evidence) -> Assessment:
         cl = ev.classifier_location
         same = [r for r in fired if r["rule"] == cls and (cl is None or r["location"] is None or r["location"] == cl)]
         if same:
-            loc = same[0]["location"] if same[0]["location"] is not None else cl
-            return Assessment("match", cls, loc, ["physics", "classifier"])
+            bank = same[0]["location"] is None
+            loc = cl if bank else same[0]["location"]
+            return Assessment("match", cls, loc, ["physics", "classifier"], bank=bank)
         if fired:
             return Assessment("conflict", None, None, ["physics", "classifier"])
     if anomaly_high and not cls_fault:
@@ -135,9 +158,10 @@ def assess(ev: Evidence) -> Assessment:
 
 class RuleLayer:
     def __init__(self, first_alarm_id: int = 1, unclassified_windows: int = UNCLASSIFIED_WINDOWS,
-                 corroborate_windows: int = CORROBORATE_WINDOWS) -> None:
+                 corroborate_windows: int = CORROBORATE_WINDOWS, recovery: bool = True) -> None:
         self.unclassified_windows = unclassified_windows
         self.corroborate_windows = corroborate_windows    # 0 = no corroboration (the behaviour before D134)
+        self.recovery = recovery                          # False = no post-misfire recovery gate (behaviour before it)
         self._named: list[dict | None] = []                # newest last: a fired trained-fault physics rule per window
         self.alarm: ActiveAlarm | None = None
         self._streak_fault: str | None = None
@@ -148,9 +172,32 @@ class RuleLayer:
         self._last = Assessment("healthy")
         self._last_severity: float | None = None
         self._unclassified_n = 0
+        self._misfire_t: float | None = None   # stream time of the last confirmed misfire window (arms recovery)
+        self.recovering = False                # this window is in the post-misfire recovery window
+        self._streak_cyls: list = []           # classifier cylinders of the current match streak (bank-wide check)
+
+    def _recovery(self, ev: Evidence) -> Evidence:
+        """Post-misfire recovery window: decide whether this window is in it and, if the ECU is removing fuel,
+        take the injector_clog rule out of the evidence (OBD-II style enable condition)."""
+        if self._misfire_t is None:
+            self.recovering = False
+            return ev
+        expired = ev.t is not None and ev.t - self._misfire_t > RECOVERY_MAX_S
+        settled = (ev.trims is not None and ev.trims["settled"]
+                   and (ev.t is None or ev.t - self._misfire_t >= RECOVERY_MIN_S))
+        if expired or settled:
+            self._misfire_t, self.recovering = None, False
+            return ev
+        self.recovering = True
+        blind = ev.t is not None and ev.t - self._misfire_t <= RECOVERY_BLIND_S
+        if blind or (ev.trims is not None and ev.trims["removing_fuel"]):
+            rules = [{**r, "fired": False} if r["rule"] == "injector_clog" else r for r in ev.physics_rules]
+            ev = replace(ev, physics_rules=rules)
+        return ev
 
     def step(self, ev: Evidence) -> dict:
         """Evaluate one window and return the contract's `decision` object."""
+        ev = self._recovery(ev)
         raw = a = assess(ev)
         self._unclassified_n = self._unclassified_n + 1 if raw.kind == "unclassified" else 0
         if raw.kind == "unclassified" and self._unclassified_n < self.unclassified_windows:
@@ -161,13 +208,22 @@ class RuleLayer:
             named = next((r for r in reversed(self._named) if r is not None), None)
             if raw.kind == "unclassified" and named is not None:   # the anomaly corroborates the named fault
                 a = Assessment("advisory", named["rule"], named["location"], ["physics"])
-        self._last, self._last_severity = a, ev.severity
+        if a.kind == "match" and a.fault == "misfire" and ev.t is not None and self.recovery:
+            self._misfire_t, self.recovering = ev.t, False        # a confirmed misfire (re)arms the recovery window
+        elif self.recovering and (a.kind in ("unclassified", "healthy", "conflict")
+                                  or (a.kind == "advisory" and a.fault == "injector_clog")):
+            a = Assessment("advisory")                             # recovery ADVISORY: fault null, no witness
 
         if a.kind == "match":
-            self._streak_n = self._streak_n + 1 if a.fault == self._streak_fault else 1
+            same = a.fault == self._streak_fault
+            self._streak_n = self._streak_n + 1 if same else 1
+            self._streak_cyls = (self._streak_cyls if same else []) + [a.location]
             self._streak_fault = a.fault
+            if a.bank and len(set(self._streak_cyls[-RAISE_WINDOWS:])) > 1:
+                a = replace(a, location=None)                      # bank-wide rule, classifier cylinder hopping
         else:
-            self._streak_fault, self._streak_n = None, 0
+            self._streak_fault, self._streak_n, self._streak_cyls = None, 0, []
+        self._last, self._last_severity = a, ev.severity
         own = self.alarm is not None and a.kind == "match" and a.fault == self.alarm.fault
         self._quiet_n = 0 if own else self._quiet_n + 1
 
@@ -176,7 +232,9 @@ class RuleLayer:
             self._next_id += 1
             self._quiet_n = 0
         elif self.alarm is not None and a.kind == "match" and a.fault == self.alarm.fault:
-            self.alarm.location, self.alarm.severity = a.location, ev.severity
+            # a bank-wide alarm becomes (and stays) "bank" once its classifier cylinder hops
+            loc = a.location if not a.bank or a.location == self.alarm.location else None
+            self.alarm.location, self.alarm.severity = loc, ev.severity
 
         if self.alarm is not None and self.alarm.acked and self._quiet_n >= CLEAR_WINDOWS:
             self._cleared_ids.add(self.alarm.alarm_id)

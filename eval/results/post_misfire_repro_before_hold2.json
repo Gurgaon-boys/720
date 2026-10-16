@@ -1,0 +1,318 @@
+{
+ "label": "SIM 2.1 (live demo backend)",
+ "misfire_alarm_s": 0.76,
+ "first_alarm_id": "a_0001",
+ "new_alarms_after_clear": [],
+ "first_normal_after_clear_s": 3.94,
+ "state_messages_after_clear": {
+  "ALARM": 12,
+  "ADVISORY": 225,
+  "UNCLASSIFIED": 36,
+  "NORMAL": 929
+ },
+ "classifier_cylinder_sequence": [
+  3,
+  1,
+  4,
+  3,
+  4,
+  2,
+  4,
+  3,
+  2,
+  4,
+  2,
+  3,
+  1,
+  4,
+  2,
+  4,
+  2,
+  4,
+  2,
+  4
+ ],
+ "changes": [
+  {
+   "t_after_clear_s": 0.05,
+   "state": "ALARM",
+   "fault": "misfire",
+   "location": 3,
+   "alarm_id": "a_0001",
+   "guidance": "Reduce load; inspect coil and plug on cyl 3"
+  },
+  {
+   "t_after_clear_s": 1.24,
+   "state": "ADVISORY",
+   "fault": "misfire",
+   "location": 3,
+   "alarm_id": null,
+   "guidance": "One witness only (misfire): keep running, watch for ALARM"
+  },
+  {
+   "t_after_clear_s": 1.45,
+   "state": "UNCLASSIFIED",
+   "fault": null,
+   "location": null,
+   "alarm_id": null,
+   "guidance": "Unknown pattern: inspect, do not clear"
+  },
+  {
+   "t_after_clear_s": 2.05,
+   "state": "ADVISORY",
+   "fault": "injector_clog",
+   "location": null,
+   "alarm_id": null,
+   "guidance": "One witness only (injector_clog): keep running, watch for ALARM"
+  },
+  {
+   "t_after_clear_s": 3.94,
+   "state": "NORMAL",
+   "fault": null,
+   "location": null,
+   "alarm_id": null,
+   "guidance": null
+  },
+  {
+   "t_after_clear_s": 4.24,
+   "state": "ADVISORY",
+   "fault": "injector_clog",
+   "location": null,
+   "alarm_id": null,
+   "guidance": "One witness only (injector_clog): keep running, watch for ALARM"
+  },
+  {
+   "t_after_clear_s": 9.63,
+   "state": "NORMAL",
+   "fault": null,
+   "location": null,
+   "alarm_id": null,
+   "guidance": null
+  },
+  {
+   "t_after_clear_s": 9.93,
+   "state": "ADVISORY",
+   "fault": "injector_clog",
+   "location": null,
+   "alarm_id": null,
+   "guidance": "One witness only (injector_clog): keep running, watch for ALARM"
+  },
+  {
+   "t_after_clear_s": 11.05,
+   "state": "NORMAL",
+   "fault": null,
+   "location": null,
+   "alarm_id": null,
+   "guidance": null
+  },
+  {
+   "t_after_clear_s": 11.43,
+   "state": "ADVISORY",
+   "fault": "injector_clog",
+   "location": null,
+   "alarm_id": null,
+   "guidance": "One witness only (injector_clog): keep running, watch for ALARM"
+  },
+  {
+   "t_after_clear_s": 12.24,
+   "state": "NORMAL",
+   "fault": null,
+   "location": null,
+   "alarm_id": null,
+   "guidance": null
+  },
+  {
+   "t_after_clear_s": 12.64,
+   "state": "ADVISORY",
+   "fault": "injector_clog",
+   "location": null,
+   "alarm_id": null,
+   "guidance": "One witness only (injector_clog): keep running, watch for ALARM"
+  },
+  {
+   "t_after_clear_s": 14.64,
+   "state": "NORMAL",
+   "fault": null,
+   "location": null,
+   "alarm_id": null,
+   "guidance": null
+  },
+  {
+   "t_after_clear_s": 14.95,
+   "state": "UNCLASSIFIED",
+   "fault": null,
+   "location": null,
+   "alarm_id": null,
+   "guidance": "Unknown pattern: inspect, do not clear"
+  },
+  {
+   "t_after_clear_s": 15.34,
+   "state": "ADVISORY",
+   "fault": "injector_clog",
+   "location": null,
+   "alarm_id": null,
+   "guidance": "One witness only (injector_clog): keep running, watch for ALARM"
+  },
+  {
+   "t_after_clear_s": 15.64,
+   "state": "NORMAL",
+   "fault": null,
+   "location": null,
+   "alarm_id": null,
+   "guidance": null
+  },
+  {
+   "t_after_clear_s": 15.94,
+   "state": "UNCLASSIFIED",
+   "fault": null,
+   "location": null,
+   "alarm_id": null,
+   "guidance": "Unknown pattern: inspect, do not clear"
+  },
+  {
+   "t_after_clear_s": 16.24,
+   "state": "ADVISORY",
+   "fault": "injector_clog",
+   "location": null,
+   "alarm_id": null,
+   "guidance": "One witness only (injector_clog): keep running, watch for ALARM"
+  },
+  {
+   "t_after_clear_s": 17.44,
+   "state": "NORMAL",
+   "fault": null,
+   "location": null,
+   "alarm_id": null,
+   "guidance": null
+  },
+  {
+   "t_after_clear_s": 17.65,
+   "state": "ADVISORY",
+   "fault": "injector_clog",
+   "location": null,
+   "alarm_id": null,
+   "guidance": "One witness only (injector_clog): keep running, watch for ALARM"
+  },
+  {
+   "t_after_clear_s": 20.14,
+   "state": "NORMAL",
+   "fault": null,
+   "location": null,
+   "alarm_id": null,
+   "guidance": null
+  },
+  {
+   "t_after_clear_s": 20.43,
+   "state": "UNCLASSIFIED",
+   "fault": null,
+   "location": null,
+   "alarm_id": null,
+   "guidance": "Unknown pattern: inspect, do not clear"
+  },
+  {
+   "t_after_clear_s": 20.73,
+   "state": "ADVISORY",
+   "fault": "injector_clog",
+   "location": null,
+   "alarm_id": null,
+   "guidance": "One witness only (injector_clog): keep running, watch for ALARM"
+  },
+  {
+   "t_after_clear_s": 21.05,
+   "state": "NORMAL",
+   "fault": null,
+   "location": null,
+   "alarm_id": null,
+   "guidance": null
+  },
+  {
+   "t_after_clear_s": 21.25,
+   "state": "ADVISORY",
+   "fault": "injector_clog",
+   "location": null,
+   "alarm_id": null,
+   "guidance": "One witness only (injector_clog): keep running, watch for ALARM"
+  },
+  {
+   "t_after_clear_s": 24.34,
+   "state": "NORMAL",
+   "fault": null,
+   "location": null,
+   "alarm_id": null,
+   "guidance": null
+  },
+  {
+   "t_after_clear_s": 24.54,
+   "state": "ADVISORY",
+   "fault": "injector_clog",
+   "location": null,
+   "alarm_id": null,
+   "guidance": "One witness only (injector_clog): keep running, watch for ALARM"
+  },
+  {
+   "t_after_clear_s": 26.44,
+   "state": "NORMAL",
+   "fault": null,
+   "location": null,
+   "alarm_id": null,
+   "guidance": null
+  },
+  {
+   "t_after_clear_s": 26.74,
+   "state": "UNCLASSIFIED",
+   "fault": null,
+   "location": null,
+   "alarm_id": null,
+   "guidance": "Unknown pattern: inspect, do not clear"
+  },
+  {
+   "t_after_clear_s": 27.04,
+   "state": "ADVISORY",
+   "fault": "injector_clog",
+   "location": null,
+   "alarm_id": null,
+   "guidance": "One witness only (injector_clog): keep running, watch for ALARM"
+  },
+  {
+   "t_after_clear_s": 27.94,
+   "state": "NORMAL",
+   "fault": null,
+   "location": null,
+   "alarm_id": null,
+   "guidance": null
+  },
+  {
+   "t_after_clear_s": 28.24,
+   "state": "ADVISORY",
+   "fault": "injector_clog",
+   "location": null,
+   "alarm_id": null,
+   "guidance": "One witness only (injector_clog): keep running, watch for ALARM"
+  },
+  {
+   "t_after_clear_s": 29.14,
+   "state": "NORMAL",
+   "fault": null,
+   "location": null,
+   "alarm_id": null,
+   "guidance": null
+  },
+  {
+   "t_after_clear_s": 29.43,
+   "state": "UNCLASSIFIED",
+   "fault": null,
+   "location": null,
+   "alarm_id": null,
+   "guidance": "Unknown pattern: inspect, do not clear"
+  },
+  {
+   "t_after_clear_s": 31.15,
+   "state": "NORMAL",
+   "fault": null,
+   "location": null,
+   "alarm_id": null,
+   "guidance": null
+  }
+ ],
+ "hold_s": 2.0
+}
