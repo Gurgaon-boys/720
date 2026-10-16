@@ -195,10 +195,9 @@ def save_upload(name: str, data: bytes, now: float) -> dict:
 # ---------------------------------------------------------------- witness 2 (Diljit's OBD classifier)
 
 def load_obd_classifier():
-    """Witness 2 for the OBD branch, if Diljit's classifier is present.
-
-    Interface (provisional, to be confirmed with Diljit): a package `models.obd_classifier` exposing
-    `load_witness()` that returns a callable, or None when its checkpoint is missing. The callable takes one
+    """Witness 2 for the OBD branch: Diljit's OBD classifier, DISABLED by default (D133: it failed
+    sim-to-real, D126). `models.obd_classifier.load_witness()` returns a callable only with
+    S720_OBD_CLASSIFIER=1 and a checkpoint, else None. The callable takes one
     OBD branch v1 window (the dict from models.obd.features.window_features, with map_resid_* and regime)
     and returns models.witness.WitnessOut: `models` = contract models[] entries with trained labels,
     `location` None (OBD is bank-wide)."""

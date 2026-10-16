@@ -178,8 +178,17 @@ def test_with_an_obd_classifier_alarm_follows_the_two_witness_rule():
     assert s.replay_info()["max_decision"] == "ALARM" and s.guidance_capability is None
 
 
-def test_classifier_is_absent_unless_models_obd_classifier_exists():
-    assert cr.load_obd_classifier() is None          # nothing on main yet: single witness, said in state
+def test_obd_classifier_is_disabled_by_default(monkeypatch, tmp_path):
+    """D133: the plug-in point exists, but Diljit's classifier failed sim-to-real (D126) and is not deployed."""
+    from models import obd_classifier as oc
+
+    monkeypatch.delenv(oc.ENV, raising=False)
+    assert cr.load_obd_classifier() is None
+    s = cr.CarObdReplay(FILE, 10)                     # classifier="auto": the default path
+    assert s.classifier is None and s.replay_info()["max_decision"] == "ADVISORY"
+    # enabled but without a checkpoint: still single-witness, never a crash
+    monkeypatch.setenv(oc.ENV, "1")
+    assert oc.load_witness(tmp_path / "missing.pkl") is None
 
 
 # ---------------------------------------------------------------- files, upload, path safety
