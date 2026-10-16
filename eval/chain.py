@@ -28,7 +28,7 @@ from pathlib import Path
 import numpy as np
 
 from backend.rule_layer import Evidence, RuleLayer, assess, classifier_label
-from dsp.rules import PER_LOCATION_THRESHOLD, all_rules, load_all
+from dsp.rules import PER_LOCATION_THRESHOLD, all_rules, load_all, trim_recovery
 from eval.common import eval_engine
 from models.classifier import BANDS, band_of
 from models.make_dataset import CLASSES
@@ -39,6 +39,7 @@ from sim.params import Regimes
 
 ROOT = Path(__file__).resolve().parents[1]
 CACHE = ROOT / "data" / "generated" / "chain"
+TRIM_TH = load_all()["injector_clog"]
 RULES = ("misfire", "knock", "injector_clog")
 BASIS = {"misfire": "crank_angle", "knock": "crank_angle", "injector_clog": "obd"}
 LEVELS = ("anomaly_flags", "classifier_false_faults", "physics_windows", "advisory", "unclassified", "alarm",
@@ -75,7 +76,7 @@ def record(rng_name: str, i: int, *, fault: str | None = None, severity: float =
     sim.set_operating_point(rpm_target=rpm, load_nm=load)
     sf, th, wit = StreamFeatures(), load_all(), ClassifierWitness(thresholds=None)
     cols = {k: [] for k in ("t_start", "t_end", "rpm", "valid", "d", "thr_ckpt", "label", "p", "loc", "rf", "rl",
-                            "obd_n", "truth")}
+                            "obd_n", "truth", "stft_r", "ltft_r", "trim30")}
     injected = fault is None
     for n in range(int(round((warmup_s + run_s) / 0.5))):
         if not injected and n * 0.5 >= warmup_s:
@@ -98,6 +99,9 @@ def record(rng_name: str, i: int, *, fault: str | None = None, severity: float =
             cols["rf"].append([r["fired"] for r in rules])
             cols["rl"].append([r["location"] or 0 for r in rules])
             cols["obd_n"].append(w.obd["n"])
+            cols["stft_r"].append(w.obd["stft_recent_pct"])      # for the post-misfire recovery gate (replay)
+            cols["ltft_r"].append(w.obd["ltft_recent_pct"])
+            cols["trim30"].append(w.obd["trim_mean_pct"])
             cols["truth"].append(_truth(w.win, fault) if w.win.t_start >= warmup_s else False)
     path.parent.mkdir(parents=True, exist_ok=True)
     meta = {"range": rng_name, "i": i, "seed": seed, "rpm": round(rpm, 1), "load_nm": round(load, 2),
@@ -122,12 +126,13 @@ def scores(rec: dict, thresholds: dict | None) -> np.ndarray:
 
 
 def replay(rec: dict, thresholds: dict | None = None, unclassified_windows: int = 2,
-           corroborate_windows: int | None = None) -> dict:
+           corroborate_windows: int | None = None, recovery: bool = True) -> dict:
     """Step the real rule layer over a recording. thresholds: {band: distance threshold}; None = the
     checkpoint's pooled-window thresholds (the configuration before L3)."""
     sc = scores(rec, thresholds)
-    layer = (RuleLayer(unclassified_windows=unclassified_windows) if corroborate_windows is None else
-             RuleLayer(unclassified_windows=unclassified_windows, corroborate_windows=corroborate_windows))
+    layer = (RuleLayer(unclassified_windows=unclassified_windows, recovery=recovery) if corroborate_windows is None else
+             RuleLayer(unclassified_windows=unclassified_windows, corroborate_windows=corroborate_windows,
+                       recovery=recovery))
     n = len(sc)
     out = {k: np.zeros(n, dtype=bool) for k in ("counted", "anomaly_flags", "classifier_false_faults", "physics_windows",
                                                  "advisory", "unclassified", "alarm", "alarm_raised", "advisory_persist2",
@@ -141,7 +146,13 @@ def replay(rec: dict, thresholds: dict | None = None, unclassified_windows: int 
         rules = [{"rule": r, "fired": bool(rec["rf"][k][j]), "location": int(rec["rl"][k][j]) or None,
                   "rule_basis": BASIS[r]} for j, r in enumerate(RULES)]
         s = None if np.isnan(sc[k]) else round(float(sc[k]), 4)
-        ev = Evidence(models, rules, s, PER_LOCATION_THRESHOLD, classifier_location=int(rec["loc"][k]) or None)
+        trims = None
+        if "stft_r" in rec:                    # recordings made after the post-misfire recovery gate carry the trims
+            trims = trim_recovery({"n": int(rec["obd_n"][k]), "stft_recent_pct": float(rec["stft_r"][k]),
+                                   "ltft_recent_pct": float(rec["ltft_r"][k]), "trim_mean_pct": float(rec["trim30"][k])},
+                                  TRIM_TH)
+        ev = Evidence(models, rules, s, PER_LOCATION_THRESHOLD, classifier_location=int(rec["loc"][k]) or None,
+                      t=float(rec["t_end"][k]), trims=trims)
         had = layer.alarm is not None
         d = layer.step(ev)
         st = d["state"]

@@ -22,6 +22,8 @@ const LIST_RETRY_MS = 5000; // scenario list: retry interval after a failed load
 
 // 3D engine view: its own chunk (three.js), fetched the first time its tab opens
 const Engine3D = lazy(() => import('./dashboard/Engine3D.jsx'));
+// Sabotage Lab (D140): its own chunk too (it reuses the 3D scene)
+const SabotageLab = lazy(() => import('./lab/SabotageLab.jsx'));
 
 // obd messages carry new samples; keep a short history per channel
 function appendObd(prev, msg) {
@@ -88,6 +90,8 @@ export default function App() {
   useEffect(() => { if (view === '3d') setOpened3d(true); }, [view]);
   const [openedResults, setOpenedResults] = useState(view === 'results'); // load the files once
   useEffect(() => { if (view === 'results') setOpenedResults(true); }, [view]);
+  const [openedLab, setOpenedLab] = useState(view === 'sabotage'); // stays mounted: its record survives tab switches
+  useEffect(() => { if (view === 'sabotage') setOpenedLab(true); }, [view]);
   if (!playerRef.current) playerRef.current = createEnginePlayer();
   if (!toneRef.current) toneRef.current = createAlarmTone();
 
@@ -233,6 +237,9 @@ export default function App() {
   const startInjection = useCallback((req) => (
     transportRef.current ? transportRef.current.startInjection(req) : Promise.reject(new Error('no transport'))
   ), []);
+  const resetEngine = useCallback(() => (
+    transportRef.current?.resetEngine ? transportRef.current.resetEngine() : Promise.reject(new Error('reset needs the backend'))
+  ), []);
   const stopInjection = useCallback(() => (
     transportRef.current ? transportRef.current.stopInjection() : Promise.reject(new Error('no transport'))
   ), []);
@@ -291,6 +298,7 @@ export default function App() {
             onAck={sendAck}
             onStartInjection={startInjection}
             onStopInjection={stopInjection}
+            onResetEngine={usingMock ? null : resetEngine /* the mock has no engine to reset */}
             ackError={ackError}
             events={events}
             offline={offline}
@@ -308,6 +316,28 @@ export default function App() {
             <PanelBoundary name="3D engine view">
               <Suspense fallback={<div className="view-loading">Loading the 3D view…</div>}>
                 <Engine3D state={state} offline={offline} active={view === '3d'} />
+              </Suspense>
+            </PanelBoundary>
+          </div>
+        )}
+        {openedLab && (
+          <div role="tabpanel" id={panelId('sabotage')} aria-labelledby={tabId('sabotage')} hidden={view !== 'sabotage'} className="view-lab">
+            <PanelBoundary name="Sabotage Lab">
+              <Suspense fallback={<div className="view-loading">Loading the Sabotage Lab…</div>}>
+                <SabotageLab
+                  state={state}
+                  signal={signal}
+                  ages={ages}
+                  offline={offline}
+                  active={view === 'sabotage'}
+                  apiUrl={apiUrl}
+                  mock={usingMock}
+                  onAck={sendAck}
+                  onStartInjection={startInjection}
+                  onStopInjection={stopInjection}
+                  ackError={ackError}
+                  onSelectScenario={selectScenario}
+                />
               </Suspense>
             </PanelBoundary>
           </div>

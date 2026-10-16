@@ -1,5 +1,5 @@
 {
- "created_at": "2026-10-16T14:57:01+00:00",
+ "created_at": "2026-10-16T18:31:01+00:00",
  "sim_version": "2.1.1",
  "label": "SIM 2.1",
  "column": "A",
@@ -11,6 +11,7 @@
   "before": {
    "healthy_thresholds": "checkpoint (pooled val windows)",
    "unclassified_windows_required": 1,
+   "corroborate_windows": 0,
    "hours": 20.0,
    "windows": 553228,
    "levels": {
@@ -571,6 +572,7 @@
   "persist2": {
    "healthy_thresholds": "checkpoint (pooled val windows)",
    "unclassified_windows_required": 2,
+   "corroborate_windows": 0,
    "hours": 20.0,
    "windows": 553228,
    "levels": {
@@ -1135,6 +1137,7 @@
     "high": 13.791712034485002
    },
    "unclassified_windows_required": 2,
+   "corroborate_windows": "rule-layer default (3, D134)",
    "hours": 20.0,
    "windows": 553228,
    "levels": {
@@ -1191,35 +1194,35 @@
     },
     "advisory": {
      "windows": {
-      "events": 320,
+      "events": 321,
       "hours": 20.0,
-      "per_hour": 16.0,
-      "lower_95": 14.340740707532385,
-      "upper_95": 17.851115753102693,
+      "per_hour": 16.05,
+      "lower_95": 14.388009802208305,
+      "upper_95": 17.903845964034346,
       "method": "Wilson on per-window proportion"
      },
      "episodes": {
-      "events": 221,
+      "events": 222,
       "exposure_hours": 20.0,
-      "per_hour": 11.05,
-      "upper_95_per_hour": 12.353148895095355,
+      "per_hour": 11.1,
+      "upper_95_per_hour": 12.405907185547775,
       "bound_method": "poisson_exact_one_sided_95"
      }
     },
     "unclassified": {
      "windows": {
-      "events": 77,
+      "events": 76,
       "hours": 20.0,
-      "per_hour": 3.85,
-      "lower_95": 3.080785254444595,
-      "upper_95": 4.8112399435497215,
+      "per_hour": 3.8,
+      "lower_95": 3.0363518809051397,
+      "upper_95": 4.7556740114816005,
       "method": "Wilson on per-window proportion"
      },
      "episodes": {
-      "events": 20,
+      "events": 19,
       "exposure_hours": 20.0,
-      "per_hour": 1.0,
-      "upper_95_per_hour": 1.4531009420217007,
+      "per_hour": 0.95,
+      "upper_95_per_hour": 1.3939619819721758,
       "bound_method": "poisson_exact_one_sided_95"
      }
     },
@@ -1241,18 +1244,18 @@
     },
     "advisory_persist2": {
      "windows": {
-      "events": 108,
+      "events": 109,
       "hours": 20.0,
-      "per_hour": 5.4,
-      "lower_95": 4.473143749371067,
-      "upper_95": 6.518859922458079,
+      "per_hour": 5.45,
+      "lower_95": 4.518461336327096,
+      "upper_95": 6.573541641109624,
       "method": "Wilson on per-window proportion"
      },
      "episodes": {
-      "events": 106,
+      "events": 107,
       "exposure_hours": 20.0,
-      "per_hour": 5.3,
-      "upper_95_per_hour": 6.228188399941113,
+      "per_hour": 5.35,
+      "upper_95_per_hour": 6.282159031383561,
       "bound_method": "poisson_exact_one_sided_95"
      }
     },
@@ -1417,7 +1420,7 @@
     0,
     0,
     0,
-    7,
+    6,
     0,
     0,
     0,

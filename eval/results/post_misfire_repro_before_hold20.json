@@ -1,0 +1,114 @@
+{
+ "label": "SIM 2.1 (live demo backend)",
+ "hold_s": 20.0,
+ "misfire_alarm_s": 0.75,
+ "first_alarm_id": "a_0004",
+ "new_alarms_after_clear": [
+  {
+   "t_after_clear_s": 1.44,
+   "alarm_id": "a_0005",
+   "fault": "injector_clog",
+   "location": 4
+  }
+ ],
+ "first_normal_after_clear_s": null,
+ "state_messages_after_clear": {
+  "ALARM": 1200,
+  "ADVISORY": 2
+ },
+ "classifier_cylinder_sequence": [
+  3,
+  1,
+  4,
+  1,
+  4,
+  2,
+  1,
+  4,
+  1,
+  4,
+  3
+ ],
+ "changes": [
+  {
+   "t_after_clear_s": 0.05,
+   "state": "ALARM",
+   "fault": "misfire",
+   "location": 3,
+   "alarm_id": "a_0004",
+   "guidance": "Reduce load; inspect coil and plug on cyl 3"
+  },
+  {
+   "t_after_clear_s": 1.24,
+   "state": "ADVISORY",
+   "fault": "injector_clog",
+   "location": 4,
+   "alarm_id": null,
+   "guidance": "One witness only (injector_clog): keep running, watch for ALARM"
+  },
+  {
+   "t_after_clear_s": 1.44,
+   "state": "ALARM",
+   "fault": "injector_clog",
+   "location": 4,
+   "alarm_id": "a_0005",
+   "guidance": "Schedule injector inspection; safe to run"
+  },
+  {
+   "t_after_clear_s": 2.14,
+   "state": "ALARM",
+   "fault": "injector_clog",
+   "location": 1,
+   "alarm_id": "a_0005",
+   "guidance": "Schedule injector inspection; safe to run"
+  },
+  {
+   "t_after_clear_s": 2.44,
+   "state": "ALARM",
+   "fault": "injector_clog",
+   "location": 4,
+   "alarm_id": "a_0005",
+   "guidance": "Schedule injector inspection; safe to run"
+  },
+  {
+   "t_after_clear_s": 3.03,
+   "state": "ALARM",
+   "fault": "injector_clog",
+   "location": 2,
+   "alarm_id": "a_0005",
+   "guidance": "Schedule injector inspection; safe to run"
+  },
+  {
+   "t_after_clear_s": 3.63,
+   "state": "ALARM",
+   "fault": "injector_clog",
+   "location": 1,
+   "alarm_id": "a_0005",
+   "guidance": "Schedule injector inspection; safe to run"
+  },
+  {
+   "t_after_clear_s": 3.93,
+   "state": "ALARM",
+   "fault": "injector_clog",
+   "location": 4,
+   "alarm_id": "a_0005",
+   "guidance": "Schedule injector inspection; safe to run"
+  },
+  {
+   "t_after_clear_s": 4.23,
+   "state": "ALARM",
+   "fault": "injector_clog",
+   "location": 1,
+   "alarm_id": "a_0005",
+   "guidance": "Schedule injector inspection; safe to run"
+  },
+  {
+   "t_after_clear_s": 5.95,
+   "state": "ALARM",
+   "fault": "injector_clog",
+   "location": 4,
+   "alarm_id": "a_0005",
+   "guidance": "Schedule injector inspection; safe to run"
+  }
+ ]
+}

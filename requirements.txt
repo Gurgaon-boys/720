@@ -17,3 +17,4 @@ pytest
 httpx
 pyarrow
 huggingface_hub
+reportlab==4.4.10        # incident report PDF export (GET /report.pdf, D143)
