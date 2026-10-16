@@ -34,3 +34,17 @@ python -m models.make_dataset     # ~20 min (10 workers; S720_WORKERS)
 python -m models.classifier       # ~1 min
 python -m eval.soak_l2            # 2 h healthy soak, ~4 min
 ```
+
+## Stage 2 evidence (D77–D83)
+
+| Script | Output | What |
+|---|---|---|
+| `eval/column_c.py` | `eval/results/column_c_detail.json` | OBD branch on carOBD held-out files (read once): false positives per hour at every level |
+| `eval/soak_l2.py --range soak_fresh2` | `eval/results/soak_l2_fresh2.json` | 2 h healthy soak on engines never used anywhere |
+| `eval/robustness_v2.py` | `eval/results/robustness_v2.json/png` | misfire detection, localisation, latency on sim 2.1 |
+| `models/make_spectra.py` | `data/generated/sim_v2_spec/`, `sim_v2_openset/` | CNN inputs (crank-angle spectra) and valve-tick open-set runs |
+| `eval/model_comparison.py` | `eval/results/model_comparison.json` | Baseline / SVM / ANN / CNN on test, leakage gap, open set |
+| `eval/shortcut_case.py` | `eval/results/shortcut_case.json` | the "short OBD history" shortcut test (not reproduced, D79) |
+| `eval/clog_sweep.py` | `eval/results/clog_sweep.json` | clog detectability at the committed operating point |
+| `eval/misfire_counter.py` | `eval/results/misfire_counter.json` | OBD-II-style misfire counter (stage 3) |
+| `eval/build_eval_json.py` | `eval/results/column_a.json`, `column_c.json`, `eval.json` → `frontend/public/eval.json` | the evidence panel's file |
