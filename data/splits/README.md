@@ -15,3 +15,4 @@ Files (JSON, each with `created_at` in UTC, `git_commit` and `seed` inside; see 
 - `carobd_split.json`: `calibration` / `heldout` file lists, per-type rows and hours (`data/carobd_split.py`)
 - `audioset_pools.json`: P1 / P2 / P3 / `knock_check` entries `{clip_id, video_id, start, engine_tag}` with counts (`data/make_pools.py`, after vetting)
 - `esc50_split.json`: `noise_train` / `noise_test` file lists, split by source clip (`data/esc50_split.py`)
+- `enginefaultdb_split.json`: temporal (per class block: first 70% train, 5% gap, last 25% test) and random (seed + SHA-256 of test rows) splits (`data/enginefaultdb_split.py`). Class = session, so neither split separates fault from session.

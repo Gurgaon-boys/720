@@ -23,6 +23,9 @@ The split lists live in `splits/` and are written at H0, **with a timestamp, bef
 | | `python data/vet_merge.py` | `data/vetting/vetted_clips.csv`, `eval/vetting_agreement.json` |
 | Pools | `python data/make_pools.py` (after vetting) | `data/splits/audioset_pools.json` |
 | ESC-50 | `python data/esc50_split.py` (clones if missing) | `data/splits/esc50_split.json` |
+| EngineFaultDB | `git clone https://github.com/Leo-Thomas/EngineFaultDB data/raw/enginefaultdb` (GPL-3, never commit the CSV) | raw CSV |
+| | `python data/enginefaultdb.py` | `eval/enginefaultdb_inventory.json` |
+| | `python data/enginefaultdb_split.py` | `data/splits/enginefaultdb_split.json` |
 | Tests | `python -m pytest data/tests -q` | |
 
 **Loading carOBD:** always use `data/carobd.py:load()`. Every data row ends with a trailing comma, and a plain `pd.read_csv` silently shifts all columns by one.
@@ -32,3 +35,5 @@ The split lists live in `splits/` and are written at H0, **with a timestamp, bef
 **Vetting rules:** don't look at the other rater's CSV until both are done. Labels are hidden in the tool on purpose. Use "unsure" freely: only clips both raters mark yes / yes / no (plus detonation = yes for knock clips) survive.
 
 **Generated (Dipen):** `data/generated/` (git-ignored) holds the simulator dataset (`python -m models.make_dataset`) and soak caches. Its manifest, split by engine seed, is committed as `data/splits/sim_v2_dataset.json`. carOBD calibration code (`sim/calibrate_ecu.py`, `dsp/calibrate_trim.py`) reads only the `calibration` list (tested in `models/tests`).
+
+**Loading EngineFaultDB:** use `data/enginefaultdb.py:load()`. Each class is one session (one contiguous block), and class 3 is a noised copy of class 2; see `docs/ENGINEFAULTDB.md`.
