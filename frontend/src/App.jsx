@@ -4,6 +4,7 @@ import ScrollIntro from './intro/ScrollIntro.jsx';
 import Dashboard from './dashboard/Dashboard.jsx';
 import PanelBoundary from './dashboard/PanelBoundary.jsx';
 import ViewTabs, { panelId, tabId, useViewTab } from './dashboard/ViewTabs.jsx';
+import ResultsView from './dashboard/ResultsView.jsx';
 import { audioContext, createAlarmTone, createEnginePlayer } from './lib/audio.js';
 import { DEMO_SOURCE, isDemoMode } from './lib/demoMode.js';
 
@@ -75,6 +76,8 @@ export default function App() {
   const [view, setView] = useViewTab();
   const [opened3d, setOpened3d] = useState(view === '3d'); // keep it mounted (paused) once opened
   useEffect(() => { if (view === '3d') setOpened3d(true); }, [view]);
+  const [openedResults, setOpenedResults] = useState(view === 'results'); // load the files once
+  useEffect(() => { if (view === 'results') setOpenedResults(true); }, [view]);
   if (!playerRef.current) playerRef.current = createEnginePlayer();
   if (!toneRef.current) toneRef.current = createAlarmTone();
 
@@ -276,6 +279,13 @@ export default function App() {
               <Suspense fallback={<div className="view-loading">Loading the 3D view…</div>}>
                 <Engine3D state={state} offline={offline} active={view === '3d'} />
               </Suspense>
+            </PanelBoundary>
+          </div>
+        )}
+        {openedResults && (
+          <div role="tabpanel" id={panelId('results')} aria-labelledby={tabId('results')} hidden={view !== 'results'}>
+            <PanelBoundary name="Results">
+              <ResultsView />
             </PanelBoundary>
           </div>
         )}

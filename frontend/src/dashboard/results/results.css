@@ -1,0 +1,64 @@
+/* Results tab. ISA-101: grey marks, text in text tokens; colour only identifies a series. */
+.results { display: flex; flex-direction: column; gap: 14px; }
+.rs-head { display: flex; flex-direction: column; gap: 6px; }
+.rs-head-note { margin: 0; font-size: 13px; color: var(--text-2); max-width: 900px; }
+.rs-frame { display: flex; flex-direction: column; gap: 10px; }
+.rs-title { margin: 0; font-family: var(--display); font-weight: 600; font-size: 17px; color: var(--text); }
+.rs-lede { margin: 0; font-size: 14px; color: var(--text-2); max-width: 900px; }
+.rs-context, .rs-src { margin: 0; font-size: 12px; color: var(--muted); }
+.rs-note { margin: 0; font-size: 12px; color: var(--muted); }
+.rs-dim { color: var(--muted); font-weight: 400; }
+
+/* bar rows (sections 1 and 2) */
+.rs-multiples { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px; }
+.rs-multiple { display: flex; flex-direction: column; gap: 8px; position: relative; min-width: 0; }
+.rs-mtitle { margin: 0 0 2px; font-size: 13px; color: var(--text); }
+.rs-row { display: grid; grid-template-columns: minmax(120px, 34%) 1fr; grid-template-areas: 'label track' 'label val'; column-gap: 10px; align-items: center; }
+.rs-row-label { grid-area: label; font-size: 13px; color: var(--text-2); }
+.rs-track { grid-area: track; position: relative; height: 12px; background: var(--line); border-radius: 3px; }
+.rs-bar { position: absolute; left: 0; top: 0; bottom: 0; background: var(--text-2); border-radius: 3px 4px 4px 3px; }
+.rs-whisker { position: absolute; top: 50%; height: 0; border-top: 1.5px solid var(--text); }
+.rs-whisker::after { content: ''; position: absolute; right: -1px; top: -6px; height: 10px; border-right: 1.5px solid var(--text); }
+.rs-row-val { grid-area: val; font-size: 12px; color: var(--text); }
+.rs-row-na { grid-area: track; font-size: 12px; color: var(--muted); font-style: italic; }
+
+/* guidance lines (section 2) */
+.rs-guides { position: relative; height: 40px; margin-left: calc(34% + 10px); }
+.rs-guide { position: absolute; top: 0; bottom: 0; border-left: 1.5px dashed var(--muted); }
+.rs-guide-label { position: absolute; left: 4px; white-space: nowrap; font-size: 11px; line-height: 14px; color: var(--text-2); }
+.rs-guide-line { position: absolute; top: -4px; bottom: -4px; border-left: 1.5px dashed var(--muted); }
+.rs-assume ul { margin: 4px 0 0; padding-left: 18px; font-size: 12px; color: var(--text-2); }
+.rs-assume li { margin: 2px 0; }
+
+/* detection table (section 3) */
+.rs-scroll { overflow-x: auto; }
+.rs-det { width: 100%; border-collapse: collapse; font-size: 12px; }
+.rs-det th, .rs-det td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.rs-det thead th { color: var(--muted); font-weight: 400; }
+.rs-det tbody th { color: var(--text); font-weight: 500; white-space: nowrap; }
+.rs-det td strong { color: var(--text); }
+.rs-det .rs-na { color: var(--muted); font-style: italic; }
+.rs-lat { display: block; color: var(--muted); }
+
+/* trade-off chart (section 4) */
+.rs-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--text-2); }
+.rs-key { display: inline-flex; align-items: center; gap: 6px; }
+.rs-svgwrap { position: relative; }
+.rs-svg { width: 100%; height: auto; display: block; }
+.rs-grid { stroke: var(--line); stroke-width: 1; }
+.rs-zero { fill: var(--line); opacity: 0.35; }
+.rs-axis { fill: var(--muted); font-family: var(--mono); font-size: 11px; }
+.rs-axis-title { fill: var(--text-2); font-size: 12px; }
+.rs-direct { fill: var(--text); font-size: 12px; }
+.rs-svg circle[tabindex]:focus { outline: none; stroke: var(--text); stroke-width: 1.5; }
+.rs-tip {
+  position: absolute; transform: translate(12px, -50%); pointer-events: none; z-index: 2;
+  background: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 6px 9px;
+  font-size: 12px; color: var(--text); white-space: nowrap;
+}
+
+/* table views */
+.rs-table table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
+.rs-table th, .rs-table td { text-align: left; padding: 4px 6px; border-bottom: 1px solid var(--line); }
+.rs-table thead th { color: var(--muted); font-weight: 400; }
+@media (max-width: 720px) { .rs-row { grid-template-columns: 1fr; grid-template-areas: 'label' 'track' 'val'; } .rs-guides { margin-left: 0; } }
