@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react';
-import { decisionColor, decisionText } from '../lib/faults.js';
+import { cylLabel, decisionColor, decisionText, locatedCyl } from '../lib/faults.js';
 
 // Full-width decision banner (ISA-18.2 wording: only ALARM is an alarm; ADVISORY is a watch).
 // Always present so the layout never jumps. ACK lives here and only here: the button sends the
 // `ack` message and shows "Waiting…" until the rule layer's broadcast says acked. A rejected ACK
 // (`ack_error` from the rule layer) re-enables the button and says why; it never changes the alarm.
+// The operator action beside ACK is the rule layer's own `decision.guidance` (contract 1.5,
+// optional, D105: one fixed line per fault and NE 107 state). The UI never writes advice: when no
+// guidance arrives (the mock, or an older backend) it says so.
 
 const BASIS = { crank_angle: 'crank angle', firing_event: 'firing event', obd: 'OBD trims' };
 const clock = (unixS) => new Date(unixS * 1000).toLocaleTimeString();
@@ -61,7 +64,7 @@ export default function AlarmBanner({ state, onAck, ackError, offline }) {
   }
 
   const color = decisionColor(d);
-  const text = decisionText(d);
+  const text = decisionText(d, state.localisation);
   const hints = state.physics_rules.filter((r) => r.fired);
   const unacked = d.state === 'ALARM' && d.alarm_id && !d.acked;
 
@@ -72,9 +75,11 @@ export default function AlarmBanner({ state, onAck, ackError, offline }) {
     note = d.acked ? `Acknowledged by ${d.acked_by} at ${clock(d.acked_at)} · condition still active` : 'Unacknowledged';
   } else if (d.state === 'UNCLASSIFIED') {
     note = hints.length
-      ? `Physics hint: ${hints.map((r) => `${r.rule}${r.location ? ` · cyl ${r.location}` : ''} (${BASIS[r.rule_basis] ?? r.rule_basis})`).join(', ')}`
+      ? `Physics hint: ${hints.map((r) => `${r.rule}${locatedCyl(r.location, state.localisation) ? ` · ${cylLabel(r.location)}` : ''} (${BASIS[r.rule_basis] ?? r.rule_basis})`).join(', ')}`
       : 'No physics hint';
   }
+
+  const guidance = typeof d.guidance === 'string' && d.guidance.trim() ? d.guidance.trim() : null;
 
   const ack = () => {
     setSentFor(d.alarm_id);
@@ -95,6 +100,10 @@ export default function AlarmBanner({ state, onAck, ackError, offline }) {
         {d.alarm_id && <span>{d.alarm_id}{d.latched ? ' · latched' : ''}</span>}
         <span>latency {state.latency_ms} ms</span>
       </div>
+      <p className={`banner-guidance${guidance ? '' : ' none'}`}>
+        <span className="eyebrow">What to do</span>
+        {guidance ?? 'No operator guidance sent by the rule layer'}
+      </p>
       {shownError && <AckError err={shownError} />}
       {d.alarm_id && !d.acked && (
         <button type="button" className="ack-btn banner-enter" onClick={ack} disabled={waiting || offline} title={offline ? 'Diagnostics offline: ACK cannot reach the rule layer' : undefined}>

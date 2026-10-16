@@ -1,3 +1,4 @@
+import { cylLabel, locatedCyl } from '../lib/faults.js';
 import SourceBadge from './SourceBadge.jsx';
 
 // Plain readout of the rest of the schema-1.3 `state` message: anomaly, physics rules, features
@@ -46,7 +47,7 @@ export default function StatePanel({ state }) {
             {state.physics_rules.map((r) => (
               <li key={r.rule} className={r.fired ? 'fired' : undefined}>
                 <span className="mono">{r.fired ? 'FIRED' : 'quiet'}</span>
-                {r.rule}{r.location ? ` · cyl ${r.location}` : ''}
+                {r.rule}{locatedCyl(r.location, state.localisation) ? ` · ${cylLabel(r.location)}` : ''}
                 <small>{BASIS[r.rule_basis] ?? r.rule_basis}</small>
               </li>
             ))}

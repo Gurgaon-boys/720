@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { PerformanceMonitor } from '@react-three/drei';
-import { decisionText, fault, state3d } from '../lib/faults.js';
+import { cylLabel, decisionText, fault, state3d } from '../lib/faults.js';
 import { FIRING_ORDER, SLOW_FACTOR, realCycleMs } from '../lib/geometry.js';
 import { fmtNum } from '../lib/format.js';
 import { reducedMotion } from '../lib/motion.js';
@@ -56,9 +56,9 @@ function useOnScreen(ref) {
   return on;
 }
 
-function StateBadge({ decision }) {
+function StateBadge({ decision, localisation }) {
   const s = state3d(decision.state);
-  const text = decisionText(decision);
+  const text = decisionText(decision, localisation);
   return (
     <div className="e3d-state" style={{ '--state': s.color }} role="status" aria-live="polite">
       <span className="e3d-state-name">{s.label}</span>
@@ -119,7 +119,8 @@ function EngineView({ state, offline, running: shown }) {
     ? {
       cyl: d.location,
       kicker: s3.label,
-      title: `Cyl ${d.location} · ${d.fault ? fault(d.fault).name : decisionText(d).title}`,
+      // same words as the banner and decision card ("Misfire · Cyl 3")
+      title: d.fault ? fault(d.fault).title(d.location) : `${decisionText(d).title} · ${cylLabel(d.location)}`,
       guidance,
       color: s3.color,
     }
@@ -155,7 +156,7 @@ function EngineView({ state, offline, running: shown }) {
           </span>
         </div>
         <div className="e3d-head-right">
-          <StateBadge decision={d} />
+          <StateBadge decision={d} localisation={state.localisation} />
           <AckNote decision={d} />
         </div>
       </div>

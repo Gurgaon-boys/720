@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { traceColor } from '../lib/faults.js';
+import { cylLabel, traceColor } from '../lib/faults.js';
 import { useSmoothed } from '../lib/motion.js';
 import { FIRING_ORDER, hasSignature, polarPath, polarPoint } from '../lib/geometry.js';
 import PolarAxes from '../lib/PolarAxes.jsx';
@@ -85,13 +85,13 @@ export default function CrankSignature({ state }) {
           return (
             <text key={cyl} x={p.x} y={p.y - 7} textAnchor="middle" dominantBaseline="middle"
               fontFamily="JetBrains Mono, monospace" fontSize="14" fontWeight={hit ? 700 : 500} fill={hit ? trace : 'var(--text-2)'}>
-              C{cyl}
+              {cylLabel(cyl)}
               <tspan x={p.x} dy="15" fontSize="10" fontWeight="400" fill="#8e9aab">{FIRING_DEG[i]}°</tspan>
             </text>
           );
         })}
       </svg>
-      <p className="sig-caption mono">angle: crank angle over one 720° cycle · radius: amplitude (a.u.) · Cn: firing event</p>
+      <p className="sig-caption mono">angle: crank angle over one 720° cycle · radius: amplitude (a.u.) · Cyl n: its firing angle</p>
     </section>
   );
 }

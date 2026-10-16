@@ -9,6 +9,7 @@ import SignalStrip from './SignalStrip.jsx';
 import SourceBadge from './SourceBadge.jsx';
 import HealthChips from './HealthChips.jsx';
 import AlarmBanner from './AlarmBanner.jsx';
+import EventTimeline from './EventTimeline.jsx';
 import SoundControls from './SoundControls.jsx';
 import OfflineBanner from './OfflineBanner.jsx';
 import PanelBoundary from './PanelBoundary.jsx';
@@ -20,7 +21,7 @@ import './dashboard.css';
 
 const STALE_S = 3; // a data stream silent this long gets a panel notice (same limit as the UI watchdog)
 
-export default function Dashboard({ state, obd, obdWindows, transport, signal, error, scenarioError, links, apiUrl, ages, scenarios, scenarioId, onSelectScenario, onAck, onStartInjection, onStopInjection, onResetEngine, ackError, offline, lastStateAt, sound, onToggleSound, audioKind, mock }) {
+export default function Dashboard({ state, obd, obdWindows, transport, signal, error, scenarioError, links, apiUrl, ages, scenarios, scenarioId, onSelectScenario, onAck, onStartInjection, onStopInjection, onResetEngine, ackError, events, offline, lastStateAt, sound, onToggleSound, audioKind, mock }) {
   const color = decisionColor(state?.decision);
   // REAL log replay (contract 1.6): no crank or audio, so the OBD panels lead and the cylinder,
   // fingerprint and signal panels are hidden
@@ -102,6 +103,12 @@ export default function Dashboard({ state, obd, obdWindows, transport, signal, e
       {state && (
         <PanelBoundary name="Alarm banner" variant="banner" resetKey={run}>
           <AlarmBanner key={state.run_id} state={state} onAck={onAck} ackError={ackError} offline={offline} />
+        </PanelBoundary>
+      )}
+      {/* no resetKey: the session's events outlive a run change */}
+      {state && (
+        <PanelBoundary name="Event timeline" variant="banner">
+          <EventTimeline events={events} offline={offline} />
         </PanelBoundary>
       )}
 

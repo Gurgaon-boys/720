@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { STAGES, VIDEO } from './stages.js';
 import { SignatureFrame } from './SignatureFrame.jsx';
-import { decisionColor, decisionText, traceColor } from '../lib/faults.js';
+import { cylLabel, decisionColor, decisionText, traceColor } from '../lib/faults.js';
 import { FIRING_ORDER, hasSignature, polarPoint } from '../lib/geometry.js';
 import { reducedMotion } from '../lib/motion.js';
 import './intro.css';
@@ -229,15 +229,15 @@ export default function ScrollIntro({ state, onSkip }) {
         {state && d.state !== 'NORMAL' && (
           <div ref={ov(3.0, 4.5)} className="ov-card ov-corner" style={{ borderColor: color }}>
             <strong style={{ color }}>
-              {decisionText(d).tag}
-              {summary.cylinder ? ` · CYL ${summary.cylinder}` : ''}
+              {decisionText(d, state.localisation).tag}
+              {summary.cylinder ? ` · ${cylLabel(summary.cylinder)}` : ''}
             </strong>
             <span className="mono">{state.operating_point.rpm == null ? 'rpm unknown' : `${state.operating_point.rpm.toLocaleString()} rpm`} · load {state.operating_point.load_pct == null ? '—' : `${state.operating_point.load_pct}%`} · {state.source.toUpperCase()}</span>
           </div>
         )}
         {state && hints.length > 0 && (
           <div ref={ov(6.4, 9.9)} className="ov-text ov-corner">
-            <strong style={{ color }}>{decisionText(d).title}</strong>
+            <strong style={{ color }}>{decisionText(d, state.localisation).title}</strong>
             {hints.slice(0, 2).map((h) => <span key={h}>{h}</span>)}
           </div>
         )}

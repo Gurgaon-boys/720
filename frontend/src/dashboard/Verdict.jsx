@@ -1,4 +1,4 @@
-import { decisionColor, decisionText, fault } from '../lib/faults.js';
+import { cylLabel, decisionColor, decisionText, fault, locatedCyl } from '../lib/faults.js';
 import SourceBadge from './SourceBadge.jsx';
 
 const BASIS = { crank_angle: 'crank angle', firing_event: 'firing event', obd: 'OBD trims' };
@@ -8,7 +8,7 @@ const clock = (unixS) => (unixS == null ? '—' : new Date(unixS * 1000).toLocal
 export default function Verdict({ state }) {
   const d = state.decision;
   const color = decisionColor(d);
-  const { panelTitle: title, sub } = decisionText(d);
+  const { panelTitle: title, sub } = decisionText(d, state.localisation);
   const hints = state.physics_rules.filter((r) => r.fired);
 
   const rows = [
@@ -32,7 +32,7 @@ export default function Verdict({ state }) {
         <div className="verdict-sub">{sub}</div>
         {d.state === 'UNCLASSIFIED' && hints.length > 0 && (
           <div className="verdict-sub">
-            Physics hint: {hints.map((r) => `${r.rule}${r.location ? ` · cyl ${r.location}` : ''} (${BASIS[r.rule_basis] ?? r.rule_basis})`).join(', ')}
+            Physics hint: {hints.map((r) => `${r.rule}${locatedCyl(r.location, state.localisation) ? ` · ${cylLabel(r.location)}` : ''} (${BASIS[r.rule_basis] ?? r.rule_basis})`).join(', ')}
           </div>
         )}
       </div>

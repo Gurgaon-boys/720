@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { fault } from '../lib/faults.js';
+import { cylLabel, fault } from '../lib/faults.js';
 import { FIRING_ORDER, SLOW_FACTOR, fireDeg, realCycleMs } from '../lib/geometry.js';
 import SourceBadge from './SourceBadge.jsx';
 import { fmtNum } from '../lib/format.js';
@@ -101,7 +101,7 @@ export default function CylinderBank({ state, offline }) {
                       style={{ background: alarm ? f.color : 'var(--faint)' }} />
                     <div ref={(el) => { pistons.current[cyl] = el; }} className="cyl-piston" />
                   </div>
-                  <div className="cyl-num mono">CYL {cyl}</div>
+                  <div className="cyl-num mono">{cylLabel(cyl)}</div>
                   <div className="cyl-tag mono" style={isFault ? { background: f.color, color: 'var(--ink)' } : undefined}>
                     {/* HIGH: this cylinder's own score is over the threshold, even if the decision names no cylinder */}
                     {isFault ? (decision.state === 'ADVISORY' ? 'WATCH' : f.short) : over ? 'HIGH' : 'OK'}

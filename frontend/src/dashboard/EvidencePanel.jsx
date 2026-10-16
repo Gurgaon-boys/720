@@ -33,8 +33,20 @@ function basisText(r) {
   return `n = ${r.n}`;
 }
 
+// A level that cannot occur on this data (ALARM on carOBD: no classifier witness; on audio-only
+// data: no second witness) shows the file's own reason, never a 0 /h that reads as measured.
 function Row({ label, r, extra, flag }) {
   const { ok, missing } = checkResult(r);
+  if (r?.structurally_limited) {
+    return (
+      <tr>
+        <th scope="row">{label}</th>
+        <td colSpan={2} className="mono">cannot occur here · {r.note ?? 'structurally limited'}</td>
+        <td className="mono ev-ctx">{COLUMNS[r.column] ?? '—'}</td>
+        <td className="mono ev-ctx">{r.split || '—'}</td>
+      </tr>
+    );
+  }
   return (
     <tr className={ok ? '' : 'ev-incomplete'}>
       <th scope="row">
@@ -71,8 +83,7 @@ function FalsePositives({ fp, caption }) {
   return (
     <Table caption={`${caption} · ${fp?.dataset ?? 'dataset not named'}`}>
       {FP_LEVELS.map(([key, label]) => (
-        <Row key={key} label={label} r={fp?.[key]}
-          flag={fp?.[key]?.structurally_limited ? 'structurally limited on audio-only data' : null} />
+        <Row key={key} label={label} r={fp?.[key]} />
       ))}
     </Table>
   );
@@ -112,17 +123,18 @@ export default function EvidencePanel() {
 
       <h3 className="ev-h">False positives on real data, at every level</h3>
       <FalsePositives fp={d.false_positives?.headline} caption="Headline · real ECU" />
+      <FalsePositives fp={d.false_positives?.secondary} caption="Secondary · real audio" />
+
+      <h3 className="ev-h">Simulated, injected and real results, kept apart</h3>
+      {/* the operator projection in eval.json is simulated (column A): shown here, not under the real data */}
       {projectionShown(proj) && (
         <p className="ev-projection">
-          <strong>PROJECTION, not an observed fleet result:</strong> an operator watching {proj.engines} engines would see{' '}
+          <strong>{proj.column === 'A' ? 'SIMULATED PROJECTION' : 'PROJECTION'}, not an observed fleet result:</strong> an operator watching {proj.engines} engines would see{' '}
           <span className="mono">{fmtSig(proj.value)} {proj.unit}</span>.
           {' '}Assumptions: {proj.assumptions}.{proj.basis ? ` Basis: ${proj.basis}.` : ''}
           <span className="mono ev-ctx"> · {COLUMNS[proj.column] ?? '—'} · {proj.split || '—'}</span>
         </p>
       )}
-      <FalsePositives fp={d.false_positives?.secondary} caption="Secondary · real audio" />
-
-      <h3 className="ev-h">Simulated, injected and real results, kept apart</h3>
       <Table caption={`${COLUMNS.A} · test bench`}>
         <Row label="Split gap · random" r={a.split_gap?.random} />
         <Row label="Split gap · grouped" r={a.split_gap?.grouped} />

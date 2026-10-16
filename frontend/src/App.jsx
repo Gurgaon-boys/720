@@ -4,9 +4,9 @@ import ScrollIntro from './intro/ScrollIntro.jsx';
 import Dashboard from './dashboard/Dashboard.jsx';
 import PanelBoundary from './dashboard/PanelBoundary.jsx';
 import ViewTabs, { panelId, tabId, useViewTab } from './dashboard/ViewTabs.jsx';
-import ResultsView from './dashboard/ResultsView.jsx';
 import { audioContext, createAlarmTone, createEnginePlayer } from './lib/audio.js';
 import { DEMO_SOURCE, isDemoMode } from './lib/demoMode.js';
+import { observeDecision } from './lib/eventLog.js';
 
 const REPLAY_SOURCE = 'carobd_replay';
 
@@ -69,6 +69,10 @@ export default function App() {
   const [offline, setOffline] = useState(false);
   const [lastStateAt, setLastStateAt] = useState(null);
   const lastStateRef = useRef(performance.now()); // counts from mount, so a dead backend also trips it
+  // alarm events observed this session, derived once per state message (see lib/eventLog.js)
+  const [events, setEvents] = useState([]);
+  const decisionSeenRef = useRef(null);
+  const eventSeqRef = useRef(0);
   const runIdRef = useRef(null);
   const [sound, setSound] = useState({ engine: false, alarm: false });
   // what "Listen" can play: 'full' = the stream's mic_audio channel; 'display' = no mic_audio, so
@@ -83,8 +87,6 @@ export default function App() {
   const [view, setView] = useViewTab();
   const [opened3d, setOpened3d] = useState(view === '3d'); // keep it mounted (paused) once opened
   useEffect(() => { if (view === '3d') setOpened3d(true); }, [view]);
-  const [openedResults, setOpenedResults] = useState(view === 'results'); // load the files once
-  useEffect(() => { if (view === 'results') setOpenedResults(true); }, [view]);
   const [openedLab, setOpenedLab] = useState(view === 'sabotage'); // stays mounted: its record survives tab switches
   useEffect(() => { if (view === 'sabotage') setOpenedLab(true); }, [view]);
   if (!playerRef.current) playerRef.current = createEnginePlayer();
@@ -151,6 +153,12 @@ export default function App() {
           }].slice(-WINDOWS_KEEP)));
         }
         sourceRef.current = msg.source;
+        const seen = observeDecision(decisionSeenRef.current, msg);
+        decisionSeenRef.current = seen.next;
+        if (seen.events.length) {
+          const stamped = seen.events.map((e) => ({ ...e, id: `ev-${eventSeqRef.current++}` }));
+          setEvents((list) => [...list, ...stamped]);
+        }
         setState(msg);
       }),
       transport.subscribe('ack_error', (msg) => {
@@ -289,6 +297,7 @@ export default function App() {
             onStopInjection={stopInjection}
             onResetEngine={usingMock ? null : resetEngine /* the mock has no engine to reset */}
             ackError={ackError}
+            events={events}
             offline={offline}
             lastStateAt={lastStateAt}
             sound={sound}
@@ -327,13 +336,6 @@ export default function App() {
                   onSelectScenario={selectScenario}
                 />
               </Suspense>
-            </PanelBoundary>
-          </div>
-        )}
-        {openedResults && (
-          <div role="tabpanel" id={panelId('results')} aria-labelledby={tabId('results')} hidden={view !== 'results'}>
-            <PanelBoundary name="Results">
-              <ResultsView />
             </PanelBoundary>
           </div>
         )}
