@@ -1,7 +1,7 @@
 """OPC UA bridge, end to end with a real asyncua client (real time; ~40 s in total).
 
 Covers the address space (AnalogItems, NE 107 enum), the decision mirror, Acknowledge (valid,
-unknown, duplicate), Inject (not supported until L1), events on both EngineAsset and Server,
+unknown, duplicate), Inject (refused off the simulator; live injection echoed), events on both EngineAsset and Server,
 sensor FAILURE, diagnostics offline, and that the dashboard and OPC UA see the same alarm state.
 """
 
@@ -19,7 +19,7 @@ from asyncua import Client, ua
 from websockets.sync.client import connect
 
 from backend.main import create_app
-from backend.opcua_bridge import NE107, NOT_SUPPORTED, OpcuaBridge, endpoint_from_env, reachable_endpoints
+from backend.opcua_bridge import NE107, OpcuaBridge, endpoint_from_env, reachable_endpoints
 from backend.runtime import Runtime
 
 
@@ -130,9 +130,9 @@ def test_address_space():
         async with Rig("healthy") as r:
             names = {(await c.read_browse_name()).Name for c in await r.node("EngineAsset").get_children()}
             assert {"RunId", "Source", "DiagnosticTimestamp", "MaintenanceMode", "OperatingPoint", "Obd",
-                    "Diagnostics", "Decision", "AssetHealth", "SensorHealth", "Acknowledge", "Inject"} <= names
+                    "Diagnostics", "Decision", "Injection", "AssetHealth", "SensorHealth", "Acknowledge", "Inject"} <= names
             sensors = {(await c.read_browse_name()).Name for c in await r.node("EngineAsset.SensorHealth").get_children()}
-            assert sensors == {"mic", "accel", "obd", "DiagnosticStream", "LastStateAgeS"}
+            assert sensors == {"mic", "accel", "obd", "crank", "cam", "DiagnosticStream", "LastStateAgeS"}
             stamp = await r.read("EngineAsset.DiagnosticTimestamp")
             assert abs(stamp.timestamp() - time.time()) < 5
 
@@ -213,12 +213,37 @@ def test_misfire_alarm_ack_and_clear():
     run(go())
 
 
-def test_inject_not_supported_until_l1():
+def test_inject_refused_without_simulator():
     async def go():
         async with Rig("healthy") as r:
             ok, reason = await r.call("Inject", "misfire", ua.Variant(3, ua.VariantType.Int32), 0.5)
-            assert ok is False and reason == NOT_SUPPORTED == "not supported until L1"
+            assert ok is False and "has no simulator" in reason
             assert await r.read("EngineAsset.Decision.State") == "NORMAL"
+            assert await r.read("EngineAsset.Injection.Active") is False
+    run(go())
+
+
+def test_inject_live_simulator_and_new_nodes():
+    async def go():
+        async with Rig("sim") as r:
+            ok, reason = await r.call("Inject", "bogus", ua.Variant(3, ua.VariantType.Int32), 0.5)
+            assert ok is False and reason                      # the simulator's own validation
+            ok, reason = await r.call("Inject", "misfire", ua.Variant(3, ua.VariantType.Int32), 1.0)
+            assert ok is True and reason == ""
+            await wait_for(lambda: _ok(r.read("EngineAsset.Injection.Active"), lambda v: v is True))
+            assert await r.read("EngineAsset.Injection.Fault") == "misfire"
+            assert await r.read("EngineAsset.Injection.Cylinder") == 3
+            assert await r.read("EngineAsset.Injection.Severity") == 1.0
+            # the misfire rule names cylinder 3 once the faulty windows arrive
+            await wait_for(lambda: _ok(r.read("EngineAsset.Diagnostics.PhysicsRulesFired"),
+                                       lambda v: any(x.startswith("misfire cyl 3") for x in (v or []))), timeout=20)
+            for ch in ("lambda", "intake_air_temp_c", "battery_v", "baro_kpa"):
+                await wait_for(lambda ch=ch: _ok(r.read(f"EngineAsset.Obd.{ch}"), lambda v: v == v), timeout=5)
+            for sensor in ("crank", "cam"):
+                assert await r.read(f"EngineAsset.SensorHealth.{sensor}") == NE107.index("NORMAL")
+            assert isinstance(await r.read("EngineAsset.Decision.Guidance"), str)
+            r.runtime.clear_faults()
+            await wait_for(lambda: _ok(r.read("EngineAsset.Injection.Active"), lambda v: v is False))
     run(go())
 
 
