@@ -106,7 +106,7 @@ def trim_drift(obd: dict, thresholds: dict) -> dict:
     return {**off, "fired": bool(obd["trim_mean_pct"] > thresholds["threshold_pct"])}
 
 
-# Post-misfire recovery gate (backend/rule_layer.py, decisions_pending/post_misfire_recovery.md).
+# Post-misfire recovery gate (backend/rule_layer.py, D144).
 # The trims count as settled when STFT and LTFT (5 s means) are within +-TRIM_SETTLED_PCT and the trim rule's own
 # 30 s window is back under its threshold. 2.5 % ~ the healthy simulator's 99th percentile of total trim
 # (models/thresholds/trim_drift.json sim_check p99 = 2.21 %), rounded up.

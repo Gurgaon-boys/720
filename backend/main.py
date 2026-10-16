@@ -182,7 +182,7 @@ def create_app(scenario: str | None = None, validate: bool | None = None, opcua:
 
     @app.post("/reset_engine")
     async def reset_engine():
-        """A fresh healthy simulator engine, same seed (trims, LTFT and the rule layer start over). Simulator only.
+        """D147: a fresh healthy simulator engine, same seed (trims, LTFT and the rule layer start over). Simulator only.
         Guidance says "warming up" for the first 20 s, while the classifier waits for a full OBD window."""
         from backend.sources.sim_source import SimSource
 

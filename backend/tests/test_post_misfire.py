@@ -1,4 +1,4 @@
-"""Post-misfire recovery (docs/decisions_pending/post_misfire_recovery.md), on the live demo path.
+"""Post-misfire recovery (D144-D147), on the live demo path.
 
 The simulator source (SimSource, reference engine, seed 0) is run offline once per scenario; its per-window
 Evidence is then stepped through two rule layers, the post-misfire recovery gate off (the behaviour before) and on,
