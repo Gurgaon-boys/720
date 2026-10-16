@@ -113,7 +113,7 @@ function EngineView({ state, offline, running: shown }) {
   const glows = Array.from({ length: N_CYL }, (_, i) => (geometry ? glowLevel(perLoc[i], threshold) : 0));
   const located = geometry && Number.isInteger(d.location) && d.location >= 1 && d.location <= N_CYL;
   const focusCyl = located && d.state === 'ALARM' ? d.location : null;
-  // decision.guidance is not in contract 1.5; shown only if a message carries it
+  // decision.guidance (contract 1.5, optional, D105): the backend sends it since L3; the mock does not
   const guidance = typeof d.guidance === 'string' && d.guidance.trim() ? d.guidance.trim() : null;
   const label = located && (d.state === 'ALARM' || d.state === 'ADVISORY')
     ? {
