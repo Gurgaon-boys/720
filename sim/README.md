@@ -95,4 +95,4 @@ python -m sim.demo_v2     # docs/figures/sim_v2_knock.png, sim_v2_clog_trim.png,
 | Timing advance | 5th–95th percentile −4…25°, idle median 1° | 14° at idle … 28° at 2,800 rpm (**idle mismatch kept**: matching it would move combustion phasing and every crank-angle threshold) |
 
 Not identifiable from carOBD (marked `# not in carOBD`): lambda transport delay (no O2 PID), STFT/LTFT time constants (0.5 Hz polls), coolant load gain.
-The dither and fuel bias change combustion slightly, so the misfire thresholds were recalibrated for 2.1. The soak and robustness numbers in D64 are sim 2.0.
+The dither and fuel bias change combustion slightly, so the misfire thresholds were recalibrated for 2.1. The soak and robustness numbers in D75 are sim 2.0.

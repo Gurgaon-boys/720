@@ -1,0 +1,60 @@
+{
+  "created_at": "2026-10-16T06:53:53Z",
+  "git_commit": "4cd245690e32c7056e9c90db7249ae1d89993319",
+  "produced_by": "data/vet_merge.py",
+  "mode": "single_rater",
+  "raters": [
+    "diljit"
+  ],
+  "audit_rater": null,
+  "rated_by_each": {
+    "diljit": 403
+  },
+  "rated": 403,
+  "rule": {
+    "idling/engine": {
+      "is_passenger_car": "y",
+      "plausibly_4cyl": "y",
+      "speech_or_music": "n"
+    },
+    "knock": {
+      "is_passenger_car": "y",
+      "plausibly_4cyl": "y",
+      "speech_or_music": "n",
+      "is_detonation_knock": "y"
+    },
+    "note": "ONE rater decides (deviation from plan section 4, which asks for two independent raters; DECISIONS D60); unsure fails",
+    "accept_unsure_4cyl": true
+  },
+  "corrections": {
+    "diljit": {
+      "file": "diljit_corrections.json",
+      "flip": {
+        "speech_or_music": {
+          "rated_at_lte": "2026-10-16T06:18:58Z",
+          "reason": "Rater read 'Speech or music audible?' as 'is the clip OK?' for every answer up to this time (confirmed by the rater, and by notes such as 'it is just music' answered n). y<->n swapped for those rows; later answers are literal.",
+          "answers_flipped": 330
+        }
+      }
+    }
+  },
+  "agreement": null,
+  "counts": {
+    "engine": {
+      "rated": 164,
+      "surviving": 70,
+      "surviving_strict_4cyl_yes": 57
+    },
+    "idling": {
+      "rated": 169,
+      "surviving": 88,
+      "surviving_strict_4cyl_yes": 62
+    },
+    "knock": {
+      "rated": 70,
+      "surviving": 25,
+      "surviving_strict_4cyl_yes": 20
+    }
+  },
+  "surviving_total": 183
+}

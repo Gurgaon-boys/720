@@ -3,7 +3,7 @@
 Per rpm band (idle / mid / high), the threshold is MARGIN x the (1 - TARGET_FPR) quantile of the
 healthy per-window half-order energy (FEATURE); the same for the per-cylinder roughness that sets
 location and the dashboard bars. The v1 half-order ratio's healthy statistics are recorded beside
-it for comparison (DECISIONS.md D58). Engines come from the "train" parameter region; the held-out band
+it for comparison (DECISIONS.md D69). Engines come from the "train" parameter region; the held-out band
 (3000-3500 rpm), the "test" region and valve_tick are refused by sim.guard. Calibration, validation
 and evaluation seeds are disjoint ranges (see SEEDS in eval/common.py).
 

@@ -1,15 +1,13 @@
-"""Assemble the evidence panel's eval.json (frontend/docs/EVAL_JSON.md shape, PROPOSED) from result files
-produced by code in this repo. Nothing here computes a result; it only copies numbers with their n,
-column and split.
+"""Build eval.json for the dashboard's evidence panel from the committed results files.
 
-  eval/results/column_a.json   {"column_a": ...}      from model_comparison.json, clog_sweep.json, l2_demo.json
-  eval/results/column_c.json   {"false_positives": {"headline"}, "column_c": ...}   from column_c_detail.json
-  eval/results/eval.json       the whole file (column B and the audio false positives: null, not measured)
-  frontend/public/eval.json    a copy, so the dashboard's evidence panel loads it
+    python -m eval.build_eval_json            # writes eval/eval.json and frontend/public/eval.json
 
-Usage:  python -m eval.build_eval_json
+Shape: docs/EVAL_JSON.md (= frontend/src/data/mockEval.js). Rules:
+  * every number is copied from a results file in eval/ produced by code in this repo; nothing is
+    computed here except unit conversions;
+  * a result we don't have yet stays null, so the panel shows it as "incomplete";
+  * every result carries its column (A simulated / B injected / C real), split, n and source file.
 """
-
 from __future__ import annotations
 
 import json
@@ -18,101 +16,140 @@ import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-RES = ROOT / "eval" / "results"
+REPO = Path(__file__).resolve().parents[1]
+EVAL = REPO / "eval"
+OUT = EVAL / "eval.json"
+FRONTEND_COPY = REPO / "frontend" / "public" / "eval.json"
+EVAL_VERSION = "0.1"
+BOUND = "poisson_exact_one_sided_95"
 
 
-def metric(value, n, split, unit=None, note=None, ci=None, column="A"):
-    return {"kind": "metric", "value": value, "unit": unit, "n": n, "ci_95": ci, "column": column, "split": split, "note": note}
+def load(name: str) -> dict | None:
+    p = EVAL / name
+    return json.loads(p.read_text()) if p.exists() else None
 
 
-def column_c_part() -> tuple[dict, dict]:
-    """(false_positives.headline, column_c) from eval/column_c.py's result; writes eval/results/column_c.json."""
-    cc = json.loads((RES / "column_c_detail.json").read_text())
-    o = cc["overall"]
-    nf = o["files"]
-
-    def with_files(r):
-        return None if r is None else {**r, "n_files": nf}
-    headline = {"dataset": "carOBD held-out files", "anomaly_flags": with_files(o["anomaly_flags"]),
-                "advisories": with_files(o["advisories"]), "classifier_false_faults": None,
-                "alarms": with_files(o["alarms"])}
-    column_c = {"obd_branch": with_files(o["unclassified"]),
-                "by_file_type": {ty: {k: with_files(s[k]) for k in ("anomaly_flags", "advisories", "unclassified", "alarms")}
-                                 for ty, s in cc["by_type"].items()},
-                "rpm_transition_check": o["transition_check"]}
-    (RES / "column_c.json").write_text(json.dumps({"false_positives": {"headline": headline}, "column_c": column_c,
-                                                   "notes": {"classifier_false_faults": "no classifier on carOBD: not measured",
-                                                             "obd_branch": "UNCLASSIFIED episodes from the OBD healthy model (no fault named)"}},
-                                                  indent=1))
-    return headline, column_c
+def null_rate(column: str, split: str, **extra) -> dict:
+    return {"kind": "rate", "events": None, "exposure_hours": None, "per_hour": None, "upper_95_per_hour": None,
+            "bound_method": BOUND, "n_files": None, "column": column, "split": split, **extra}
 
 
-def main():
-    mc = json.loads((RES / "model_comparison.json").read_text())
-    cs = json.loads((RES / "clog_sweep.json").read_text())
-    demo = json.loads((ROOT / "docs" / "figures" / "l2_demo.json").read_text())
-    n_test = mc["test_windows"]
-    grouped = "TEST split: engines 775-789, grouped by engine"
+def null_metric(column: str, split: str, **extra) -> dict:
+    return {"kind": "metric", "value": None, "unit": None, "n": None, "ci_95": None, "column": column,
+            "split": split, **extra}
 
-    gap = mc["split_gap_svm_macro_f1"]
-    split_gap = {k: metric(round(gap[k]["mean"], 4), gap[k]["n"], f"{k} split" + (" by window" if k == "random" else " by engine"),
-                           unit="macro-F1 (SVM)", note=f"mean of 3 seeds, sd {gap[k]['sd']:.4f}") for k in ("random", "grouped")}
-    comp = [{"model": m, "result": metric(round(v["macro_f1"]["mean"], 4), v["n"], grouped, unit="macro-F1",
-                                          note=f"localisation {v['localisation_accuracy']['mean']:.3f}; "
-                                               + ("deterministic" if m == "Baseline" else "3 seeds")),
-             "sd_across_seeds": None if m == "Baseline" else round(v["macro_f1"]["sd"], 4)}
-            for m, v in mc["models"].items()]
-    hm = mc["open_set_healthy_model_vs_healthy"]
 
-    def oc(key, split):
-        r = hm[key]
-        n = r["n_unknown"] + r["n_known"]
-        note = (f"healthy-model Mahalanobis; unknown n={r['n_unknown']} vs healthy n={r['n_known']}; at the VAL threshold "
-                f"TPR {r['tpr_at_val_threshold']:.3f}, FPR {r['fpr_at_val_threshold']:.3f}")
-        return {"auroc": metric(round(r["auroc"], 4), n, split, unit="AUROC", note=note),
-                "pauc": metric(round(r["pauc_fpr_0.1"], 4), n, split, unit="pAUROC, FPR <= 0.1 (McClish)", note=note)}
-    held = {"valve_tick": oc("valve_tick", "held-out class: valve_tick (15 test engines) vs healthy test windows"),
-            "knock": oc("knock", "knock (never seen by the healthy model) vs healthy test windows")}
-    s50, s90 = cs["smallest_clog_alarm_rate_ge_0.5"], cs["smallest_clog_alarm_rate_ge_0.9"]
-    k = f"{s50:.2f}" if s50 is not None else None
-    clog = metric(s50, cs["per_severity"][k]["n_runs"] if k else None, cs["split"], unit="clog severity s (fuel lost)",
-                  note=f"smallest s with a two-witness injector_clog ALARM in >= 50 % of runs "
-                       f"({cs['per_severity'][k]['alarm']['successes']}/{cs['per_severity'][k]['n_runs']} at s = {s50}); "
-                       f"no s reached 90 % (s = {s90}). At s = 0.6 lean misfire takes over (misfire rule, UNCLASSIFIED)" if k else None)
-    rb = json.loads((RES / "robustness_v2.json").read_text())
-    lat = rb["latency"]
-    li = lat["p1.0_idle"]
-    mis = next(f for f in demo["faults"] if f["fault"] == "misfire")
-    latency = metric(round(li["median_ms"]), li["n"], f"robustness engines (unseen), sim {rb['sim_version']}", unit="ms",
-                     note=(f"first true misfire -> ADVISORY window end, p 1.0, idle (the slowest band); median, p95 "
-                           f"{li['p95_ms']:.0f} ms. mid {lat['p1.0_mid']['median_ms']:.0f}, high {lat['p1.0_high']['median_ms']:.0f}, "
-                           f"held-out rpm {lat['p1.0_held-out']['median_ms']:.0f} ms. Live take: POST /inject -> ALARM "
-                           f"{1000 * mis['time_to_state_s']:.0f} ms (n = 1)"))
-    column_a = {"split_gap": split_gap, "model_comparison": comp, "held_out_class": held,
-                "injector_detectability": {"smallest_clog_at_fixed_far": clog}, "latency_ms": latency}
+def null_proportion(column: str, split: str) -> dict:
+    return {"kind": "proportion", "successes": None, "n": None, "value": None, "ci_95": None,
+            "ci_method": "wilson_95", "column": column, "split": split}
 
-    headline, column_c = column_c_part()
 
-    commit = subprocess.run(["git", "rev-parse", "--short", "HEAD"], capture_output=True, text=True, cwd=ROOT).stdout.strip()
-    full = {"eval_version": "proposed-0.1", "placeholder": False,
-            "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "source_commit": commit,
-            "false_positives": {"headline": headline, "secondary": None},
-            "column_a": column_a, "column_b": None, "column_c": column_c,
-            "notes": {"classifier_false_faults": "no classifier runs on carOBD (OBD branch = trim rule + OBD healthy model): not measured",
-                      "secondary": "AudioSet P3 audio branch not built yet: not measured",
-                      "column_b": "injected-on-real-audio results not produced yet",
-                      "obd_branch": "column C row = UNCLASSIFIED episodes from the OBD healthy model (no fault named)"}}
-    (RES / "column_a.json").write_text(json.dumps({"column_a": column_a}, indent=1))
-    (RES / "eval.json").write_text(json.dumps(full, indent=1))
-    shutil.copy(RES / "eval.json", ROOT / "frontend" / "public" / "eval.json")
-    print("wrote column_a.json, column_c.json, eval.json and frontend/public/eval.json")
+def rate_from(summary: dict, n_files: int, split: str, source: str, **extra) -> dict:
+    return {"kind": "rate", "events": summary["count"], "exposure_hours": summary["hours"],
+            "per_hour": summary["per_hour"], "upper_95_per_hour": summary["upper95_per_hour"],
+            "bound_method": BOUND, "n_files": n_files, "column": "C", "split": split, "source": source, **extra}
+
+
+def headline_fp() -> dict:
+    obd = load("obd_carobd.json")
+    split = "held-out carOBD files (by file)"
+    if obd is None:
+        return {"dataset": "carOBD held-out files", **{k: null_rate("C", split) for k in
+                ("anomaly_flags", "advisories", "classifier_false_faults", "alarms")}}
+    h, L, src = obd["heldout"], obd["heldout"]["levels"], "eval/obd_carobd.json"
+    unit = "episodes (runs of consecutive 30 s windows)"
+    return {
+        "dataset": f"carOBD held-out files ({h['files']} files, {h['hours']:.2f} h), OBD branch {obd.get('version', 'v1')}",
+        "anomaly_flags": rate_from(L["1_anomaly_flags"]["episodes"], h["files"], split, src, unit=unit),
+        "advisories": rate_from(L["3_advisories"]["episodes"], h["files"], split, src, unit=unit),
+        "classifier_false_faults": null_rate("C", split, note=L["4_classifier_false_faults"]),
+        "alarms": rate_from({k: L["5_alarms"][k] for k in ("count", "hours", "per_hour", "upper95_per_hour")},
+                            h["files"], split, src, structurally_limited=True, note=L["5_alarms"]["note"]),
+    }
+
+
+def secondary_fp() -> dict:
+    # AudioSet P3 results don't exist until vetting is finished and the audio pipeline runs on P3
+    split = "held-out pool P3 (by video id)"
+    return {"dataset": "AudioSet P3 (single-rater vetted car idle; pending)",
+            "anomaly_flags": null_rate("C", split), "advisories": null_rate("C", split),
+            "classifier_false_faults": null_rate("C", split),
+            "alarms": null_rate("C", split, structurally_limited=True)}
+
+
+def column_a() -> dict:
+    # sim 2.1, four classes, test split grouped by engine (Dipen, eval/build_eval_l2.py); the earlier
+    # sim v1 misfire-only Table A slice stays in eval/table_a_misfire.json and is named in the note below
+    l2 = load("results/column_a.json")
+    if l2 is not None:
+        return l2["column_a"]
+    t = load("table_a_misfire.json")
+    gsplit = "grouped by run (identical across models)"
+    models = ["Baseline", "SVM", "ANN", "CNN"]
+    out = {
+        "split_gap": {"random": null_metric("A", "random"), "grouped": null_metric("A", "grouped by run")},
+        "model_comparison": [{"model": m, "result": null_metric("A", gsplit), "sd_across_seeds": None} for m in models],
+        "held_out_class": {c: {"auroc": null_metric("A", "held-out class"), "pauc": null_metric("A", "held-out class")}
+                           for c in ("valve_tick", "knock")},
+        "injector_detectability": {"smallest_clog_at_fixed_far": null_metric("A", "grouped by run")},
+        "latency_ms": null_metric("A", "live pipeline", unit="ms"),
+    }
+    if t is None:
+        return out
+    src, metric = "eval/table_a_misfire.json", t["metric"]
+    task = f"{t['task']} ({metric}), sim {t['sim_version']}"
+    for m in out["model_comparison"]:
+        r = t["models"].get(m["model"])
+        if r:
+            m["result"] = {"kind": "metric", "value": r["grouped"]["mean"], "unit": metric, "n": r["grouped"]["n_test_windows"],
+                           "ci_95": None, "column": "A", "split": gsplit, "task": task, "source": src}
+            m["sd_across_seeds"] = r["grouped"]["sd"]
+    gap = t.get("split_gap")
+    if gap:
+        for k, label in (("random", "random (by window)"), ("grouped", "grouped by run")):
+            out["split_gap"][k] = {"kind": "metric", "value": gap[k]["mean"], "unit": metric, "n": gap[k]["n_test_windows"],
+                                   "ci_95": None, "column": "A", "split": label, "model": gap["model"],
+                                   "task": task, "source": src}
+    return out
+
+
+def column_c() -> dict:
+    obd = load("obd_carobd.json")
+    if obd is None:
+        return {"obd_branch": null_metric("C", "held-out carOBD files")}
+    w = obd["heldout"]["levels"]["1_anomaly_flags"]["windows"]
+    return {"obd_branch": {"kind": "metric", "value": w["rate"], "unit": "fraction of 30 s windows flagged (healthy data)",
+                           "n": w["n"], "ci_95": w["wilson95"], "column": "C", "split": "held-out carOBD files (by file)",
+                           "source": "eval/obd_carobd.json"}}
+
+
+def main() -> None:
+    commit = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], cwd=REPO, text=True).strip()
+    d = {
+        "eval_version": EVAL_VERSION,
+        "placeholder": False,
+        "generated_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+        "source_commit": commit,
+        "produced_by": "python -m eval.build_eval_json",
+        "false_positives": {"headline": headline_fp(), "secondary": secondary_fp()},
+        # alarms are structurally zero without a classifier witness, so a fleet projection would mislead
+        "operator_projection": {"engines": 50, "value": None, "unit": "alarms per hour", "basis": None,
+                                "assumptions": None, "column": "C", "split": "held-out files"},
+        "column_a": column_a(),
+        "column_b": {"knock": null_proportion("B", "grouped by source clip"),
+                     "valve_tick": null_proportion("B", "grouped by source clip")},
+        "column_c": column_c(),
+        "notes": {"column_a": "sim 2.1 four-class results (eval/results/column_a.json, Dipen, DECISIONS D90-D94); the sim v1 "
+                              "misfire-only slice (eval/table_a_misfire.json, D63) is an earlier result",
+                  "column_c": "headline = the pre-registered OBD branch v1 (eval/obd_carobd.json, D55-D58). A second, "
+                              "later read of the same held-out files with a different OBD model (eval/results/column_c.json) "
+                              "is a secondary analysis and not on the panel"},
+    }
+    OUT.write_text(json.dumps(d, indent=2) + "\n")
+    FRONTEND_COPY.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(OUT, FRONTEND_COPY)
+    print(f"Wrote {OUT.relative_to(REPO)} and {FRONTEND_COPY.relative_to(REPO)} (commit {commit})")
 
 
 if __name__ == "__main__":
-    import sys
-    if sys.argv[1:] == ["--column-c"]:
-        column_c_part()
-        print("wrote eval/results/column_c.json")
-    else:
-        main()
+    main()

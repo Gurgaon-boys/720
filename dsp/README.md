@@ -34,7 +34,7 @@ Every rule that fires reports `rule_basis` (see `contract/`).
 
 **Detection (sim, idle, misfire cyl 3 p = 0.5):** fires on cyl 3 in the 2nd window that holds a misfire, 1.24 s after injection (a fault starts at the next unplanned cycle, and a 4-cycle window lasts 0.6 s at idle). A single misfire in a 4-cycle window often stays under the half-order threshold while roughness already flags it: a candidate second firing condition.
 
-## Sim v2 (D55–D64)
+## Sim v2 (D66–D75)
 
 The L1 numbers above are sim v1 and kept for the record (`models/thresholds/misfire_half_order_v1.json`). On sim v2 (reciprocating inertia, regimes on), the misfire rule changed:
 
@@ -65,7 +65,7 @@ python -m pytest dsp/tests
 ```
 
 
-## L2 physics rules (D66–D68)
+## L2 physics rules (D77–D79)
 
 | Rule | Basis | Feature | Threshold (calibration) |
 |---|---|---|---|

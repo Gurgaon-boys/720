@@ -1,0 +1,306 @@
+{
+  "created_at": "2026-10-16T05:40:04Z",
+  "git_commit": "bd1b7172310c6d9878c656fb18a975c8da102166",
+  "produced_by": "python -m models.table_a.misfire",
+  "column": "A (simulated only)",
+  "sim_version": "1.0.0",
+  "task": "misfire vs healthy, per 4-cycle window",
+  "metric": "balanced accuracy",
+  "features": [
+    "half_order_ratio",
+    "rough_max",
+    "rough_1",
+    "rough_2",
+    "rough_3",
+    "rough_4",
+    "slot_1",
+    "slot_2",
+    "slot_3",
+    "slot_4",
+    "mic_rms_log",
+    "mic_kurtosis",
+    "rpm_mean"
+  ],
+  "features_status": "v0 provisional (Diljit), until Dipen's engineered vector exists",
+  "data": {
+    "train_region_engines": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    ],
+    "test_region_engines": [
+      200,
+      201,
+      202,
+      203
+    ],
+    "rpm": [
+      800,
+      1500,
+      2500
+    ],
+    "severities": [
+      0.2,
+      0.5,
+      1.0
+    ],
+    "record_s_per_run": 12.0,
+    "runs": 192,
+    "train_region_windows": 11230,
+    "train_region_misfire_frac": 0.6297,
+    "heldout_region_windows": 3745
+  },
+  "splits": {
+    "grouped": "5 folds by engine (all runs of an engine in one fold)",
+    "random": "5 folds by window",
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "heldout_region": "train on all train-region engines, test on test-region engines"
+  },
+  "models": {
+    "Baseline": {
+      "grouped": {
+        "mean": 0.8986,
+        "sd": 0.0005,
+        "per_seed": [
+          0.8985,
+          0.8992,
+          0.8981
+        ],
+        "auroc_mean": 0.9649,
+        "n_test_windows": 11230
+      },
+      "random": {
+        "mean": 0.8989,
+        "sd": 0.0001,
+        "per_seed": [
+          0.8987,
+          0.8989,
+          0.899
+        ],
+        "auroc_mean": 0.9657,
+        "n_test_windows": 11230
+      },
+      "heldout_region": {
+        "mean": 0.8955,
+        "sd": 0.0,
+        "n_test_windows": 3745
+      },
+      "grouped_by_severity_seed0": {
+        "healthy_runs_false_positive": {
+          "k": 40,
+          "n": 2808,
+          "rate": 0.01425,
+          "wilson95": [
+            0.01048,
+            0.01934
+          ]
+        },
+        "p0.2_detected": {
+          "k": 1453,
+          "n": 1640,
+          "rate": 0.88598,
+          "wilson95": [
+            0.86968,
+            0.90046
+          ]
+        },
+        "p0.5_detected": {
+          "k": 2496,
+          "n": 2625,
+          "rate": 0.95086,
+          "wilson95": [
+            0.94191,
+            0.95849
+          ]
+        },
+        "p1.0_detected": {
+          "k": 2807,
+          "n": 2807,
+          "rate": 1.0,
+          "wilson95": [
+            0.99863,
+            1.0
+          ]
+        }
+      }
+    },
+    "SVM": {
+      "grouped": {
+        "mean": 0.9663,
+        "sd": 0.0003,
+        "per_seed": [
+          0.9666,
+          0.9662,
+          0.966
+        ],
+        "auroc_mean": 0.9922,
+        "n_test_windows": 11230
+      },
+      "random": {
+        "mean": 0.9673,
+        "sd": 0.0,
+        "per_seed": [
+          0.9672,
+          0.9673,
+          0.9673
+        ],
+        "auroc_mean": 0.9947,
+        "n_test_windows": 11230
+      },
+      "heldout_region": {
+        "mean": 0.9697,
+        "sd": 0.0,
+        "n_test_windows": 3745
+      },
+      "grouped_by_severity_seed0": {
+        "healthy_runs_false_positive": {
+          "k": 0,
+          "n": 2808,
+          "rate": 0.0,
+          "wilson95": [
+            0.0,
+            0.00137
+          ]
+        },
+        "p0.2_detected": {
+          "k": 1364,
+          "n": 1640,
+          "rate": 0.83171,
+          "wilson95": [
+            0.81283,
+            0.84903
+          ]
+        },
+        "p0.5_detected": {
+          "k": 2434,
+          "n": 2625,
+          "rate": 0.92724,
+          "wilson95": [
+            0.91666,
+            0.93656
+          ]
+        },
+        "p1.0_detected": {
+          "k": 2807,
+          "n": 2807,
+          "rate": 1.0,
+          "wilson95": [
+            0.99863,
+            1.0
+          ]
+        }
+      }
+    },
+    "ANN": {
+      "grouped": {
+        "mean": 0.9618,
+        "sd": 0.0016,
+        "per_seed": [
+          0.9636,
+          0.9615,
+          0.9604
+        ],
+        "auroc_mean": 0.9927,
+        "n_test_windows": 11230
+      },
+      "random": {
+        "mean": 0.9708,
+        "sd": 0.0008,
+        "per_seed": [
+          0.9711,
+          0.9699,
+          0.9714
+        ],
+        "auroc_mean": 0.9954,
+        "n_test_windows": 11230
+      },
+      "heldout_region": {
+        "mean": 0.9642,
+        "sd": 0.005,
+        "n_test_windows": 3745
+      },
+      "grouped_by_severity_seed0": {
+        "healthy_runs_false_positive": {
+          "k": 14,
+          "n": 2808,
+          "rate": 0.00499,
+          "wilson95": [
+            0.00297,
+            0.00835
+          ]
+        },
+        "p0.2_detected": {
+          "k": 1471,
+          "n": 1640,
+          "rate": 0.89695,
+          "wilson95": [
+            0.8813,
+            0.91075
+          ]
+        },
+        "p0.5_detected": {
+          "k": 2521,
+          "n": 2625,
+          "rate": 0.96038,
+          "wilson95": [
+            0.95222,
+            0.9672
+          ]
+        },
+        "p1.0_detected": {
+          "k": 2807,
+          "n": 2807,
+          "rate": 1.0,
+          "wilson95": [
+            0.99863,
+            1.0
+          ]
+        }
+      }
+    }
+  },
+  "split_gap": {
+    "model": "SVM",
+    "random": {
+      "mean": 0.9673,
+      "sd": 0.0,
+      "per_seed": [
+        0.9672,
+        0.9673,
+        0.9673
+      ],
+      "auroc_mean": 0.9947,
+      "n_test_windows": 11230
+    },
+    "grouped": {
+      "mean": 0.9663,
+      "sd": 0.0003,
+      "per_seed": [
+        0.9666,
+        0.9662,
+        0.966
+      ],
+      "auroc_mean": 0.9922,
+      "n_test_windows": 11230
+    },
+    "gap": 0.001
+  },
+  "not_yet": [
+    "CNN (needs order-normalised spectrogram pipeline)",
+    "knock / injector_clog classes (sim v2)",
+    "valve_tick open-set test (sim v2)"
+  ]
+}

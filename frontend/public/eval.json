@@ -1,517 +1,326 @@
 {
- "eval_version": "proposed-0.1",
- "placeholder": false,
- "generated_at": "2026-10-16T07:33:01+00:00",
- "source_commit": "60e0091",
- "false_positives": {
-  "headline": {
-   "dataset": "carOBD held-out files",
-   "anomaly_flags": {
-    "kind": "rate",
-    "events": 14,
-    "exposure_hours": 12.5447,
-    "per_hour": 1.116007174331835,
-    "upper_95_per_hour": 1.74467680711977,
-    "bound_method": "poisson_exact_one_sided_95",
-    "column": "C",
-    "split": "carOBD held-out files",
-    "unit": "windows",
-    "n_files": 39
-   },
-   "advisories": {
-    "kind": "rate",
-    "events": 0,
-    "exposure_hours": 12.5447,
-    "per_hour": 0.0,
-    "upper_95_per_hour": 0.2388041935474051,
-    "bound_method": "poisson_exact_one_sided_95",
-    "column": "C",
-    "split": "carOBD held-out files",
-    "unit": "episodes",
-    "windows": 0,
-    "n_files": 39
-   },
-   "classifier_false_faults": null,
-   "alarms": {
-    "kind": "rate",
-    "events": 0,
-    "exposure_hours": 12.5447,
-    "per_hour": 0.0,
-    "upper_95_per_hour": 0.2388041935474051,
-    "bound_method": "poisson_exact_one_sided_95",
-    "column": "C",
-    "split": "carOBD held-out files",
-    "unit": "episodes",
-    "structurally_limited": true,
-    "note": "no classifier on carOBD: ALARM needs two witnesses, so it cannot occur",
-    "n_files": 39
-   }
-  },
-  "secondary": null
- },
- "column_a": {
-  "split_gap": {
-   "random": {
-    "kind": "metric",
-    "value": 0.9547,
-    "unit": "macro-F1 (SVM)",
-    "n": 16006,
-    "ci_95": null,
-    "column": "A",
-    "split": "random split by window",
-    "note": "mean of 3 seeds, sd 0.0017"
-   },
-   "grouped": {
-    "kind": "metric",
-    "value": 0.9165,
-    "unit": "macro-F1 (SVM)",
-    "n": 16006,
-    "ci_95": null,
-    "column": "A",
-    "split": "grouped split by engine",
-    "note": "mean of 3 seeds, sd 0.0086"
-   }
-  },
-  "model_comparison": [
-   {
-    "model": "Baseline",
-    "result": {
-     "kind": "metric",
-     "value": 0.66,
-     "unit": "macro-F1",
-     "n": 16006,
-     "ci_95": null,
-     "column": "A",
-     "split": "TEST split: engines 775-789, grouped by engine",
-     "note": "localisation 0.858; deterministic"
+  "eval_version": "0.1",
+  "placeholder": false,
+  "generated_at": "2026-10-16T07:50:56Z",
+  "source_commit": "30a588a",
+  "produced_by": "python -m eval.build_eval_json",
+  "false_positives": {
+    "headline": {
+      "dataset": "carOBD held-out files (39 files, 12.54 h), OBD branch v1",
+      "anomaly_flags": {
+        "kind": "rate",
+        "events": 29,
+        "exposure_hours": 12.545,
+        "per_hour": 2.3117,
+        "upper_95_per_hour": 3.152,
+        "bound_method": "poisson_exact_one_sided_95",
+        "n_files": 39,
+        "column": "C",
+        "split": "held-out carOBD files (by file)",
+        "source": "eval/obd_carobd.json",
+        "unit": "episodes (runs of consecutive 30 s windows)"
+      },
+      "advisories": {
+        "kind": "rate",
+        "events": 4,
+        "exposure_hours": 12.545,
+        "per_hour": 0.3189,
+        "upper_95_per_hour": 0.7297,
+        "bound_method": "poisson_exact_one_sided_95",
+        "n_files": 39,
+        "column": "C",
+        "split": "held-out carOBD files (by file)",
+        "source": "eval/obd_carobd.json",
+        "unit": "episodes (runs of consecutive 30 s windows)"
+      },
+      "classifier_false_faults": {
+        "kind": "rate",
+        "events": null,
+        "exposure_hours": null,
+        "per_hour": null,
+        "upper_95_per_hour": null,
+        "bound_method": "poisson_exact_one_sided_95",
+        "n_files": null,
+        "column": "C",
+        "split": "held-out carOBD files (by file)",
+        "note": "not available: the OBD classifier is trained on simulator OBD channels, which sim v1 does not produce yet"
+      },
+      "alarms": {
+        "kind": "rate",
+        "events": 0,
+        "exposure_hours": 12.545,
+        "per_hour": 0.0,
+        "upper_95_per_hour": 0.2388,
+        "bound_method": "poisson_exact_one_sided_95",
+        "n_files": 39,
+        "column": "C",
+        "split": "held-out carOBD files (by file)",
+        "source": "eval/obd_carobd.json",
+        "structurally_limited": true,
+        "note": "structurally limited: ALARM needs a classifier witness, and there is none yet"
+      }
     },
-    "sd_across_seeds": null
-   },
-   {
-    "model": "SVM",
-    "result": {
-     "kind": "metric",
-     "value": 0.9165,
-     "unit": "macro-F1",
-     "n": 16006,
-     "ci_95": null,
-     "column": "A",
-     "split": "TEST split: engines 775-789, grouped by engine",
-     "note": "localisation 0.937; 3 seeds"
-    },
-    "sd_across_seeds": 0.0086
-   },
-   {
-    "model": "ANN",
-    "result": {
-     "kind": "metric",
-     "value": 0.9247,
-     "unit": "macro-F1",
-     "n": 16006,
-     "ci_95": null,
-     "column": "A",
-     "split": "TEST split: engines 775-789, grouped by engine",
-     "note": "localisation 0.912; 3 seeds"
-    },
-    "sd_across_seeds": 0.0029
-   },
-   {
-    "model": "CNN",
-    "result": {
-     "kind": "metric",
-     "value": 0.6558,
-     "unit": "macro-F1",
-     "n": 16006,
-     "ci_95": null,
-     "column": "A",
-     "split": "TEST split: engines 775-789, grouped by engine",
-     "note": "localisation 0.592; 3 seeds"
-    },
-    "sd_across_seeds": 0.0428
-   },
-   {
-    "model": "CNN_6_epochs",
-    "result": {
-     "kind": "metric",
-     "value": 0.5944,
-     "unit": "macro-F1",
-     "n": 16006,
-     "ci_95": null,
-     "column": "A",
-     "split": "TEST split: engines 775-789, grouped by engine",
-     "note": "localisation 0.531; 3 seeds"
-    },
-    "sd_across_seeds": 0.0509
-   }
-  ],
-  "held_out_class": {
-   "valve_tick": {
-    "auroc": {
-     "kind": "metric",
-     "value": 0.9463,
-     "unit": "AUROC",
-     "n": 7497,
-     "ci_95": null,
-     "column": "A",
-     "split": "held-out class: valve_tick (15 test engines) vs healthy test windows",
-     "note": "healthy-model Mahalanobis; unknown n=3776 vs healthy n=3721; at the VAL threshold TPR 0.508, FPR 0.014"
-    },
-    "pauc": {
-     "kind": "metric",
-     "value": 0.8457,
-     "unit": "pAUROC, FPR <= 0.1 (McClish)",
-     "n": 7497,
-     "ci_95": null,
-     "column": "A",
-     "split": "held-out class: valve_tick (15 test engines) vs healthy test windows",
-     "note": "healthy-model Mahalanobis; unknown n=3776 vs healthy n=3721; at the VAL threshold TPR 0.508, FPR 0.014"
+    "secondary": {
+      "dataset": "AudioSet P3 (single-rater vetted car idle; pending)",
+      "anomaly_flags": {
+        "kind": "rate",
+        "events": null,
+        "exposure_hours": null,
+        "per_hour": null,
+        "upper_95_per_hour": null,
+        "bound_method": "poisson_exact_one_sided_95",
+        "n_files": null,
+        "column": "C",
+        "split": "held-out pool P3 (by video id)"
+      },
+      "advisories": {
+        "kind": "rate",
+        "events": null,
+        "exposure_hours": null,
+        "per_hour": null,
+        "upper_95_per_hour": null,
+        "bound_method": "poisson_exact_one_sided_95",
+        "n_files": null,
+        "column": "C",
+        "split": "held-out pool P3 (by video id)"
+      },
+      "classifier_false_faults": {
+        "kind": "rate",
+        "events": null,
+        "exposure_hours": null,
+        "per_hour": null,
+        "upper_95_per_hour": null,
+        "bound_method": "poisson_exact_one_sided_95",
+        "n_files": null,
+        "column": "C",
+        "split": "held-out pool P3 (by video id)"
+      },
+      "alarms": {
+        "kind": "rate",
+        "events": null,
+        "exposure_hours": null,
+        "per_hour": null,
+        "upper_95_per_hour": null,
+        "bound_method": "poisson_exact_one_sided_95",
+        "n_files": null,
+        "column": "C",
+        "split": "held-out pool P3 (by video id)",
+        "structurally_limited": true
+      }
     }
-   },
-   "knock": {
-    "auroc": {
-     "kind": "metric",
-     "value": 0.9996,
-     "unit": "AUROC",
-     "n": 4331,
-     "ci_95": null,
-     "column": "A",
-     "split": "knock (never seen by the healthy model) vs healthy test windows",
-     "note": "healthy-model Mahalanobis; unknown n=610 vs healthy n=3721; at the VAL threshold TPR 0.997, FPR 0.014"
+  },
+  "operator_projection": {
+    "engines": 50,
+    "value": null,
+    "unit": "alarms per hour",
+    "basis": null,
+    "assumptions": null,
+    "column": "C",
+    "split": "held-out files"
+  },
+  "column_a": {
+    "split_gap": {
+      "random": {
+        "kind": "metric",
+        "value": 0.9547,
+        "unit": "macro-F1 (SVM)",
+        "n": 16006,
+        "ci_95": null,
+        "column": "A",
+        "split": "random split by window",
+        "note": "mean of 3 seeds, sd 0.0017"
+      },
+      "grouped": {
+        "kind": "metric",
+        "value": 0.9165,
+        "unit": "macro-F1 (SVM)",
+        "n": 16006,
+        "ci_95": null,
+        "column": "A",
+        "split": "grouped split by engine",
+        "note": "mean of 3 seeds, sd 0.0086"
+      }
     },
-    "pauc": {
-     "kind": "metric",
-     "value": 0.9979,
-     "unit": "pAUROC, FPR <= 0.1 (McClish)",
-     "n": 4331,
-     "ci_95": null,
-     "column": "A",
-     "split": "knock (never seen by the healthy model) vs healthy test windows",
-     "note": "healthy-model Mahalanobis; unknown n=610 vs healthy n=3721; at the VAL threshold TPR 0.997, FPR 0.014"
+    "model_comparison": [
+      {
+        "model": "Baseline",
+        "result": {
+          "kind": "metric",
+          "value": 0.66,
+          "unit": "macro-F1",
+          "n": 16006,
+          "ci_95": null,
+          "column": "A",
+          "split": "TEST split: engines 775-789, grouped by engine",
+          "note": "localisation 0.858; deterministic"
+        },
+        "sd_across_seeds": null
+      },
+      {
+        "model": "SVM",
+        "result": {
+          "kind": "metric",
+          "value": 0.9165,
+          "unit": "macro-F1",
+          "n": 16006,
+          "ci_95": null,
+          "column": "A",
+          "split": "TEST split: engines 775-789, grouped by engine",
+          "note": "localisation 0.937; 3 seeds"
+        },
+        "sd_across_seeds": 0.0086
+      },
+      {
+        "model": "ANN",
+        "result": {
+          "kind": "metric",
+          "value": 0.9247,
+          "unit": "macro-F1",
+          "n": 16006,
+          "ci_95": null,
+          "column": "A",
+          "split": "TEST split: engines 775-789, grouped by engine",
+          "note": "localisation 0.912; 3 seeds"
+        },
+        "sd_across_seeds": 0.0029
+      },
+      {
+        "model": "CNN",
+        "result": {
+          "kind": "metric",
+          "value": 0.6558,
+          "unit": "macro-F1",
+          "n": 16006,
+          "ci_95": null,
+          "column": "A",
+          "split": "TEST split: engines 775-789, grouped by engine",
+          "note": "localisation 0.592; 3 seeds"
+        },
+        "sd_across_seeds": 0.0428
+      },
+      {
+        "model": "CNN_6_epochs",
+        "result": {
+          "kind": "metric",
+          "value": 0.5944,
+          "unit": "macro-F1",
+          "n": 16006,
+          "ci_95": null,
+          "column": "A",
+          "split": "TEST split: engines 775-789, grouped by engine",
+          "note": "localisation 0.531; 3 seeds"
+        },
+        "sd_across_seeds": 0.0509
+      }
+    ],
+    "held_out_class": {
+      "valve_tick": {
+        "auroc": {
+          "kind": "metric",
+          "value": 0.9463,
+          "unit": "AUROC",
+          "n": 7497,
+          "ci_95": null,
+          "column": "A",
+          "split": "held-out class: valve_tick (15 test engines) vs healthy test windows",
+          "note": "healthy-model Mahalanobis; unknown n=3776 vs healthy n=3721; at the VAL threshold TPR 0.508, FPR 0.014"
+        },
+        "pauc": {
+          "kind": "metric",
+          "value": 0.8457,
+          "unit": "pAUROC, FPR <= 0.1 (McClish)",
+          "n": 7497,
+          "ci_95": null,
+          "column": "A",
+          "split": "held-out class: valve_tick (15 test engines) vs healthy test windows",
+          "note": "healthy-model Mahalanobis; unknown n=3776 vs healthy n=3721; at the VAL threshold TPR 0.508, FPR 0.014"
+        }
+      },
+      "knock": {
+        "auroc": {
+          "kind": "metric",
+          "value": 0.9996,
+          "unit": "AUROC",
+          "n": 4331,
+          "ci_95": null,
+          "column": "A",
+          "split": "knock (never seen by the healthy model) vs healthy test windows",
+          "note": "healthy-model Mahalanobis; unknown n=610 vs healthy n=3721; at the VAL threshold TPR 0.997, FPR 0.014"
+        },
+        "pauc": {
+          "kind": "metric",
+          "value": 0.9979,
+          "unit": "pAUROC, FPR <= 0.1 (McClish)",
+          "n": 4331,
+          "ci_95": null,
+          "column": "A",
+          "split": "knock (never seen by the healthy model) vs healthy test windows",
+          "note": "healthy-model Mahalanobis; unknown n=610 vs healthy n=3721; at the VAL threshold TPR 0.997, FPR 0.014"
+        }
+      }
+    },
+    "injector_detectability": {
+      "smallest_clog_at_fixed_far": {
+        "kind": "metric",
+        "value": 0.4,
+        "unit": "clog severity s (fuel lost)",
+        "n": 10,
+        "ci_95": null,
+        "column": "A",
+        "split": "robustness engines (unseen), regimes on",
+        "note": "smallest s with a two-witness injector_clog ALARM in >= 50 % of runs (5/10 at s = 0.4); no s reached 90 % (s = None). At s = 0.6 lean misfire takes over (misfire rule, UNCLASSIFIED)"
+      }
+    },
+    "latency_ms": {
+      "kind": "metric",
+      "value": 592,
+      "unit": "ms",
+      "n": 12,
+      "ci_95": null,
+      "column": "A",
+      "split": "robustness engines (unseen), sim 2.1.0",
+      "note": "first true misfire -> ADVISORY window end, p 1.0, idle (the slowest band); median, p95 693 ms. mid 270, high 158, held-out rpm 123 ms. Live take: POST /inject -> ALARM 1090 ms (n = 1)"
     }
-   }
   },
-  "injector_detectability": {
-   "smallest_clog_at_fixed_far": {
-    "kind": "metric",
-    "value": 0.4,
-    "unit": "clog severity s (fuel lost)",
-    "n": 10,
-    "ci_95": null,
-    "column": "A",
-    "split": "robustness engines (unseen), regimes on",
-    "note": "smallest s with a two-witness injector_clog ALARM in >= 50 % of runs (5/10 at s = 0.4); no s reached 90 % (s = None). At s = 0.6 lean misfire takes over (misfire rule, UNCLASSIFIED)"
-   }
+  "column_b": {
+    "knock": {
+      "kind": "proportion",
+      "successes": null,
+      "n": null,
+      "value": null,
+      "ci_95": null,
+      "ci_method": "wilson_95",
+      "column": "B",
+      "split": "grouped by source clip"
+    },
+    "valve_tick": {
+      "kind": "proportion",
+      "successes": null,
+      "n": null,
+      "value": null,
+      "ci_95": null,
+      "ci_method": "wilson_95",
+      "column": "B",
+      "split": "grouped by source clip"
+    }
   },
-  "latency_ms": {
-   "kind": "metric",
-   "value": 592,
-   "unit": "ms",
-   "n": 12,
-   "ci_95": null,
-   "column": "A",
-   "split": "robustness engines (unseen), sim 2.1.0",
-   "note": "first true misfire -> ADVISORY window end, p 1.0, idle (the slowest band); median, p95 693 ms. mid 270, high 158, held-out rpm 123 ms. Live take: POST /inject -> ALARM 1090 ms (n = 1)"
+  "column_c": {
+    "obd_branch": {
+      "kind": "metric",
+      "value": 0.01115,
+      "unit": "fraction of 30 s windows flagged (healthy data)",
+      "n": 2960,
+      "ci_95": [
+        0.00795,
+        0.01562
+      ],
+      "column": "C",
+      "split": "held-out carOBD files (by file)",
+      "source": "eval/obd_carobd.json"
+    }
+  },
+  "notes": {
+    "column_a": "sim 2.1 four-class results (eval/results/column_a.json, Dipen, DECISIONS D90-D94); the sim v1 misfire-only slice (eval/table_a_misfire.json, D63) is an earlier result",
+    "column_c": "headline = the pre-registered OBD branch v1 (eval/obd_carobd.json, D55-D58). A second, later read of the same held-out files with a different OBD model (eval/results/column_c.json) is a secondary analysis and not on the panel"
   }
- },
- "column_b": null,
- "column_c": {
-  "obd_branch": {
-   "kind": "rate",
-   "events": 10,
-   "exposure_hours": 12.5447,
-   "per_hour": 0.7971479816655964,
-   "upper_95_per_hour": 1.352139882832507,
-   "bound_method": "poisson_exact_one_sided_95",
-   "column": "C",
-   "split": "carOBD held-out files",
-   "unit": "episodes",
-   "windows": 14,
-   "n_files": 39
-  },
-  "by_file_type": {
-   "drive": {
-    "anomaly_flags": {
-     "kind": "rate",
-     "events": 11,
-     "exposure_hours": 1.7758,
-     "per_hour": 6.194274988268418,
-     "upper_95_per_hour": 10.252940920264846,
-     "bound_method": "poisson_exact_one_sided_95",
-     "column": "C",
-     "split": "carOBD held-out files",
-     "unit": "windows",
-     "n_files": 39
-    },
-    "advisories": {
-     "kind": "rate",
-     "events": 0,
-     "exposure_hours": 1.7758,
-     "per_hour": 0.0,
-     "upper_95_per_hour": 1.6869444994203602,
-     "bound_method": "poisson_exact_one_sided_95",
-     "column": "C",
-     "split": "carOBD held-out files",
-     "unit": "episodes",
-     "windows": 0,
-     "n_files": 39
-    },
-    "unclassified": {
-     "kind": "rate",
-     "events": 8,
-     "exposure_hours": 1.7758,
-     "per_hour": 4.504927264195214,
-     "upper_95_per_hour": 8.128380881386942,
-     "bound_method": "poisson_exact_one_sided_95",
-     "column": "C",
-     "split": "carOBD held-out files",
-     "unit": "episodes",
-     "windows": 11,
-     "n_files": 39
-    },
-    "alarms": {
-     "kind": "rate",
-     "events": 0,
-     "exposure_hours": 1.7758,
-     "per_hour": 0.0,
-     "upper_95_per_hour": 1.6869444994203602,
-     "bound_method": "poisson_exact_one_sided_95",
-     "column": "C",
-     "split": "carOBD held-out files",
-     "unit": "episodes",
-     "structurally_limited": true,
-     "note": "no classifier on carOBD: ALARM needs two witnesses, so it cannot occur",
-     "n_files": 39
-    }
-   },
-   "idle": {
-    "anomaly_flags": {
-     "kind": "rate",
-     "events": 0,
-     "exposure_hours": 2.9997,
-     "per_hour": 0.0,
-     "upper_95_per_hour": 0.9986698939526217,
-     "bound_method": "poisson_exact_one_sided_95",
-     "column": "C",
-     "split": "carOBD held-out files",
-     "unit": "windows",
-     "n_files": 39
-    },
-    "advisories": {
-     "kind": "rate",
-     "events": 0,
-     "exposure_hours": 2.9997,
-     "per_hour": 0.0,
-     "upper_95_per_hour": 0.9986698939526217,
-     "bound_method": "poisson_exact_one_sided_95",
-     "column": "C",
-     "split": "carOBD held-out files",
-     "unit": "episodes",
-     "windows": 0,
-     "n_files": 39
-    },
-    "unclassified": {
-     "kind": "rate",
-     "events": 0,
-     "exposure_hours": 2.9997,
-     "per_hour": 0.0,
-     "upper_95_per_hour": 0.9986698939526217,
-     "bound_method": "poisson_exact_one_sided_95",
-     "column": "C",
-     "split": "carOBD held-out files",
-     "unit": "episodes",
-     "windows": 0,
-     "n_files": 39
-    },
-    "alarms": {
-     "kind": "rate",
-     "events": 0,
-     "exposure_hours": 2.9997,
-     "per_hour": 0.0,
-     "upper_95_per_hour": 0.9986698939526217,
-     "bound_method": "poisson_exact_one_sided_95",
-     "column": "C",
-     "split": "carOBD held-out files",
-     "unit": "episodes",
-     "structurally_limited": true,
-     "note": "no classifier on carOBD: ALARM needs two witnesses, so it cannot occur",
-     "n_files": 39
-    }
-   },
-   "live": {
-    "anomaly_flags": {
-     "kind": "rate",
-     "events": 3,
-     "exposure_hours": 3.9858,
-     "per_hour": 0.7526656909889191,
-     "upper_95_per_hour": 1.9453037494290761,
-     "bound_method": "poisson_exact_one_sided_95",
-     "column": "C",
-     "split": "carOBD held-out files",
-     "unit": "windows",
-     "n_files": 39
-    },
-    "advisories": {
-     "kind": "rate",
-     "events": 0,
-     "exposure_hours": 3.9858,
-     "per_hour": 0.0,
-     "upper_95_per_hour": 0.751594967230773,
-     "bound_method": "poisson_exact_one_sided_95",
-     "column": "C",
-     "split": "carOBD held-out files",
-     "unit": "episodes",
-     "windows": 0,
-     "n_files": 39
-    },
-    "unclassified": {
-     "kind": "rate",
-     "events": 2,
-     "exposure_hours": 3.9858,
-     "per_hour": 0.501777127325946,
-     "upper_95_per_hour": 1.57954261890997,
-     "bound_method": "poisson_exact_one_sided_95",
-     "column": "C",
-     "split": "carOBD held-out files",
-     "unit": "episodes",
-     "windows": 3,
-     "n_files": 39
-    },
-    "alarms": {
-     "kind": "rate",
-     "events": 0,
-     "exposure_hours": 3.9858,
-     "per_hour": 0.0,
-     "upper_95_per_hour": 0.751594967230773,
-     "bound_method": "poisson_exact_one_sided_95",
-     "column": "C",
-     "split": "carOBD held-out files",
-     "unit": "episodes",
-     "structurally_limited": true,
-     "note": "no classifier on carOBD: ALARM needs two witnesses, so it cannot occur",
-     "n_files": 39
-    }
-   },
-   "long": {
-    "anomaly_flags": {
-     "kind": "rate",
-     "events": 0,
-     "exposure_hours": 2.3939,
-     "per_hour": 0.0,
-     "upper_95_per_hour": 1.2514082368060295,
-     "bound_method": "poisson_exact_one_sided_95",
-     "column": "C",
-     "split": "carOBD held-out files",
-     "unit": "windows",
-     "n_files": 39
-    },
-    "advisories": {
-     "kind": "rate",
-     "events": 0,
-     "exposure_hours": 2.3939,
-     "per_hour": 0.0,
-     "upper_95_per_hour": 1.2514082368060295,
-     "bound_method": "poisson_exact_one_sided_95",
-     "column": "C",
-     "split": "carOBD held-out files",
-     "unit": "episodes",
-     "windows": 0,
-     "n_files": 39
-    },
-    "unclassified": {
-     "kind": "rate",
-     "events": 0,
-     "exposure_hours": 2.3939,
-     "per_hour": 0.0,
-     "upper_95_per_hour": 1.2514082368060295,
-     "bound_method": "poisson_exact_one_sided_95",
-     "column": "C",
-     "split": "carOBD held-out files",
-     "unit": "episodes",
-     "windows": 0,
-     "n_files": 39
-    },
-    "alarms": {
-     "kind": "rate",
-     "events": 0,
-     "exposure_hours": 2.3939,
-     "per_hour": 0.0,
-     "upper_95_per_hour": 1.2514082368060295,
-     "bound_method": "poisson_exact_one_sided_95",
-     "column": "C",
-     "split": "carOBD held-out files",
-     "unit": "episodes",
-     "structurally_limited": true,
-     "note": "no classifier on carOBD: ALARM needs two witnesses, so it cannot occur",
-     "n_files": 39
-    }
-   },
-   "ufpe": {
-    "anomaly_flags": {
-     "kind": "rate",
-     "events": 0,
-     "exposure_hours": 1.3894,
-     "per_hour": 0.0,
-     "upper_95_per_hour": 2.1560648110344585,
-     "bound_method": "poisson_exact_one_sided_95",
-     "column": "C",
-     "split": "carOBD held-out files",
-     "unit": "windows",
-     "n_files": 39
-    },
-    "advisories": {
-     "kind": "rate",
-     "events": 0,
-     "exposure_hours": 1.3894,
-     "per_hour": 0.0,
-     "upper_95_per_hour": 2.1560648110344585,
-     "bound_method": "poisson_exact_one_sided_95",
-     "column": "C",
-     "split": "carOBD held-out files",
-     "unit": "episodes",
-     "windows": 0,
-     "n_files": 39
-    },
-    "unclassified": {
-     "kind": "rate",
-     "events": 0,
-     "exposure_hours": 1.3894,
-     "per_hour": 0.0,
-     "upper_95_per_hour": 2.1560648110344585,
-     "bound_method": "poisson_exact_one_sided_95",
-     "column": "C",
-     "split": "carOBD held-out files",
-     "unit": "episodes",
-     "windows": 0,
-     "n_files": 39
-    },
-    "alarms": {
-     "kind": "rate",
-     "events": 0,
-     "exposure_hours": 1.3894,
-     "per_hour": 0.0,
-     "upper_95_per_hour": 2.1560648110344585,
-     "bound_method": "poisson_exact_one_sided_95",
-     "column": "C",
-     "split": "carOBD held-out files",
-     "unit": "episodes",
-     "structurally_limited": true,
-     "note": "no classifier on carOBD: ALARM needs two witnesses, so it cannot occur",
-     "n_files": 39
-    }
-   }
-  },
-  "rpm_transition_check": {
-   "transition_windows": 1310,
-   "transition_flagged": 9,
-   "steady_windows": 1317,
-   "steady_flagged": 5,
-   "transition_rule": "rpm range > 600 in the 30 s window"
-  }
- },
- "notes": {
-  "classifier_false_faults": "no classifier runs on carOBD (OBD branch = trim rule + OBD healthy model): not measured",
-  "secondary": "AudioSet P3 audio branch not built yet: not measured",
-  "column_b": "injected-on-real-audio results not produced yet",
-  "obd_branch": "column C row = UNCLASSIFIED episodes from the OBD healthy model (no fault named)"
- }
 }

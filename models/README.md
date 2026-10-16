@@ -27,7 +27,7 @@ Checkpoints (`*.pt`, `*.pkl`, `*.onnx`) are not committed.
 | `witness.py` | adapter into the rule layer: `models[]` entry, `Evidence.classifier_location`, `anomaly.score` (limit at 0.5); abstains below p 0.8 or outside the predicted class |
 
 Dataset windows: train 29,707 healthy / 14,722 misfire / 2,718 knock / 15,264 clog (240 runs, 60 engines), plus 120 healthy-only runs; val 60 runs + 60 healthy-only; test 60; held-out 3000–3500 rpm 60 (test engines).
-Val: macro-F1 0.942, localisation 0.950. 2 h soak: ADVISORY 17.0/h, ALARM 0. Details and caveats: DECISIONS D65–D76.
+Val: macro-F1 0.942, localisation 0.950. 2 h soak: ADVISORY 17.0/h, ALARM 0. Details and caveats: DECISIONS D76–D87.
 
 ```bash
 python -m models.make_dataset     # ~20 min (10 workers; S720_WORKERS)
@@ -35,7 +35,7 @@ python -m models.classifier       # ~1 min
 python -m eval.soak_l2            # 2 h healthy soak, ~4 min
 ```
 
-## Stage 2 evidence (D77–D83)
+## Stage 2 evidence (D88–D94)
 
 | Script | Output | What |
 |---|---|---|
@@ -44,7 +44,13 @@ python -m eval.soak_l2            # 2 h healthy soak, ~4 min
 | `eval/robustness_v2.py` | `eval/results/robustness_v2.json/png` | misfire detection, localisation, latency on sim 2.1 |
 | `models/make_spectra.py` | `data/generated/sim_v2_spec/`, `sim_v2_openset/` | CNN inputs (crank-angle spectra) and valve-tick open-set runs |
 | `eval/model_comparison.py` | `eval/results/model_comparison.json` | Baseline / SVM / ANN / CNN on test, leakage gap, open set |
-| `eval/shortcut_case.py` | `eval/results/shortcut_case.json` | the "short OBD history" shortcut test (not reproduced, D79) |
+| `eval/shortcut_case.py` | `eval/results/shortcut_case.json` | the "short OBD history" shortcut test (not reproduced, D90) |
 | `eval/clog_sweep.py` | `eval/results/clog_sweep.json` | clog detectability at the committed operating point |
 | `eval/misfire_counter.py` | `eval/results/misfire_counter.json` | OBD-II-style misfire counter (stage 3) |
 | `eval/build_eval_json.py` | `eval/results/column_a.json`, `column_c.json`, `eval.json` → `frontend/public/eval.json` | the evidence panel's file |
+
+`thresholds/`: calibrated rule thresholds with their calibration metadata (committed; JSON, small). `misfire_half_order.json` comes from `python -m dsp.calibrate_misfire`.
+
+## OBD branch v1 (`models/obd/`, Diljit)
+
+`python -m models.obd.run_carobd` (~25 s) calibrates on carOBD calibration files (fit / validation by file) and evaluates once on the 39 held-out files → `models/thresholds/obd_branch.json`, `eval/obd_carobd.json`. Every result goes through the real `backend/rule_layer.py`. No OBD classifier yet (needs simulator OBD channels), so ALARM is structurally impossible on carOBD; report anomaly flags, UNCLASSIFIED and ADVISORY rates. See DECISIONS D55–D58.

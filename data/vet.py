@@ -148,7 +148,7 @@ button{font-size:15px;padding:6px 16px;margin-right:8px} #msg{color:#a00;margin-
  <label><input type="radio" name="plausibly_4cyl" value="y"><span>yes [q]</span></label>
  <label><input type="radio" name="plausibly_4cyl" value="n"><span>no [w]</span></label>
  <label><input type="radio" name="plausibly_4cyl" value="unsure"><span>unsure [e]</span></label></div>
-<div class="q"><b>Speech or music audible?</b>
+<div class="q"><b>Can you hear talking or music? (yes = reject)</b>
  <label><input type="radio" name="speech_or_music" value="y"><span>yes [a]</span></label>
  <label><input type="radio" name="speech_or_music" value="n"><span>no [s]</span></label></div>
 <div class="q knock"><b>Detonation knock?</b>
