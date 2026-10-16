@@ -1,0 +1,82 @@
+{
+  "schema_version": "1.4",
+  "sent_at": 1760551251.2,
+  "units": {
+    "t": "s",
+    "sent_at": "unix s",
+    "rpm": "rev/min",
+    "load_pct": "%",
+    "latency_ms": "ms",
+    "severity": "0-1",
+    "crank_deg": "deg"
+  },
+  "run_id": "sim_0000",
+  "source": "simulated",
+  "audioset_pool": null,
+  "engine_tag": null,
+  "mode": "live",
+  "t": 6.4,
+  "operating_point": {
+    "rpm": 801,
+    "load_pct": 22,
+    "regime": "idle"
+  },
+  "localisation": "cylinder",
+  "features_summary": {
+    "half_order_ratio": 9.8
+  },
+  "anomaly": {
+    "score": 0.0,
+    "threshold": 0.6,
+    "per_location": [
+      0.0,
+      0.0,
+      1.0,
+      0.0
+    ]
+  },
+  "models": [],
+  "physics_rules": [
+    {
+      "rule": "misfire",
+      "fired": true,
+      "location": 3,
+      "rule_basis": "crank_angle"
+    }
+  ],
+  "decision": {
+    "state": "ADVISORY",
+    "alarm_id": null,
+    "fault": "misfire",
+    "location": 3,
+    "severity": null,
+    "witnesses": [
+      "physics"
+    ],
+    "consecutive_windows": 0,
+    "latched": false,
+    "acked": false,
+    "acked_by": null,
+    "acked_at": null
+  },
+  "health": {
+    "asset_ne107": "NORMAL",
+    "sensors": {
+      "mic": "NORMAL",
+      "obd": "NORMAL"
+    }
+  },
+  "latency_ms": 12,
+  "signature": {
+    "crank_deg": [],
+    "amplitude": [],
+    "baseline_amplitude": []
+  },
+  "injection": {
+    "active": true,
+    "fault": "misfire",
+    "cylinder": 3,
+    "severity": 1.0,
+    "started_at": 1760551250.0
+  }
+}

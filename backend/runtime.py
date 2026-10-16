@@ -94,8 +94,21 @@ class Runtime:
         self.watchdog = Watchdog(self.scenario.sensors, self.clock())
         self.last_window = None
         self.last_state = None
+        self.injection = None  # a new source starts with nothing injected
         self._epoch = time.monotonic()
         self._generation = getattr(self, "_generation", 0) + 1
+
+    def inject(self, fault: str, cylinder: int, severity: float) -> dict:
+        """Inject into the simulator source and record the accepted request for state.injection (1.4).
+        The source's own errors (NotImplementedError, ValueError) pass through unrecorded."""
+        self.scenario.inject(fault, cylinder, severity)
+        self.injection = {"active": True, "fault": fault, "cylinder": int(cylinder), "severity": float(severity),
+                          "started_at": self.clock()}
+        return self.injection
+
+    def clear_faults(self) -> None:
+        self.scenario.clear_faults()
+        self.injection = None
 
     async def start(self) -> None:
         self._tasks = [asyncio.create_task(self._loop(p, f)) for p, f in
@@ -148,7 +161,8 @@ class Runtime:
         now = self.clock()
         health = {"asset_ne107": asset_ne107(decision, self.maintenance_mode), "sensors": self.watchdog.status(now)}
         latency = round((time.perf_counter() - start) * 1000, 2)
-        msg = messages.state_message(sent_at=now, decision=decision, health=health, latency_ms=latency, **w.fields)
+        msg = messages.state_message(sent_at=now, decision=decision, health=health, latency_ms=latency,
+                                     injection=self.injection, **w.fields)
         self.last_state = msg
         self._send(self.state_hub, "state", msg)
 

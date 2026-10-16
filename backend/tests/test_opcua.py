@@ -133,8 +133,11 @@ async def _ok(coro, pred):
 
 def test_misfire_alarm_ack_and_clear():
     async def go():
-        async with Rig("misfire") as r:
-            # healthy for the first 2 s
+        async with Rig("healthy") as r:
+            # switch only once the client is connected: the switch restarts stream time, so the
+            # misfire scenario's 2 s healthy lead-in is guaranteed whatever the start-up took
+            await wait_for(lambda: _ok(r.read("EngineAsset.RunId"), lambda v: v == "fake_healthy"), timeout=3)
+            r.runtime.select("misfire")
             await wait_for(lambda: _ok(r.read("EngineAsset.RunId"), lambda v: v == "fake_misfire"), timeout=3)
             assert await r.read("EngineAsset.Decision.State") == "NORMAL"
             assert await r.read("EngineAsset.AssetHealth") == 0
@@ -254,7 +257,7 @@ def test_dashboard_and_opcua_agree():
                 alarm_id = await node("EngineAsset.Decision.AlarmId").read_value()
 
                 with connect(f"ws://127.0.0.1:{port}/ws/state") as ws:  # dashboard ACK
-                    ws.send(json.dumps({"schema_version": "1.3", "type": "ack", "alarm_id": alarm_id,
+                    ws.send(json.dumps({"schema_version": "1.4", "type": "ack", "alarm_id": alarm_id,
                                         "operator": "dashboard", "sent_at": time.time()}))
                     await wait_for(lambda: _ok(node("EngineAsset.Decision.AckedBy").read_value(), lambda v: v == "dashboard"), timeout=3)
                 return alarm_id

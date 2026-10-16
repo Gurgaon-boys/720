@@ -24,6 +24,15 @@
   --mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
 
   --radius: 14px;
+
+  /* motion: decelerating curves only (things arrive and settle, never bounce); short durations so the
+     screen never lags the data. prefers-reduced-motion turns all of it off (bottom of this file). */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);      /* settle */
+  --ease-press: cubic-bezier(0.32, 0.72, 0, 1);    /* physical press / release */
+  --dur-press: 120ms;
+  --dur-fast: 180ms;
+  --dur-data: 260ms;    /* a value moving to its new reading */
+  --dur-state: 320ms;   /* a decision or health state changing */
   color-scheme: dark;
 }
 

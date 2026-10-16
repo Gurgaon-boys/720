@@ -1,4 +1,6 @@
+import { useRef } from 'react';
 import { traceColor } from '../lib/faults.js';
+import { useSmoothed } from '../lib/motion.js';
 import { FIRING_ORDER, hasSignature, polarPath, polarPoint } from '../lib/geometry.js';
 import PolarAxes from '../lib/PolarAxes.jsx';
 import SourceBadge from './SourceBadge.jsx';
@@ -9,6 +11,20 @@ const GEO = { cx: CX, cy: CY, inner: 40, scale: 175 };
 const AMP_RINGS = [0.5, 1.0];
 const AXIS_R = 240;
 const FIRING_DEG = FIRING_ORDER.map((_, i) => (720 / FIRING_ORDER.length) * i);
+const TRACE_TAU_MS = 140; // display smoothing of the observed trace: well under one 0.5 s window
+
+// The observed trace morphs toward each new reading instead of being replaced 10× a second.
+// `d` is written straight to the path (no React re-render per frame); a new point count snaps.
+function SmoothTrace({ deg, amp, ...rest }) {
+  const ref = useRef(null);
+  const degRef = useRef(deg);
+  degRef.current = deg;
+  useSmoothed(amp, {
+    tau: TRACE_TAU_MS,
+    onFrame: (a) => { if (ref.current) ref.current.setAttribute('d', polarPath(degRef.current, a, GEO)); },
+  });
+  return <path ref={ref} {...rest} />;
+}
 
 export default function CrankSignature({ state }) {
   const { signature: sig, decision } = state;
@@ -60,7 +76,8 @@ export default function CrankSignature({ state }) {
         <PolarAxes cx={CX} cy={CY} r={AXIS_R} inner={GEO.inner} labelR={AXIS_R + 18} fontSize={11} skipLabels={FIRING_DEG} />
 
         <path d={polarPath(sig.crank_deg, sig.baseline_amplitude, GEO)} fill="none" stroke="#8e9aab" strokeOpacity="0.7" strokeWidth="1.25" strokeDasharray="4 3" />
-        <path d={polarPath(sig.crank_deg, sig.amplitude, GEO)} fill="none" stroke={trace} strokeWidth="1.75" strokeLinejoin="round" />
+        <SmoothTrace deg={sig.crank_deg} amp={sig.amplitude} fill="none" stroke={trace} strokeWidth="1.75" strokeLinejoin="round"
+          className="sig-observed" />
 
         {FIRING_ORDER.map((cyl, i) => {
           const p = polarPoint(FIRING_DEG[i], AXIS_R + 26, CX, CY);

@@ -6,7 +6,7 @@
   "additionalProperties": false,
   "required": ["schema_version", "sent_at", "channel", "kind", "t0", "sample_rate_hz", "n_samples", "dtype"],
   "properties": {
-    "schema_version": { "const": "1.3" },
+    "schema_version": { "const": "1.4" },
     "sent_at": { "type": "number", "description": "unix seconds" },
     "channel": { "type": "string", "minLength": 1, "description": "e.g. mic, accel, crank_speed, mic_stft, accel_stft" },
     "kind": { "enum": ["waveform", "spectrogram"] },

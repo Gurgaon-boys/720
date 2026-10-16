@@ -3,7 +3,7 @@
 // decodeFrame reads one; toUiFrame turns it into the plain objects SignalStrip already draws
 // (the same shapes the mock transport emits), so the panels don't care where frames come from.
 
-const SCHEMA_VERSION = '1.3';
+const SUPPORTED_VERSIONS = ['1.3', '1.4']; // same as wsTransport.js; frames didn't change in 1.4
 const decoder = new TextDecoder();
 
 export function decodeFrame(buf) {
@@ -24,7 +24,9 @@ export function decodeFrame(buf) {
 // waveform → { channel, t0, sent_at, sample_rate_hz, samples }
 // spectrogram → { channel: 'stft' (for mic_stft), t0, sent_at, freqs_hz, dt_s, columns }
 export function toUiFrame({ header: h, data }) {
-  if (h.schema_version !== SCHEMA_VERSION) throw new Error(`signal frame schema_version ${h.schema_version}, expected ${SCHEMA_VERSION}`);
+  if (!SUPPORTED_VERSIONS.includes(h.schema_version)) {
+    throw new Error(`signal frame schema_version ${h.schema_version}, expected one of ${SUPPORTED_VERSIONS.join(', ')}`);
+  }
   if (h.dtype !== 'float32') throw new Error(`signal frame dtype ${h.dtype}`);
   const base = { schema_version: h.schema_version, sent_at: h.sent_at, t0: h.t0 };
 

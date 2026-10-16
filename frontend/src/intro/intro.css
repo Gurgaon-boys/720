@@ -37,7 +37,7 @@
   position: absolute; z-index: 5; left: 16px; bottom: 24px; width: min(460px, calc(100% - 32px));
   display: flex; flex-direction: column; gap: 6px; padding: 18px 20px;
   background: rgba(14, 19, 28, 0.82); border: 1px solid var(--line); border-radius: var(--radius);
-  backdrop-filter: blur(8px); animation: cap-in 0.4s ease both;
+  backdrop-filter: blur(8px); animation: cap-in 0.5s var(--ease-out) both;
 }
 @keyframes cap-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 .intro-eyebrow { color: var(--scan); }
