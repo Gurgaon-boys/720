@@ -23,13 +23,17 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Request, WebSocket
 from fastapi.concurrency import run_in_threadpool
+from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+from backend import investigator
+from backend import report as incident_report
 from backend.messages import SCHEMA_VERSION
 from backend.opcua_bridge import OpcuaBridge, endpoint_from_env
-from backend.runtime import Hub, Runtime, put_latest
+from backend.runtime import Hub, Runtime, SensorControlError, put_latest
 from backend.sources import REPLAY, describe, make_source, source_names
+from backend.sources.sim_source import SABOTAGE_CHANNELS
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 log = logging.getLogger("backend")
@@ -165,7 +169,7 @@ def create_app(scenario: str | None = None, validate: bool | None = None, opcua:
         if cylinder is None and src.name != REPLAY:
             raise HTTPException(422, "cylinder is required for the simulator")
         try:
-            runtime.inject(body.fault, cylinder, body.severity)  # echoed in state.injection
+            runtime.inject(body.fault, cylinder, body.severity, via="http")  # echoed in state.injection
         except NotImplementedError as e:
             raise HTTPException(501, str(e)) from e
         except ValueError as e:
@@ -191,8 +195,73 @@ def create_app(scenario: str | None = None, validate: bool | None = None, opcua:
         src = runtime.scenario
         if not hasattr(src, "clear_faults"):
             raise HTTPException(409, f"source {src.name!r} takes no injection")
-        runtime.clear_faults()  # state.injection -> null
+        runtime.clear_faults(via="http")  # state.injection -> null
         return {"cleared": True, "t": round(src.stream_t, 3)}
+
+    # ------------------------------------------------------------ Sabotage Lab sensor controls (D137)
+
+    def _sensor_reply(disabled: list[str] | None) -> dict:
+        """What was commanded. Sensor health itself is only ever confirmed by state.health.sensors."""
+        health = (runtime.last_state or {}).get("health", {}).get("sensors")
+        return {"source": runtime.scenario.name, "controllable": disabled is not None,
+                "channels": list(SABOTAGE_CHANNELS), "disabled": disabled or [], "health": health,
+                "t": round(getattr(runtime.scenario, "stream_t", 0.0), 3)}
+
+    def _sensor_command(fn, *args) -> dict:
+        try:
+            return _sensor_reply(fn(*args, via="http"))
+        except SensorControlError as e:
+            raise HTTPException(409, str(e)) from e
+        except ValueError as e:
+            raise HTTPException(422, str(e)) from e
+
+    @app.get("/sensors")
+    def sensors():
+        return _sensor_reply(runtime.disabled_sensors())
+
+    @app.post("/sensor/{channel}/off")
+    async def sensor_off(channel: str):
+        """Switch a simulator sensor off (mic, accel, crank, cam). 409 off the simulator."""
+        return _sensor_command(runtime.disable_sensor, channel)
+
+    @app.post("/sensor/{channel}/on")
+    async def sensor_on(channel: str):
+        return _sensor_command(runtime.enable_sensor, channel)
+
+    @app.post("/sensors/restore")
+    async def sensors_restore():
+        return _sensor_command(runtime.restore_sensors)
+
+    # ------------------------------------------------------------ Resilience Lab (D138): record, agent, link, report
+
+    @app.get("/events")
+    def events(after: int = 0):
+        """Incident record since sequence number `after` (requested / accepted / refused / confirmed)."""
+        return {"events": runtime.events.since(after), "now": runtime.clock()}
+
+    @app.get("/investigate")
+    def investigate_now(trigger: str | None = None):
+        """Reliability Agent: read-only tools over the backend state, deterministic answers."""
+        return investigator.investigate(runtime, trigger)
+
+    @app.get("/industrial")
+    def industrial():
+        """Facts about the OPC UA server as it ran (nothing estimated). No client count: asyncua's
+        session list is not exposed here, so none is reported."""
+        last_cmd = runtime.events.last(pred=lambda e: e["via"] == "opcua" and e["phase"] in ("accepted", "refused"))
+        running = bool(bridge is not None and bridge.running)
+        return {"running": running, "endpoint": bridge.endpoint if bridge is not None else None,
+                "namespace": "urn:720:hackhive", "security": "None (local demo)",
+                "last_publish": bridge.last_publish if bridge is not None else None,
+                "last_event": bridge.last_event if bridge is not None else None,
+                "events_emitted": bridge.events_emitted if bridge is not None else 0,
+                "last_command": last_cmd, "sensor_health": (runtime.last_state or {}).get("health", {}).get("sensors"),
+                "now": runtime.clock()}
+
+    @app.get("/report", response_class=HTMLResponse)
+    def report():
+        """Printable incident report from recorded data only."""
+        return incident_report.build(runtime)
 
     @app.websocket("/ws/state")
     async def ws_state(ws: WebSocket):
