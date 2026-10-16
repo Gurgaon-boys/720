@@ -1,8 +1,8 @@
 {
   "eval_version": "0.1",
   "placeholder": false,
-  "generated_at": "2026-10-16T05:40:05Z",
-  "source_commit": "bd1b717",
+  "generated_at": "2026-10-16T07:40:00Z",
+  "source_commit": "e8706b8",
   "produced_by": "python -m eval.build_eval_json",
   "false_positives": {
     "headline": {
@@ -61,28 +61,34 @@
       }
     },
     "secondary": {
-      "dataset": "AudioSet P3 (single-rater vetted car idle; pending)",
+      "dataset": "AudioSet P3, single-rater vetted (56 clips, 9.2 min)",
       "anomaly_flags": {
         "kind": "rate",
-        "events": null,
-        "exposure_hours": null,
-        "per_hour": null,
-        "upper_95_per_hour": null,
+        "events": 1,
+        "exposure_hours": 0.154,
+        "per_hour": 6.504,
+        "upper_95_per_hour": 30.854,
         "bound_method": "poisson_exact_one_sided_95",
-        "n_files": null,
+        "n_files": 56,
         "column": "C",
-        "split": "held-out pool P3 (by video id)"
+        "split": "held-out pool P3 (by video id)",
+        "source": "eval/audio_p3.json",
+        "unit": "episodes (runs of consecutive 1 s windows)"
       },
       "advisories": {
         "kind": "rate",
-        "events": null,
-        "exposure_hours": null,
-        "per_hour": null,
-        "upper_95_per_hour": null,
+        "events": 0,
+        "exposure_hours": 0.154,
+        "per_hour": 0.0,
+        "upper_95_per_hour": 19.4842,
         "bound_method": "poisson_exact_one_sided_95",
-        "n_files": null,
+        "n_files": 56,
         "column": "C",
-        "split": "held-out pool P3 (by video id)"
+        "split": "held-out pool P3 (by video id)",
+        "source": "eval/audio_p3.json",
+        "unit": "episodes (runs of consecutive 1 s windows)",
+        "structurally_limited": true,
+        "note": "structurally zero: no physics rule runs on real audio yet (firing_event versions not built)"
       },
       "classifier_false_faults": {
         "kind": "rate",
@@ -93,19 +99,23 @@
         "bound_method": "poisson_exact_one_sided_95",
         "n_files": null,
         "column": "C",
-        "split": "held-out pool P3 (by video id)"
+        "split": "held-out pool P3 (by video id)",
+        "note": "not available: the classifier needs crank angle and the accelerometer"
       },
       "alarms": {
         "kind": "rate",
-        "events": null,
-        "exposure_hours": null,
-        "per_hour": null,
-        "upper_95_per_hour": null,
+        "events": 0,
+        "exposure_hours": 0.154,
+        "per_hour": 0.0,
+        "upper_95_per_hour": 19.4842,
         "bound_method": "poisson_exact_one_sided_95",
-        "n_files": null,
+        "n_files": 56,
         "column": "C",
         "split": "held-out pool P3 (by video id)",
-        "structurally_limited": true
+        "source": "eval/audio_p3.json",
+        "unit": "episodes (runs of consecutive 1 s windows)",
+        "structurally_limited": true,
+        "note": "structurally zero on audio-only data (no second witness)"
       }
     }
   },
@@ -291,6 +301,21 @@
     }
   },
   "column_c": {
+    "knock_check": {
+      "kind": "proportion",
+      "successes": 1,
+      "n": 19,
+      "value": 0.05263,
+      "ci_95": [
+        0.00935,
+        0.24639
+      ],
+      "ci_method": "wilson_95",
+      "column": "C",
+      "split": "knock_check pool (single-rater agreed detonation, >= 15 kHz)",
+      "detector": "median 5-15 kHz envelope kurtosis > threshold (stand-in: the system's knock rule needs crank angle)",
+      "source": "eval/audio_p3.json"
+    },
     "obd_branch": {
       "kind": "metric",
       "value": 0.01115,
