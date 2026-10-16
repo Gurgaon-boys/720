@@ -1,4 +1,4 @@
-// Sabotage Lab: HTTP client for the backend's sensor controls (D137) and the Resilience Lab reads (D138).
+// Sabotage Lab: HTTP client for the backend's sensor controls (D140) and the Resilience Lab reads (D141).
 //   GET  /sensors               which sensors the backend has switched off (+ last health)
 //   POST /sensor/{ch}/off|on    switch one off / back on (409 off the simulator, 422 unknown channel)
 //   POST /sensors/restore       switch every sensor back on
@@ -6,7 +6,7 @@
 //   GET  /investigate           Reliability Agent: read-only tools, deterministic answers
 //   GET  /industrial            OPC UA server facts (endpoint, last publish, last event, last command)
 //   GET  /report                printable incident report (HTML)
-//   GET  /report.pdf            the same report as a PDF download (D140)
+//   GET  /report.pdf            the same report as a PDF download (D143)
 // A reply only says a command was ACCEPTED. Whether a sensor is actually offline or live again is read
 // from state.health.sensors (the backend watchdog), never from this reply.
 

@@ -70,7 +70,7 @@ def create_app(scenario: str | None = None, validate: bool | None = None, opcua:
     # the Vite dev server on any local port (5173 by default) may call the HTTP helpers
     app.add_middleware(CORSMiddleware, allow_origin_regex=r"http://(localhost|127\.0\.0\.1)(:\d+)?",
                        allow_methods=["*"], allow_headers=["*"],
-                       expose_headers=["Content-Disposition"])  # PDF report file name (D140)
+                       expose_headers=["Content-Disposition"])  # PDF report file name (D143)
 
     @app.get("/health")
     def health():
@@ -188,7 +188,7 @@ def create_app(scenario: str | None = None, validate: bool | None = None, opcua:
         runtime.clear_faults(via="http")  # state.injection -> null
         return {"cleared": True, "t": round(src.stream_t, 3)}
 
-    # ------------------------------------------------------------ Sabotage Lab sensor controls (D137)
+    # ------------------------------------------------------------ Sabotage Lab sensor controls (D140)
 
     def _sensor_reply(disabled: list[str] | None) -> dict:
         """What was commanded. Sensor health itself is only ever confirmed by state.health.sensors."""
@@ -222,7 +222,7 @@ def create_app(scenario: str | None = None, validate: bool | None = None, opcua:
     async def sensors_restore():
         return _sensor_command(runtime.restore_sensors)
 
-    # ------------------------------------------------------------ Resilience Lab (D138): record, agent, link, report
+    # ------------------------------------------------------------ Resilience Lab (D141): record, agent, link, report
 
     @app.get("/events")
     def events(after: int = 0):
@@ -255,7 +255,7 @@ def create_app(scenario: str | None = None, validate: bool | None = None, opcua:
 
     @app.get("/report.pdf")
     def report_pdf():
-        """The same incident report as a downloadable PDF (D140). 503 without reportlab: use GET /report."""
+        """The same incident report as a downloadable PDF (D143). 503 without reportlab: use GET /report."""
         pdf = incident_pdf.build_pdf(runtime)
         if pdf is None:
             raise HTTPException(503, "PDF export needs reportlab (pip install -r requirements.txt); use GET /report and print")

@@ -1,4 +1,4 @@
-"""Incident event log (D138): a bounded in-memory record of what was requested, what the backend
+"""Incident event log (D141): a bounded in-memory record of what was requested, what the backend
 accepted, and what the broadcast then confirmed. Backend clock only; nothing here decides anything.
 
     requested  a command arrived (HTTP, OPC UA or WebSocket)

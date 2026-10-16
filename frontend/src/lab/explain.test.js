@@ -1,4 +1,4 @@
-// node --test: plain-language explanation (D139).
+// node --test: plain-language explanation (D142).
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { explain } from './explain.js';

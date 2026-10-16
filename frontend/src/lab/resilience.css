@@ -1,4 +1,4 @@
-/* 720 INDUSTRIAL RESILIENCE LAB (D138): 3D sensor rig, outcome, agent, industrial link.
+/* 720 INDUSTRIAL RESILIENCE LAB (D141): 3D sensor rig, outcome, agent, industrial link.
    Neutral charcoal while healthy; amber = degraded evidence; red = genuine alarm or sensor failure. */
 
 .rl { gap: 12px; }
@@ -194,7 +194,7 @@
   .details-panel .agent-qa { grid-template-columns: 1fr; }
 }
 
-/* ---------------------------------------------------------------- plain-language outcome (D139) */
+/* ---------------------------------------------------------------- plain-language outcome (D142) */
 .ox {
   border: 1px solid var(--lab-edge-2); border-radius: var(--radius); padding: 16px 20px;
   background: linear-gradient(180deg, #121925, #0d121a); display: flex; flex-direction: column; gap: 14px;
@@ -236,7 +236,7 @@
 .ox-chip.kept::before { content: '✓ '; color: #c3cbd6; }
 @media (max-width: 1100px) { .ox-cols { grid-template-columns: 1fr; } }
 
-/* ---------------------------------------------------------------- PDF export (D140) */
+/* ---------------------------------------------------------------- PDF export (D143) */
 .rl-head { grid-template-columns: auto auto 1fr auto; }
 .rl-head .export { justify-self: end; }
 .export { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 3px; }

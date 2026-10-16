@@ -1,4 +1,4 @@
-"""Incident report as a PDF (D140): the same recorded data as backend/report.py, laid out with reportlab.
+"""Incident report as a PDF (D143): the same recorded data as backend/report.py, laid out with reportlab.
 
 Only what the backend recorded: the incident event log (backend clock), the last state broadcast and one
 Reliability Agent investigation. Unrecorded values read "unavailable". No cost, damage, remaining-life or

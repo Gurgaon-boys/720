@@ -134,7 +134,7 @@ Only the carOBD **held-out** files are offered (display only; nothing is fitted 
 
 Tab **SABOTAGE LAB** (`http://127.0.0.1:5173/?demo=1#sabotage`), labelled **SIMULATED TEST ENVIRONMENT**. A judge
 switches simulator sensors off and on and watches what 720 can still prove. It uses the same backend runtime,
-rule layer and OPC UA server as every other tab; it adds no decision logic (D137).
+rule layer and OPC UA server as every other tab; it adds no decision logic (D140).
 
 **Start the backend at least 30 s before this demo.** The classifier abstains until it has 20 s of OBD history,
 and the first ~2 s after start can show a one-window knock Watch or UNCLASSIFIED (start-up transient).
@@ -172,7 +172,7 @@ API: `GET /sensors`, `POST /sensor/{mic|accel|crank|cam}/off|on`, `POST /sensors
 
 ## 8. Industrial Resilience Lab (the SABOTAGE LAB tab, 60–90 s judge script)
 
-The tab is now **720 — INDUSTRIAL RESILIENCE LAB** (D138), laid out to present top to bottom: a **1-2-3 guide**
+The tab is now **720 — INDUSTRIAL RESILIENCE LAB** (D141), laid out to present top to bottom: a **1-2-3 guide**
 (Inject a fault → Take a sensor away → Bring it back; the current step lights up from backend state), one big
 **Inject misfire · cylinder 3** button and the four sensor switches, the large **3D stage** (the engine with its four
 sensors cabled to a "720 EDGE" unit and an OPC UA mast), the rule-layer decision with ACK, the **What just
@@ -187,7 +187,7 @@ before (classifier warm-up). Measured on this laptop, browser click → first br
 | 3 | **ACCEL → Disable** (or UaExpert `EngineAsset.DisableSensor("accel")`) | ACCEL cable amber "AWAITING WATCHDOG", then **fractures red with a spark**; ML lamp off; **What just happened**: YOU REMOVED ACCEL → 720 LOST knock rule, ML classifier witness → STILL WORKING misfire rule, injector-clog rule, localisation → RESULT "No new alarm can be confirmed", "a_000N stays latched", "Rule layer now: ALARM"; key line; agent explains which sensor, which evidence, whether the fault can still be confirmed; timeline shows requested → accepted → confirmed | accepted ~0.1 s; **classifier gone 0.17–0.40 s**; **watchdog FAILURE 3.06–3.25 s** |
 | 4 | **Acknowledge alarm** | Decision drops to **ADVISORY, physics only** (the latch resets once its two-witness match is gone, D124) | 0.23 s |
 | 5 | **ACCEL → Enable** | Cable rejoins, pulses resume; ML lamp back only when the model answers again; a new ALARM is confirmed | **sensor LIVE 0.23–0.29 s; classifier back 0.94–1.03 s; new ALARM 1.20–1.36 s** |
-| 6 | **Export PDF report** (header button, or the Incident timeline tab) | Downloads `720_incident_<run>_<time>.pdf` (D140); "View report" opens the same content as a printable page: asset, source, episodes, alarm ids, sensor availability, physics and ML evidence, ACK, timeline with phases, agent findings, limitations | — |
+| 6 | **Export PDF report** (header button, or the Incident timeline tab) | Downloads `720_incident_<run>_<time>.pdf` (D143); "View report" opens the same content as a printable page: asset, source, episodes, alarm ids, sensor availability, physics and ML evidence, ACK, timeline with phases, agent findings, limitations | — |
 
 Closing line: *"Most systems tell you when an engine fails. 720 also tells you when its own diagnosis can no longer
 be trusted."*
@@ -201,4 +201,4 @@ the Industrial link showed it as the last command plus the emitted OPC UA event 
 (outcome, agent, timeline, report) works without it. Agent: it is deterministic and runs on the backend; there is no
 language model to fail.
 
-API (D138, D140): `GET /events?after=N`, `GET /investigate`, `GET /industrial`, `GET /report`, `GET /report.pdf`.
+API (D141, D143): `GET /events?after=N`, `GET /investigate`, `GET /industrial`, `GET /report`, `GET /report.pdf`.

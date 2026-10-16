@@ -1,4 +1,4 @@
-// Plain-language "What happened / What it means / What to do now" (D139), for people who don't know the
+// Plain-language "What happened / What it means / What to do now" (D142), for people who don't know the
 // system. It only rephrases backend facts (sensor health and the backend's switched-off list, the rule
 // layer's decision, witnesses and guidance text) and the fixed sensor dependency table. It never names a
 // fault the rule layer did not name, and never gives a confidence.

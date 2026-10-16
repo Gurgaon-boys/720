@@ -18,7 +18,7 @@ import ExportButton from './ExportButton.jsx';
 import './sabotage.css';
 import './resilience.css';
 
-// SABOTAGE LAB = 720 INDUSTRIAL RESILIENCE LAB (D137, D138): a judge switches simulator sensors off and on
+// SABOTAGE LAB = 720 INDUSTRIAL RESILIENCE LAB (D140, D141): a judge switches simulator sensors off and on
 // and watches what 720 can still prove across the whole chain: sensors, evidence, rule layer, OPC UA. Everything shown comes from the backend: sensor state from GET /sensors and the watchdog's
 // state.health.sensors, evidence from state.models / state.physics_rules, the decision from the rule
 // layer. This view never derives a fault, a confidence or a decision, and never clears an alarm.

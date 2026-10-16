@@ -1,6 +1,6 @@
 import { explain } from './explain.js';
 
-// WHAT JUST HAPPENED (D138, D139): the result of the judge's action, explained for someone who doesn't know
+// WHAT JUST HAPPENED (D141, D142): the result of the judge's action, explained for someone who doesn't know
 // the system. One headline, then three columns: what happened, what it means, what to do now. A thin strip
 // underneath lists what 720 lost and what still works. Every statement comes from explain.js, which only
 // rephrases backend facts and the fixed sensor dependency table.

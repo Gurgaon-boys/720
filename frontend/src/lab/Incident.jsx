@@ -1,6 +1,6 @@
 import ExportButton from './ExportButton.jsx';
 
-// LIVE INCIDENT TIMELINE (D138): the backend's incident record (GET /events), newest first, with the three
+// LIVE INCIDENT TIMELINE (D141): the backend's incident record (GET /events), newest first, with the three
 // phases kept apart: REQUESTED (a command arrived), ACCEPTED (the backend applied it), CONFIRMED (the
 // broadcast shows the change). Times are the backend clock. A confirmation shows how long after its
 // command it arrived, measured on that clock.

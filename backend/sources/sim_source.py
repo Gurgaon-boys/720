@@ -47,7 +47,7 @@ OBD_UNITS = {"rpm": "rev/min", "load_pct": "%", "throttle_pct": "%", "map_kpa": 
              "stft_pct": "%", "ltft_pct": "%", "spark_adv_deg": "deg", "lambda": "1",
              "intake_air_temp_c": "degC", "battery_v": "V", "baro_kpa": "kPa"}
 _RUNNING = Phase()        # the source itself never goes "offline"; sensors drop out individually
-SABOTAGE_CHANNELS = ("mic", "accel", "crank", "cam")   # sensors an operator may switch off (Sabotage Lab, D137)
+SABOTAGE_CHANNELS = ("mic", "accel", "crank", "cam")   # sensors an operator may switch off (Sabotage Lab, D140)
 
 
 class SimSource:
@@ -103,9 +103,9 @@ class SimSource:
         self.sim.inject(fault, cylinder=cylinder, severity=severity)
 
     def clear_faults(self) -> None:
-        self.sim.clear_faults()   # never restores a disabled sensor (D137)
+        self.sim.clear_faults()   # never restores a disabled sensor (D140)
 
-    # ------------------------------------------------------------ sensor sabotage (D137)
+    # ------------------------------------------------------------ sensor sabotage (D140)
 
     def disable_sensor(self, channel: str) -> None:
         """Switch a sensor off from the next simulator chunk on. Uses the simulator's own dropout
@@ -227,7 +227,7 @@ class SimSource:
             wit = self.witness(w.vector, f["rpm_mean"], True, w.obd["n"])
         else:
             # the classifier's inputs include crank and accelerometer features: with either stream missing
-            # the vector is not a measurement, so the witness gives no output at all (D137)
+            # the vector is not a measurement, so the witness gives no output at all (D140)
             wit = WitnessOut([], None, None, 0.0)
         if wit.cpu_ms:
             self.classifier_ms = (self.classifier_ms + [wit.cpu_ms])[-500:]

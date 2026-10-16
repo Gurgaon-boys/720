@@ -10,7 +10,7 @@ import EngineScene from '../dashboard/engine3d/EngineScene.jsx';
 import PanelBoundary from '../dashboard/PanelBoundary.jsx';
 import { SENSOR_INFO } from './evidence.js';
 
-// The Resilience Lab's 3D stage (D138): Livana's engine (EngineScene, reused unchanged) with the four
+// The Resilience Lab's 3D stage (D141): Livana's engine (EngineScene, reused unchanged) with the four
 // physical sensors mounted on it, wired by cables to a "720 EDGE" unit (the rule layer, with a lamp per
 // witness and the decision light) and on to an OPC UA mast. Every visual follows backend facts only:
 //   cable pulses     only while the watchdog reports the sensor NORMAL

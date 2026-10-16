@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { usePoll } from './useBackend.js';
 
-// INDUSTRIAL LINK (D138): the OPC UA server as it actually runs, from GET /industrial. No client count:
+// INDUSTRIAL LINK (D141): the OPC UA server as it actually runs, from GET /industrial. No client count:
 // the backend does not expose OPC UA sessions, so none is shown.
 
 const ago = (t, now) => (t == null ? 'never' : `${Math.max(0, now - t).toFixed(1)} s ago`);

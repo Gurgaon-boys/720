@@ -20,7 +20,7 @@ Address space (namespace urn:720:hackhive), under Objects/EngineAsset:
   Acknowledge(AlarmId, Operator) -> (Accepted, Reason)
   Inject(Fault, Cylinder, Severity) -> (Accepted, Reason)   live simulator only, same path as POST /inject
   DisableSensor(Channel) / EnableSensor(Channel) -> (Accepted, Reason)   live simulator only, same path as
-                   POST /sensor/{channel}/off|on (D137); the sensor's state is confirmed by SensorHealth/*
+                   POST /sensor/{channel}/off|on (D140); the sensor's state is confirmed by SensorHealth/*
 
 NE 107 values match the OPC UA DI DeviceHealthEnumeration: NORMAL 0, FAILURE 1, CHECK_FUNCTION 2,
 OFF_SPEC 3, MAINTENANCE_REQUIRED 4. It's a custom enum with those values; the DI nodeset isn't loaded.
@@ -167,7 +167,7 @@ class OpcuaBridge:
         self._last_state_mono: float | None = None
         self._online = True
         self._tasks: list[asyncio.Task] = []
-        # for the Sabotage Lab's Industrial Link panel (D138): facts about what this server actually did
+        # for the Sabotage Lab's Industrial Link panel (D141): facts about what this server actually did
         self.last_publish: float | None = None     # backend clock of the last state written to the address space
         self.last_event: dict | None = None        # the last OPC UA event emitted
         self.events_emitted = 0
@@ -582,7 +582,7 @@ class OpcuaBridge:
         return self._reply(False, reason)
 
     def _sensor_command(self, fn, channel, name):
-        """Same Runtime call as the HTTP sensor routes (D137). Accepted only means the command was taken;
+        """Same Runtime call as the HTTP sensor routes (D140). Accepted only means the command was taken;
         the sensor's actual state comes from SensorHealth/<channel> (the watchdog, 3 s)."""
         try:
             fn(str(channel), via="opcua")

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-// EXPORT PDF REPORT (D140): downloads GET /report.pdf (built on the backend from recorded data only).
+// EXPORT PDF REPORT (D143): downloads GET /report.pdf (built on the backend from recorded data only).
 // If the backend can't make a PDF (reportlab missing → 503) or the request fails, it opens the printable
 // HTML report instead, where the browser's "Save as PDF" does the same job.
 
