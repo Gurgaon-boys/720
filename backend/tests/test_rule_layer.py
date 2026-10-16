@@ -146,7 +146,10 @@ def test_invalid_acks_rejected_without_state_change():
 
 def test_unclassified_with_physics_hint():
     layer = RuleLayer()
-    for d in run(layer, *[VALVE] * 8):
+    ds = run(layer, *[VALVE] * 8)
+    # the first anomalous window is not yet persistent: the physics hint alone is an ADVISORY
+    assert ds[0]["state"] == "ADVISORY" and ds[0]["fault"] == "valve_tick" and asset_ne107(ds[0]) == "NORMAL"
+    for d in ds[1:]:
         assert d["state"] == "UNCLASSIFIED" and d["fault"] == "valve_tick" and d["location"] == 2
         assert d["witnesses"] == ["physics"] and not d["latched"]
         assert asset_ne107(d) == "OFF_SPEC"
@@ -154,8 +157,15 @@ def test_unclassified_with_physics_hint():
 
 def test_unclassified_without_hint():
     ev = Evidence(models("healthy", 0.45), [rule("misfire", False)], 0.9, 0.6)
-    d = RuleLayer().step(ev)
-    assert d["state"] == "UNCLASSIFIED" and d["fault"] is None and d["witnesses"] == []
+    first, second = run(RuleLayer(), ev, ev)
+    assert first["state"] == "NORMAL"
+    assert second["state"] == "UNCLASSIFIED" and second["fault"] is None and second["witnesses"] == []
+
+
+def test_unclassified_needs_two_consecutive_windows():
+    anom = Evidence(models("healthy", 0.45), [rule("misfire", False)], 0.9, 0.6)
+    seq = [d["state"] for d in run(RuleLayer(), anom, HEALTHY, anom, HEALTHY, anom, anom, anom, HEALTHY)]
+    assert seq == ["NORMAL"] * 5 + ["UNCLASSIFIED", "UNCLASSIFIED", "NORMAL"]
 
 
 def test_injector_clog_alarm_is_maintenance_required():
@@ -182,7 +192,7 @@ def test_check_function_only_in_maintenance_and_never_over_a_fault():
     assert asset_ne107(alarm, maintenance=True) == "OFF_SPEC"
     clog = Evidence(models("injector_clog"), [rule("injector_clog", location=1)], 0.7, 0.6)
     assert asset_ne107(run(RuleLayer(), clog, clog)[-1], maintenance=True) == "MAINTENANCE_REQUIRED"
-    assert asset_ne107(RuleLayer().step(VALVE), maintenance=True) == "OFF_SPEC"
+    assert asset_ne107(run(RuleLayer(), VALVE, VALVE)[-1], maintenance=True) == "OFF_SPEC"
 
 
 # ---------------------------------------------------------------- L2: the classifier's cylinder

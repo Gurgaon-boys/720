@@ -11,6 +11,10 @@ Per-window assessment, in order of precedence:
   advisory      one witness only (classifier or physics)
   healthy       none of the above
 
+UNCLASSIFIED persistence: like ALARM, UNCLASSIFIED needs UNCLASSIFIED_WINDOWS (2) consecutive
+`unclassified` windows. The first one is assessed as if there were no anomaly witness (ADVISORY when a
+physics rule fired, else NORMAL), so one stray anomalous window raises nothing.
+
 Latch (decided by Nishant, 2026-10-16):
   - ALARM after 2 consecutive `match` windows for the same fault. The first one is ADVISORY.
   - The alarm stays latched until it is acknowledged and the engine is healthy again,
@@ -23,12 +27,13 @@ Latch (decided by Nishant, 2026-10-16):
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 TRAINED_FAULTS = ("misfire", "knock", "injector_clog")
 
 RAISE_WINDOWS = 2  # consecutive two-witness windows before ALARM
 CLEAR_WINDOWS = 2  # consecutive healthy windows (after ACK) before reset
+UNCLASSIFIED_WINDOWS = 2  # consecutive anomalous, unnamed windows before UNCLASSIFIED
 P_MIN = 0.6  # mean probability the classifier majority needs to count as a witness
 
 # NE 107 asset health for a latched alarm, by fault (DECISIONS.md D14)
@@ -118,7 +123,8 @@ def assess(ev: Evidence) -> Assessment:
 
 
 class RuleLayer:
-    def __init__(self, first_alarm_id: int = 1) -> None:
+    def __init__(self, first_alarm_id: int = 1, unclassified_windows: int = UNCLASSIFIED_WINDOWS) -> None:
+        self.unclassified_windows = unclassified_windows
         self.alarm: ActiveAlarm | None = None
         self._streak_fault: str | None = None
         self._streak_n = 0
@@ -127,10 +133,14 @@ class RuleLayer:
         self._cleared_ids: set[str] = set()
         self._last = Assessment("healthy")
         self._last_severity: float | None = None
+        self._unclassified_n = 0
 
     def step(self, ev: Evidence) -> dict:
         """Evaluate one window and return the contract's `decision` object."""
         a = assess(ev)
+        self._unclassified_n = self._unclassified_n + 1 if a.kind == "unclassified" else 0
+        if a.kind == "unclassified" and self._unclassified_n < self.unclassified_windows:
+            a = assess(replace(ev, anomaly_score=None))      # not yet persistent: no anomaly witness
         self._last, self._last_severity = a, ev.severity
 
         if a.kind == "match":

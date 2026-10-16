@@ -124,7 +124,8 @@ def test_advisory_and_conflict_never_alarm():
 
 def test_unclassified_scenario():
     r = Run("unclassified").advance(14)
-    assert r.seq() == ["NORMAL", "UNCLASSIFIED", "NORMAL"]
+    # the first anomalous window is not yet persistent: the physics hint alone shows as ADVISORY
+    assert r.seq() == ["NORMAL", "ADVISORY", "UNCLASSIFIED", "NORMAL"]
     u = next(m for m in r.states if m["decision"]["state"] == "UNCLASSIFIED")
     assert u["decision"]["fault"] == "valve_tick" and u["health"]["asset_ne107"] == "OFF_SPEC"
 
