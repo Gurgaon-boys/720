@@ -252,7 +252,7 @@ def test_diagnostics_offline():
             assert await r.read("EngineAsset.SensorHealth.DiagnosticStream") == 0
             await wait_for(lambda: _ok(r.read("EngineAsset.Diagnostics.DiagnosticsOnline"), lambda v: v is False))
             assert await r.read("EngineAsset.SensorHealth.DiagnosticStream") == NE107.index("FAILURE")
-            assert await r.read("EngineAsset.SensorHealth.LastStateAgeS") > 3.0
+            assert await r.read("EngineAsset.SensorHealth.LastStateAgeS") >= 3.0   # offline is declared at 3 s
             assert await r.read("EngineAsset.AssetHealth") == 0  # stream health isn't engine health
             off = await event(r.server_events, "Diagnostics offline")
             assert off and off[0]["sev"] == 500 and off[0]["sensor"] == "DiagnosticStream"

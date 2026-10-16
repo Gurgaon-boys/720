@@ -291,13 +291,16 @@ class EngineSim:
     """
 
     def __init__(self, params: EngineParams | None = None, seed: int = 0, *, ecu: EcuParams | None = None,
-                 regimes: Regimes | None = None, purpose: str = "general"):
+                 regimes: Regimes | None = None, purpose: str = "general", chunk_invariant: bool = True):
         self.params = p = params or EngineParams()
         self.ecu = ecu or EcuParams()
         self.regimes = regimes or Regimes()
         if purpose not in PURPOSES:
             raise ValueError(f"purpose must be one of {PURPOSES}")
         self.purpose = purpose
+        # False: with regimes on, generate each step directly (sub-block operating-point / fault timing, but the
+        # regime noise realisation then depends on the step size, as in 2.1.0; see step)
+        self.chunk_invariant = chunk_invariant
         self.seed = seed
         if sorted(p.firing_order) != [1, 2, 3, 4]:
             raise ValueError("the simulator supports 4 cylinders only")
@@ -420,10 +423,11 @@ class EngineSim:
         whatever the caller's step, the simulator then always generates BLOCK_S blocks (aligned to t = 0)
         and serves other steps as slices of them: step(0.5) is unchanged, step(0.05) returns the same
         samples. A fault or operating-point change requested mid-block takes effect from the next block
-        (at most BLOCK_S later). With regimes off the stream is chunk-independent already and nothing changes.
+        (at most BLOCK_S later), so a ramp applied in smaller steps becomes a BLOCK_S staircase. With regimes off
+        the stream is chunk-independent already and nothing changes. EngineSim(chunk_invariant=False) opts out.
         """
         n_block = int(round(BLOCK_S * FS))
-        if not self.regimes.any_on or (not self._blocks and abs(duration_s - BLOCK_S) < 1e-12 and self._n % n_block == 0):
+        if not self.chunk_invariant or not self.regimes.any_on or (not self._blocks and abs(duration_s - BLOCK_S) < 1e-12 and self._n % n_block == 0):
             return self._step(duration_s, background)
         if background is not None:
             raise ValueError("background texture needs step(BLOCK_S) when regimes are on")

@@ -74,7 +74,8 @@ def test_half_order_energy_ignores_a_healthy_load_change(rpm):
     """Load 30 % -> 70 % (calculated load) over 1 s on a healthy engine: the misfire rule stays quiet.
     The crank-speed trend is removed before the half order, so the ramp doesn't leak into it."""
     th = load_thresholds()
-    sim = EngineSim(EngineParams.randomised(55), seed=1, regimes=Regimes.eval())
+    # a smooth ramp in 0.1 s steps needs sub-block timing: opt out of the 0.5 s blocks (DECISIONS D103)
+    sim = EngineSim(EngineParams.randomised(55), seed=1, regimes=Regimes.eval(), chunk_invariant=False)
     sim.set_operating_point(rpm_target=rpm, load_nm=2.0)
     w, fired, loads, vals = CycleWindower(), 0, [], []
     for i in range(200):
