@@ -22,21 +22,21 @@ import { SENSOR_INFO } from './evidence.js';
 
 // composition space: the engine at the origin scaled by S, the rig to its right; the whole composition is
 // shifted by COMP so it sits centred on EngineScene's home camera target (0, 1.25, 0)
-const S = 0.8;
-const COMP = [-1.75, 0.35, 0.2];
+const S = 0.9;
+const COMP = [-1.45, -0.05, 0.3];
 const w = ([x, y, z]) => new Vector3(x * S, y * S, z * S);
 
 // sensor mount points in engine coordinates (block x ±2.65, deck y ≈ 2.1, head top ≈ 2.5, crank on y = 0)
 const MOUNT = {
-  mic: [-1.0, 3.75, 1.35],
+  mic: [-1.0, 3.25, 1.35],
   accel: [1.1, 1.35, 0.8],
   crank: [-2.95, -0.15, 0.45],
   cam: [2.9, 2.32, 0.25],
 };
-const EDGE = new Vector3(3.15, 0.25, -0.9);
+const EDGE = new Vector3(3.55, 0.12, -0.95);
 const EDGE_SIZE = [0.78, 1.0, 0.5];
-const PORT_Y = { mic: 0.6, accel: 0.4, crank: 0.2, cam: 0.0 };
-const MAST = new Vector3(4.3, -0.64, -2.1);
+const PORT_Y = { mic: 0.47, accel: 0.27, crank: 0.07, cam: -0.13 };
+const MAST = new Vector3(4.6, -0.78, -2.2);
 
 const COL = { live: '#8e9aab', hot: '#e6edf5', pending: '#ffb020', broken: '#ff4d4f', idle: '#2c3a4e' };
 const CABLE = { LIVE: 'live', SENDING: 'pending', DISABLING: 'pending', RECOVERING: 'pending', OFFLINE: 'broken', FAILURE: 'broken', UNKNOWN: 'idle' };
@@ -105,7 +105,7 @@ function Cable({ curve, state, frozen, radius = 0.024 }) {
 
 function Tag({ position, title, status, tone, wide, rows }) {
   return (
-    <Html position={position} center distanceFactor={4.6} zIndexRange={[20, 0]}>
+    <Html position={position} center distanceFactor={7} zIndexRange={[20, 0]}>
       <div className={`s3-tag t-${tone}${wide ? ' wide' : ''}`}>
         <span className="s3-tag-title">{title}</span>
         {status && <span className="s3-tag-status">{status}</span>}
@@ -164,7 +164,7 @@ function Edge({ decision, physicsTone, mlTone, frozen }) {
       <Lamp position={[-0.17, 0.24, front + 0.03]} size={0.05} color={lamp[physicsTone]} />
       <Lamp position={[0.17, 0.24, front + 0.03]} size={0.05} color={lamp[mlTone]} />
       <Lamp position={[0, -0.12, front + 0.04]} size={0.11} color={decision.state === 'NORMAL' ? '#8e9aab' : s3.color} pulse={decision.state === 'ALARM' && !decision.acked} frozen={frozen} />
-      <mesh position={[0, -EDGE_SIZE[1] / 2 - 0.125, 0]}><boxGeometry args={[0.36, 0.25, 0.32]} /><meshStandardMaterial color="#111720" /></mesh>
+      <mesh position={[0, -EDGE_SIZE[1] / 2 - 0.2, 0]}><boxGeometry args={[0.36, 0.4, 0.32]} /><meshStandardMaterial color="#111720" /></mesh>
     </group>
   );
 }

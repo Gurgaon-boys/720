@@ -12,6 +12,8 @@ import AgentPanel from './AgentPanel.jsx';
 import IndustrialLink, { useIndustrial } from './IndustrialLink.jsx';
 import Incident from './Incident.jsx';
 import LabSignals from './LabSignals.jsx';
+import Guide, { currentStep } from './Guide.jsx';
+import Details from './Details.jsx';
 import './sabotage.css';
 import './resilience.css';
 
@@ -138,9 +140,11 @@ export default function SabotageLab({
   return (
     <section className={`lab rl${offline ? ' lab-offline' : ''}`} aria-label="720 Industrial Resilience Lab">
       <LabHeader level={level} scripted={String(state.run_id).startsWith('fake_')} />
+      <Guide step={currentStep(state, sensors)} />
 
       <div className="rl-grid">
         <aside className="lab-col rl-left" aria-label="Controls">
+          <InjectPanel state={state} enabled={Boolean(api) && isSim && ctl.controllable === true && !offline} onStart={onStartInjection} onStop={onStopInjection} />
           <SensorPanel
             sensors={sensors} canControl={canControl} ctl={ctl} onCommand={(kind, ch) => ctl.command(kind, ch)}
             why={controlBlocker({ api, isSim, ctl, offline, mock })}
@@ -148,7 +152,6 @@ export default function SabotageLab({
               ? () => { onSelectScenario('sim'); setTimeout(ctl.refresh, 1500); }
               : null}
           />
-          <InjectPanel state={state} enabled={Boolean(api) && isSim && ctl.controllable === true && !offline} onStart={onStartInjection} onStop={onStopInjection} />
         </aside>
 
         <div className="rl-center">
@@ -156,20 +159,29 @@ export default function SabotageLab({
             state={state} sensors={sensors} classifier={classifier} physics={physics}
             industrial={industrial} offline={offline} active={active}
           />
-          <Outcome result={result} state={state} sensors={sensors} />
         </div>
 
-        <aside className="lab-col rl-right" aria-label="Decision and investigation">
+        <aside className="lab-col rl-right" aria-label="Decision">
           <DecisionCard decision={state.decision} onAck={onAck} ackError={ackError} />
-          <AgentPanel api={api} events={events} active={active} />
         </aside>
       </div>
 
-      <div className="rl-bottom">
-        <Incident events={events} error={evError} reportUrl={api?.reportUrl} showOpc={false} />
-        <IndustrialLink data={industrial} error={indError} />
-        <LabSignals state={state} signal={signal} ages={ages} sensors={sensors} offline={offline} />
-      </div>
+      <Outcome result={result} state={state} sensors={sensors} />
+
+      <Details
+        tabs={[
+          { id: 'agent', label: 'Reliability Agent', body: <AgentPanel api={api} events={events} active={active} /> },
+          {
+            id: 'timeline', label: 'Incident timeline', badge: events.length ? String(events.filter((e) => e.kind !== 'opcua_event').length) : null,
+            body: <Incident events={events} error={evError} reportUrl={api?.reportUrl} showOpc={false} />,
+          },
+          {
+            id: 'opcua', label: 'OPC UA link', badge: industrial ? (industrial.running ? 'UP' : 'DOWN') : null, badgeTone: industrial?.running ? 'ok' : 'red',
+            body: <IndustrialLink data={industrial} error={indError} />,
+          },
+          { id: 'signals', label: 'Live signals', body: <LabSignals state={state} signal={signal} ages={ages} sensors={sensors} offline={offline} /> },
+        ]}
+      />
       <p className="rl-closing">Most systems tell you when an engine fails. 720 also tells you when its own diagnosis can no longer be trusted.</p>
     </section>
   );
@@ -231,7 +243,6 @@ function SensorPanel({ sensors, canControl, ctl, onCommand, why, onSwitchToSim }
             <li key={ch} className={`lab-sensor st-${s.status.toLowerCase()}`}>
               <div className="lab-sensor-id">
                 <span className="lab-sensor-name">{info.short}</span>
-                <span className="lab-sensor-feeds">{info.feeds}</span>
               </div>
               <span className="lab-chip mono" aria-live="polite">{STATUS_TEXT[s.status]}</span>
               <button
@@ -253,7 +264,7 @@ function SensorPanel({ sensors, canControl, ctl, onCommand, why, onSwitchToSim }
         <button type="button" className="lab-btn primary" onClick={onSwitchToSim}>Switch to live simulator</button>
       )}
       {ctl.error && <p className="lab-note err" role="alert">{ctl.error}</p>}
-      <p className="lab-note faint">Disable blanks the sensor inside the simulator. The watchdog confirms it after 3 s without data; nothing here changes until the backend says so.</p>
+      <p className="lab-note faint">A cut is confirmed by the backend watchdog after 3 s without data.</p>
     </section>
   );
 }
@@ -265,14 +276,31 @@ function InjectPanel({ state, enabled, onStart, onStop }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
   const inj = state.injection?.active ? state.injection : null;
-  const run = (p, what) => {
+  const run = (p) => {
     setBusy(true);
     setErr(null);
     Promise.resolve().then(p).catch((e) => setErr(e.message)).finally(() => setBusy(false));
   };
   return (
     <section className="lab-card" aria-label="Fault injection">
-      <div className="lab-card-head"><h3>Fault injection</h3><span className="lab-tag mono">SIMULATED</span></div>
+      <div className="lab-card-head"><h3>Fault</h3><span className="lab-tag mono">SIMULATED</span></div>
+      <div className="lab-actions inject-main">
+        <button
+          type="button" className="lab-btn primary big" disabled={!enabled || busy}
+          onClick={() => run(() => onStart({ fault, cylinder: cyl, severity: sev }))}
+        >
+          Inject {FAULTS[fault].name.toLowerCase()} · cylinder {cyl}
+        </button>
+        <button type="button" className="lab-btn ghost" disabled={!enabled || busy || !inj} onClick={() => run(onStop)}>
+          Clear
+        </button>
+      </div>
+      <p className="lab-note mono" aria-live="polite">
+        {inj ? `ACTIVE · ${faultInfo(inj.fault).name}${inj.cylinder != null ? ` · cyl ${inj.cylinder}` : ''} · ${inj.severity.toFixed(2)}` : 'Healthy engine: nothing injected'}
+      </p>
+      {err && <p className="lab-note err" role="alert">{err}</p>}
+      <details className="inject-more">
+        <summary>Change fault</summary>
       <div className="lab-seg" role="group" aria-label="Fault">
         {INJECT_FAULTS.map((f) => (
           <button key={f} type="button" className={`lab-seg-btn${f === fault ? ' on' : ''}`} aria-pressed={f === fault} onClick={() => setFault(f)} disabled={!enabled}>
@@ -293,22 +321,8 @@ function InjectPanel({ state, enabled, onStart, onStop }) {
         <input type="range" min="0.05" max="1" step="0.05" value={sev} disabled={!enabled} onChange={(e) => setSev(Number(e.target.value))} />
         <span className="mono lab-sev">{sev.toFixed(2)}</span>
       </label>
-      <div className="lab-actions">
-        <button
-          type="button" className="lab-btn primary" disabled={!enabled || busy}
-          onClick={() => run(() => onStart({ fault, cylinder: cyl, severity: sev }), `Inject ${FAULTS[fault].name.toLowerCase()} · cyl ${cyl} · ${sev.toFixed(2)}`)}
-        >
-          Inject
-        </button>
-        <button type="button" className="lab-btn ghost" disabled={!enabled || busy || !inj} onClick={() => run(onStop, 'Clear faults')}>
-          Clear fault
-        </button>
-      </div>
-      <p className="lab-note mono" aria-live="polite">
-        {inj ? `ACTIVE · ${faultInfo(inj.fault).name}${inj.cylinder != null ? ` · cyl ${inj.cylinder}` : ''} · ${inj.severity.toFixed(2)}` : 'No injection active (healthy engine)'}
-      </p>
-      {err && <p className="lab-note err" role="alert">{err}</p>}
       <p className="lab-note faint">Clearing a fault never re-enables a sensor.</p>
+      </details>
     </section>
   );
 }
