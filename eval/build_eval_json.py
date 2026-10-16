@@ -123,10 +123,11 @@ def operator_projection() -> dict:
     p, sim = ab["operator_projection"], ab["healthy"]["sim"]
     return {"engines": p["engines"], "value": p["fleet_per_hour"], "upper_95": p["fleet_upper_95_per_hour"],
             "unit": "operator notifications per hour (ALARM + UNCLASSIFIED episodes)",
-            "basis": f"{p['per_engine_operator_notifications']['events']} episodes in {sim['hours']:.2f} engine-h "
+            "basis": f"{p['per_engine_operator_notifications']['events']} episodes in {sim['hours']:.1f} engine-h "
                      f"x {p['engines']} engines ({sim['label']}, {sim['split']}); exact Poisson 95 % upper "
-                     f"{p['fleet_upper_95_per_hour']:.1f} per hour, above the ~12/h manageable guidance: too little "
-                     f"exposure yet to bound a {p['engines']}-engine fleet",
+                     f"{p['fleet_upper_95_per_hour']:.1f} per hour; guidance per operator ~6/h acceptable, ~12/h manageable. "
+                     f"REAL carOBD held-out: {p['by_source']['real_carobd']['fleet_per_hour']:.1f} per hour "
+                     f"(95 % upper {p['by_source']['real_carobd']['fleet_upper_95_per_hour']:.1f}), UNCLASSIFIED only",
             "guidance_per_operator_hour": p["guidance_per_operator_hour"], "assumptions": "; ".join(p["assumptions"]),
             "column": "A", "split": sim["split"], "source": "eval/results/alarm_budget.json"}
 

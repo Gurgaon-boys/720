@@ -33,6 +33,7 @@ from sim import SIM_VERSION
 ROOT = Path(__file__).resolve().parents[1]
 WORKERS = int(os.environ.get("S720_WORKERS", 10))
 RUNS, RUN_S = 40, 180.0
+RUNS_BY_RANGE = {"soak_long": 400}          # 100 engines x 4 runs = 20 engine-hours
 ALL_LEVELS = LEVELS + ("alarms_raised", "alarms_raised_startup")
 
 
@@ -66,7 +67,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--range", default="soak_fresh3")
     args = ap.parse_args()
-    paths = [CACHE / "soak" / args.range / f"run_{i:03d}.npz" for i in range(RUNS)]
+    runs = RUNS_BY_RANGE.get(args.range, RUNS)
+    paths = [CACHE / "soak" / args.range / f"run_{i:03d}.npz" for i in range(runs)]
     todo = [(args.range, i) for i, p in enumerate(paths) if not p.exists()]
     if todo:
         with Pool(WORKERS) as pool:
@@ -74,7 +76,7 @@ def main():
     recs = [load_rec(p) for p in paths]
     res = {"created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "sim_version": SIM_VERSION,
            "label": "SIM 2.1", "column": "A", "split": f"{args.range} engines {SEEDS[args.range][0][0]}-{SEEDS[args.range][0][-1]} (unseen)",
-           "runs": RUNS, "run_s_counted": RUN_S, "window": "4-cycle windows, 50 % overlap",
+           "runs": runs, "run_s_counted": RUN_S, "window": "4-cycle windows, 50 % overlap",
            "configs": {}, "runs_detail": [r["meta"] for r in recs]}
     for name, (th, uw) in configs().items():
         res["configs"][name] = {"healthy_thresholds": th or "checkpoint (pooled val windows)",
@@ -91,7 +93,7 @@ def main():
         print("reproduces", old.name, same)
     out = ROOT / "eval" / "results" / f"soak_l3_{args.range.replace('soak_', '')}.json"
     out.write_text(json.dumps(res, indent=1))
-    print(f"{args.range}: {RUNS} runs, {res['configs']['after']['hours']:.2f} h, {res['configs']['after']['windows']} windows")
+    print(f"{args.range}: {runs} runs, {res['configs']['after']['hours']:.2f} h, {res['configs']['after']['windows']} windows")
     print(f"  {'level':24s} " + "  ".join(f"{c:>26s}" for c in res["configs"]))
     for lv in ALL_LEVELS:
         cells = []

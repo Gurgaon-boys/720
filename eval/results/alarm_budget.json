@@ -1,12 +1,58 @@
 {
- "created_at": "2026-10-16T13:59:10+00:00",
+ "created_at": "2026-10-16T14:58:38+00:00",
  "sim_version": "2.1.1",
  "healthy": {
   "sim": {
    "label": "SIM 2.1",
    "column": "A",
+   "split": "soak_long engines 1300-1399 (unseen)",
+   "hours": 20.0,
+   "runs": 400,
+   "source": "eval/results/soak_l3_long.json (after)",
+   "levels": {
+    "physics_alone": {
+     "events": 184,
+     "exposure_hours": 20.0,
+     "per_hour": 9.2,
+     "upper_95_per_hour": 10.39631777570941,
+     "bound_method": "poisson_exact_one_sided_95"
+    },
+    "classifier_alone": {
+     "events": 38,
+     "exposure_hours": 20.0,
+     "per_hour": 1.9,
+     "upper_95_per_hour": 2.4904231831070964,
+     "bound_method": "poisson_exact_one_sided_95"
+    },
+    "alarm": {
+     "events": 0,
+     "exposure_hours": 20.0,
+     "per_hour": 0.0,
+     "upper_95_per_hour": 0.14978661367769946,
+     "bound_method": "poisson_exact_one_sided_95"
+    },
+    "unclassified": {
+     "events": 20,
+     "exposure_hours": 20.0,
+     "per_hour": 1.0,
+     "upper_95_per_hour": 1.4531009420217007,
+     "bound_method": "poisson_exact_one_sided_95"
+    },
+    "advisory": {
+     "events": 221,
+     "exposure_hours": 20.0,
+     "per_hour": 11.05,
+     "upper_95_per_hour": 12.353148895095355,
+     "bound_method": "poisson_exact_one_sided_95"
+    }
+   }
+  },
+  "sim_2h": {
+   "label": "SIM 2.1",
+   "column": "A",
    "split": "soak_fresh3 engines 1100-1139 (unseen)",
    "hours": 2.0,
+   "runs": 40,
    "source": "eval/results/soak_l3_fresh3.json (after)",
    "levels": {
     "physics_alone": {
@@ -110,21 +156,67 @@
  },
  "operator_projection": {
   "engines": 50,
+  "main": "sim_20h",
   "per_engine_operator_notifications": {
-   "events": 0,
-   "exposure_hours": 2.0,
-   "per_hour": 0.0,
-   "upper_95_per_hour": 1.4978661367769948,
+   "events": 20,
+   "exposure_hours": 20.0,
+   "per_hour": 1.0,
+   "upper_95_per_hour": 1.4531009420217007,
    "bound_method": "poisson_exact_one_sided_95"
   },
-  "fleet_per_hour": 0.0,
-  "fleet_upper_95_per_hour": 74.89330683884974,
+  "fleet_per_hour": 50.0,
+  "fleet_upper_95_per_hour": 72.65504710108503,
+  "by_source": {
+   "sim_20h": {
+    "label": "SIM 2.1",
+    "split": "soak_long engines 1300-1399 (unseen)",
+    "hours": 20.0,
+    "per_engine_operator_notifications": {
+     "events": 20,
+     "exposure_hours": 20.0,
+     "per_hour": 1.0,
+     "upper_95_per_hour": 1.4531009420217007,
+     "bound_method": "poisson_exact_one_sided_95"
+    },
+    "fleet_per_hour": 50.0,
+    "fleet_upper_95_per_hour": 72.65504710108503
+   },
+   "sim_2h": {
+    "label": "SIM 2.1",
+    "split": "soak_fresh3 engines 1100-1139 (unseen)",
+    "hours": 2.0,
+    "per_engine_operator_notifications": {
+     "events": 0,
+     "exposure_hours": 2.0,
+     "per_hour": 0.0,
+     "upper_95_per_hour": 1.4978661367769948,
+     "bound_method": "poisson_exact_one_sided_95"
+    },
+    "fleet_per_hour": 0.0,
+    "fleet_upper_95_per_hour": 74.89330683884974
+   },
+   "real_carobd": {
+    "label": "REAL carOBD",
+    "split": "carOBD held-out files",
+    "hours": 12.545,
+    "per_engine_operator_notifications": {
+     "events": 4,
+     "exposure_hours": 12.545,
+     "per_hour": 0.3188521323236349,
+     "upper_95_per_hour": 0.7296547649770884,
+     "bound_method": "poisson_exact_one_sided_95"
+    },
+    "fleet_per_hour": 15.942606616181745,
+    "fleet_upper_95_per_hour": 36.48273824885442,
+    "note": "ALARM is structurally 0 on carOBD (no classifier on OBD): notifications are UNCLASSIFIED episodes only"
+   }
+  },
   "guidance_per_operator_hour": {
    "very likely acceptable (1 per 10 min)": 6.0,
    "maximum manageable (2 per 10 min)": 12.0
   },
   "assumptions": [
-   "50 engines like the SIM 2.1 healthy third-soak fleet, independent, steady operation",
+   "50 engines like the healthy test fleet (SIM 2.1 long soak, or the REAL carOBD held-out drives), independent, steady operation",
    "every ALARM and every UNCLASSIFIED episode is one operator notification; ADVISORY is logged, not annunciated",
    "nuisance load on a healthy fleet only (true fault alarms come on top)",
    "guidance: EEMUA 191 / ANSI/ISA-18.2 average alarm rate per operator (6/h acceptable, 12/h max manageable)"
