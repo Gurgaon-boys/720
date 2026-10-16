@@ -53,6 +53,7 @@ class SimSource:
     name = "sim"
     description = "Physics-informed simulator v2, live"
     source = "simulated"
+    source_label = "simulated"      # contract 1.6 (optional), also on obd messages
     sensors = ("mic", "accel", "obd", "crank", "cam")
     polled_sensors = ("crank", "cam")   # no stream of their own: the runtime feeds the watchdog on state ticks
     channel_calibration = CHANNEL_CALIBRATION   # obd channel -> real_calibrated | sim_only (contract 1.5)
@@ -190,6 +191,7 @@ class SimSource:
         fields = {
             "run_id": f"sim_{self.seed:04d}",
             "source": "simulated",
+            "source_label": "simulated",
             "audioset_pool": None,
             "engine_tag": None,
             "mode": "live",

@@ -418,7 +418,7 @@ class OpcuaBridge:
         inj = m.get("injection")
         await self._set("inj_active", bool(inj))
         await self._set("inj_fault", inj["fault"] if inj else "")
-        await self._set("inj_cyl", int(inj["cylinder"]) if inj else 0)
+        await self._set("inj_cyl", int(inj["cylinder"] or 0) if inj else 0)   # 1.6: null = bank-wide (lean_drift)
         await self._set("inj_sev", float(inj["severity"]) if inj else math.nan)
         await self._set("inj_started", _dt(inj["started_at"]) if inj else NULL_DATETIME)
 
@@ -546,7 +546,9 @@ class OpcuaBridge:
             reason = f"source {self.runtime.scenario.name!r} has no simulator; switch to sim first"
         else:
             try:
-                self.runtime.inject(str(fault), int(cylinder), float(severity))
+                # the REAL carOBD replay's lean_drift is bank-wide: cylinder null, as on POST /inject
+                cyl = None if self.runtime.scenario.name == "carobd_replay" else int(cylinder)
+                self.runtime.inject(str(fault), cyl, float(severity))
                 log.info("OPC UA Inject(%s, %s, %s) accepted", fault, cylinder, severity)
                 return self._reply(True, "")
             except (NotImplementedError, ValueError, TypeError) as e:

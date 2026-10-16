@@ -11,6 +11,7 @@ import math
 import socket
 import threading
 import time
+from pathlib import Path
 
 import httpx
 import pytest
@@ -247,6 +248,23 @@ def test_inject_live_simulator_and_new_nodes():
     run(go())
 
 
+
+@pytest.mark.skipif(not (Path(__file__).resolve().parents[2] / "data" / "raw" / "carobd" / "obdiidata" / "drive2.csv").exists(),
+                    reason="carOBD not downloaded")
+def test_inject_lean_drift_on_the_real_replay_is_bank_wide():
+    """Contract 1.6: lean_drift on the REAL carOBD replay has cylinder null; OPC UA shows Cylinder 0."""
+    async def go():
+        async with Rig("carobd_replay") as r:
+            ok, reason = await r.call("Inject", "lean_drift", ua.Variant(2, ua.VariantType.Int32), 0.5)
+            assert ok is True and reason == ""
+            await wait_for(lambda: _ok(r.read("EngineAsset.Injection.Active"), lambda v: v is True))
+            assert await r.read("EngineAsset.Injection.Fault") == "lean_drift"
+            assert await r.read("EngineAsset.Injection.Cylinder") == 0
+            assert r.runtime.injection["cylinder"] is None
+            ok, reason = await r.call("Inject", "misfire", ua.Variant(3, ua.VariantType.Int32), 1.0)
+            assert ok is False and "lean_drift" in reason
+    run(go())
+
 def test_unclassified_injector_clog_and_sensor_failure():
     async def go():
         async with Rig("unclassified") as r:
@@ -309,7 +327,7 @@ def test_dashboard_and_opcua_agree():
                 alarm_id = await node("EngineAsset.Decision.AlarmId").read_value()
 
                 with connect(f"ws://127.0.0.1:{port}/ws/state") as ws:  # dashboard ACK
-                    ws.send(json.dumps({"schema_version": "1.5", "type": "ack", "alarm_id": alarm_id,
+                    ws.send(json.dumps({"schema_version": "1.6", "type": "ack", "alarm_id": alarm_id,
                                         "operator": "dashboard", "sent_at": time.time()}))
                     await wait_for(lambda: _ok(node("EngineAsset.Decision.AckedBy").read_value(), lambda v: v == "dashboard"), timeout=3)
                 return alarm_id

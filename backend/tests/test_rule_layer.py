@@ -107,13 +107,20 @@ def test_reset_only_after_ack_plus_two_windows_without_its_fault_matching():
 
 def test_acked_alarm_resets_while_an_anomaly_remains_and_shows_it():
     """D124: after ACK, an alarm whose own fault no longer matches resets even if the engine isn't
-    healthy yet (e.g. the ECU still recovering): the remaining anomaly shows as UNCLASSIFIED."""
+    healthy yet (e.g. the ECU still recovering). D134: while the misfire rule fired in the last 3 windows the
+    remaining anomaly corroborates a misfire ADVISORY; after that hold it shows as UNCLASSIFIED."""
     anomalous = Evidence(models("healthy", 0.45), [rule("misfire", False)], 0.9, 0.6)
     layer = RuleLayer()
     run(layer, MISFIRE, MISFIRE)
     layer.ack("a_0001", "judge", 1.0)
-    states = [d["state"] for d in run(layer, anomalous, anomalous, anomalous)]
-    assert states == ["ALARM", "UNCLASSIFIED", "UNCLASSIFIED"]
+    ds = run(layer, anomalous, anomalous, anomalous, anomalous)
+    assert [d["state"] for d in ds] == ["ALARM", "ADVISORY", "UNCLASSIFIED", "UNCLASSIFIED"]
+    assert ds[1]["fault"] == "misfire" and ds[1]["witnesses"] == ["physics"]
+
+    old = RuleLayer(corroborate_windows=0)               # before D134
+    run(old, MISFIRE, MISFIRE)
+    old.ack("a_0001", "judge", 1.0)
+    assert [d["state"] for d in run(old, anomalous, anomalous, anomalous)] == ["ALARM", "UNCLASSIFIED", "UNCLASSIFIED"]
 
 
 def test_one_witness_of_its_fault_does_not_hold_an_acked_alarm():
@@ -244,3 +251,37 @@ def test_bank_wide_rule_takes_the_classifier_cylinder():
     layer = RuleLayer()
     d = run(layer, ev, ev)[-1]
     assert d["state"] == "ALARM" and d["location"] == 2
+
+
+# ---------------------------------------------------------------- D134: anomaly corroborates a named fault
+
+TRIM = Evidence([], [rule("injector_clog", location=None)], 0.9, 0.5)          # trim rule + anomaly, no classifier
+TRIM_QUIET = Evidence([], [rule("injector_clog", False, location=None)], 0.9, 0.5)
+ANOMALY_ONLY = Evidence([], [rule("injector_clog", False, location=None)], 0.9, 0.5)
+
+
+def test_anomaly_with_a_named_physics_fault_is_its_advisory_not_unclassified():
+    ds = run(RuleLayer(), TRIM, TRIM, TRIM, TRIM)
+    assert all(d["state"] == "ADVISORY" and d["fault"] == "injector_clog" and d["witnesses"] == ["physics"] for d in ds)
+    # before D134 the same evidence went UNCLASSIFIED from the 2nd window
+    assert [d["state"] for d in run(RuleLayer(corroborate_windows=0), TRIM, TRIM, TRIM)] ==         ["ADVISORY", "UNCLASSIFIED", "UNCLASSIFIED"]
+
+
+def test_the_hold_lasts_3_windows_then_an_unnamed_anomaly_is_unclassified():
+    # the rule fired once; windows 2 and 3 are inside the hold, window 4 is not
+    states = [d["state"] for d in run(RuleLayer(), TRIM, TRIM_QUIET, TRIM_QUIET, TRIM_QUIET, TRIM_QUIET)]
+    assert states == ["ADVISORY", "ADVISORY", "ADVISORY", "UNCLASSIFIED", "UNCLASSIFIED"]
+
+
+def test_no_named_fault_in_the_hold_still_raises_unclassified():
+    assert [d["state"] for d in run(RuleLayer(), ANOMALY_ONLY, ANOMALY_ONLY)] == ["NORMAL", "UNCLASSIFIED"]
+
+
+def test_valve_tick_rule_is_a_hint_not_a_named_fault():
+    """Valve tick is never trained: its rule stays a hint on UNCLASSIFIED (the open-set demo)."""
+    d = run(RuleLayer(), VALVE, VALVE)[-1]
+    assert d["state"] == "UNCLASSIFIED" and d["fault"] == "valve_tick"
+
+
+def test_classifier_match_and_alarm_are_unchanged_by_corroboration():
+    assert [d["state"] for d in run(RuleLayer(), MISFIRE, MISFIRE)] == ["ADVISORY", "ALARM"]

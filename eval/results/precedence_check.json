@@ -1,0 +1,487 @@
+{
+ "created_at": "2026-10-16T17:59:54+00:00",
+ "label": "SIM 2.1",
+ "column": "A",
+ "what": "D134 check: does the corroboration rule (an anomaly flag within 3 windows of a trained-fault physics rule\nis that fault's ADVISORY, not UNCLASSIFIED) change any simulator number?",
+ "ranges": {
+  "val_thr": {
+   "runs": 160,
+   "engine_hours": 8.0,
+   "windows": 222102,
+   "levels_before": {
+    "anomaly_flags": {
+     "windows": 24,
+     "episodes": 24
+    },
+    "classifier_false_faults": {
+     "windows": 15,
+     "episodes": 15
+    },
+    "physics_windows": {
+     "windows": 148,
+     "episodes": 104
+    },
+    "advisory": {
+     "windows": 163,
+     "episodes": 119
+    },
+    "unclassified": {
+     "windows": 0,
+     "episodes": 0
+    },
+    "alarm": {
+     "windows": 0,
+     "episodes": 0
+    },
+    "advisory_persist2": {
+     "windows": 50,
+     "episodes": 50
+    },
+    "alarms_raised": {
+     "windows": 0,
+     "episodes": 0
+    },
+    "alarms_raised_startup": {
+     "windows": 0,
+     "episodes": 0
+    },
+    "counted_windows": 222102
+   },
+   "levels_after": {
+    "anomaly_flags": {
+     "windows": 24,
+     "episodes": 24
+    },
+    "classifier_false_faults": {
+     "windows": 15,
+     "episodes": 15
+    },
+    "physics_windows": {
+     "windows": 148,
+     "episodes": 104
+    },
+    "advisory": {
+     "windows": 163,
+     "episodes": 119
+    },
+    "unclassified": {
+     "windows": 0,
+     "episodes": 0
+    },
+    "alarm": {
+     "windows": 0,
+     "episodes": 0
+    },
+    "advisory_persist2": {
+     "windows": 50,
+     "episodes": 50
+    },
+    "alarms_raised": {
+     "windows": 0,
+     "episodes": 0
+    },
+    "alarms_raised_startup": {
+     "windows": 0,
+     "episodes": 0
+    },
+    "counted_windows": 222102
+   },
+   "windows_changed": 0,
+   "changes": {},
+   "runs_changed": 0
+  },
+  "soak_fresh2": {
+   "runs": 40,
+   "engine_hours": 2.0,
+   "windows": 49675,
+   "levels_before": {
+    "anomaly_flags": {
+     "windows": 4,
+     "episodes": 3
+    },
+    "classifier_false_faults": {
+     "windows": 2,
+     "episodes": 2
+    },
+    "physics_windows": {
+     "windows": 55,
+     "episodes": 34
+    },
+    "advisory": {
+     "windows": 57,
+     "episodes": 36
+    },
+    "unclassified": {
+     "windows": 1,
+     "episodes": 1
+    },
+    "alarm": {
+     "windows": 0,
+     "episodes": 0
+    },
+    "advisory_persist2": {
+     "windows": 21,
+     "episodes": 21
+    },
+    "alarms_raised": {
+     "windows": 0,
+     "episodes": 0
+    },
+    "alarms_raised_startup": {
+     "windows": 0,
+     "episodes": 0
+    },
+    "counted_windows": 49675
+   },
+   "levels_after": {
+    "anomaly_flags": {
+     "windows": 4,
+     "episodes": 3
+    },
+    "classifier_false_faults": {
+     "windows": 2,
+     "episodes": 2
+    },
+    "physics_windows": {
+     "windows": 55,
+     "episodes": 34
+    },
+    "advisory": {
+     "windows": 57,
+     "episodes": 36
+    },
+    "unclassified": {
+     "windows": 1,
+     "episodes": 1
+    },
+    "alarm": {
+     "windows": 0,
+     "episodes": 0
+    },
+    "advisory_persist2": {
+     "windows": 21,
+     "episodes": 21
+    },
+    "alarms_raised": {
+     "windows": 0,
+     "episodes": 0
+    },
+    "alarms_raised_startup": {
+     "windows": 0,
+     "episodes": 0
+    },
+    "counted_windows": 49675
+   },
+   "windows_changed": 0,
+   "changes": {},
+   "runs_changed": 0
+  },
+  "soak_fresh3": {
+   "runs": 40,
+   "engine_hours": 2.0,
+   "windows": 55669,
+   "levels_before": {
+    "anomaly_flags": {
+     "windows": 1,
+     "episodes": 1
+    },
+    "classifier_false_faults": {
+     "windows": 2,
+     "episodes": 2
+    },
+    "physics_windows": {
+     "windows": 18,
+     "episodes": 12
+    },
+    "advisory": {
+     "windows": 20,
+     "episodes": 14
+    },
+    "unclassified": {
+     "windows": 0,
+     "episodes": 0
+    },
+    "alarm": {
+     "windows": 0,
+     "episodes": 0
+    },
+    "advisory_persist2": {
+     "windows": 6,
+     "episodes": 6
+    },
+    "alarms_raised": {
+     "windows": 0,
+     "episodes": 0
+    },
+    "alarms_raised_startup": {
+     "windows": 0,
+     "episodes": 0
+    },
+    "counted_windows": 55669
+   },
+   "levels_after": {
+    "anomaly_flags": {
+     "windows": 1,
+     "episodes": 1
+    },
+    "classifier_false_faults": {
+     "windows": 2,
+     "episodes": 2
+    },
+    "physics_windows": {
+     "windows": 18,
+     "episodes": 12
+    },
+    "advisory": {
+     "windows": 20,
+     "episodes": 14
+    },
+    "unclassified": {
+     "windows": 0,
+     "episodes": 0
+    },
+    "alarm": {
+     "windows": 0,
+     "episodes": 0
+    },
+    "advisory_persist2": {
+     "windows": 6,
+     "episodes": 6
+    },
+    "alarms_raised": {
+     "windows": 0,
+     "episodes": 0
+    },
+    "alarms_raised_startup": {
+     "windows": 0,
+     "episodes": 0
+    },
+    "counted_windows": 55669
+   },
+   "windows_changed": 0,
+   "changes": {},
+   "runs_changed": 0
+  },
+  "soak_long": {
+   "runs": 400,
+   "engine_hours": 20.0,
+   "windows": 553228,
+   "levels_before": {
+    "anomaly_flags": {
+     "windows": 182,
+     "episodes": 105
+    },
+    "classifier_false_faults": {
+     "windows": 38,
+     "episodes": 38
+    },
+    "physics_windows": {
+     "windows": 283,
+     "episodes": 184
+    },
+    "advisory": {
+     "windows": 320,
+     "episodes": 221
+    },
+    "unclassified": {
+     "windows": 77,
+     "episodes": 20
+    },
+    "alarm": {
+     "windows": 0,
+     "episodes": 0
+    },
+    "advisory_persist2": {
+     "windows": 108,
+     "episodes": 106
+    },
+    "alarms_raised": {
+     "windows": 0,
+     "episodes": 0
+    },
+    "alarms_raised_startup": {
+     "windows": 0,
+     "episodes": 0
+    },
+    "counted_windows": 553228
+   },
+   "levels_after": {
+    "anomaly_flags": {
+     "windows": 182,
+     "episodes": 105
+    },
+    "classifier_false_faults": {
+     "windows": 38,
+     "episodes": 38
+    },
+    "physics_windows": {
+     "windows": 283,
+     "episodes": 184
+    },
+    "advisory": {
+     "windows": 321,
+     "episodes": 222
+    },
+    "unclassified": {
+     "windows": 76,
+     "episodes": 19
+    },
+    "alarm": {
+     "windows": 0,
+     "episodes": 0
+    },
+    "advisory_persist2": {
+     "windows": 109,
+     "episodes": 107
+    },
+    "alarms_raised": {
+     "windows": 0,
+     "episodes": 0
+    },
+    "alarms_raised_startup": {
+     "windows": 0,
+     "episodes": 0
+    },
+    "counted_windows": 553228
+   },
+   "windows_changed": 1,
+   "changes": {
+    "UNCLASSIFIED:misfire -> ADVISORY:misfire": 1
+   },
+   "runs_changed": 1
+  },
+  "faults": {
+   "runs": 120,
+   "engine_hours": 3.0,
+   "windows": 88371,
+   "levels_before": {
+    "anomaly_flags": {
+     "windows": 56950,
+     "episodes": 1832
+    },
+    "classifier_false_faults": {
+     "windows": 21069,
+     "episodes": 2532
+    },
+    "physics_windows": {
+     "windows": 30632,
+     "episodes": 1415
+    },
+    "advisory": {
+     "windows": 7417,
+     "episodes": 2417
+    },
+    "unclassified": {
+     "windows": 32450,
+     "episodes": 2696
+    },
+    "alarm": {
+     "windows": 16462,
+     "episodes": 1816
+    },
+    "advisory_persist2": {
+     "windows": 7042,
+     "episodes": 2523
+    },
+    "alarms_raised": {
+     "windows": 1814,
+     "episodes": 1814
+    },
+    "alarms_raised_startup": {
+     "windows": 2,
+     "episodes": 2
+    },
+    "counted_windows": 88371
+   },
+   "levels_after": {
+    "anomaly_flags": {
+     "windows": 56950,
+     "episodes": 1832
+    },
+    "classifier_false_faults": {
+     "windows": 21069,
+     "episodes": 2532
+    },
+    "physics_windows": {
+     "windows": 30632,
+     "episodes": 1415
+    },
+    "advisory": {
+     "windows": 16636,
+     "episodes": 2681
+    },
+    "unclassified": {
+     "windows": 23333,
+     "episodes": 1940
+    },
+    "alarm": {
+     "windows": 16462,
+     "episodes": 1816
+    },
+    "advisory_persist2": {
+     "windows": 16261,
+     "episodes": 2850
+    },
+    "alarms_raised": {
+     "windows": 1814,
+     "episodes": 1814
+    },
+    "alarms_raised_startup": {
+     "windows": 2,
+     "episodes": 2
+    },
+    "counted_windows": 88371
+   },
+   "windows_changed": 9219,
+   "changes": {
+    "UNCLASSIFIED:misfire -> ADVISORY:misfire": 7449,
+    "UNCLASSIFIED:None -> ADVISORY:knock": 780,
+    "UNCLASSIFIED:injector_clog -> ADVISORY:injector_clog": 538,
+    "UNCLASSIFIED:None -> ADVISORY:misfire": 215,
+    "UNCLASSIFIED:knock -> ADVISORY:knock": 135,
+    "NORMAL -> ADVISORY:knock": 57,
+    "NORMAL -> ADVISORY:misfire": 45
+   },
+   "runs_changed": 63,
+   "detection": {
+    "metric": "ALARM raised (trained faults) / UNCLASSIFIED reached (valve tick)",
+    "injector_clog s0.5": {
+     "n": 20,
+     "detected_before": 20,
+     "detected_after": 20,
+     "latency_changed": 0
+    },
+    "knock s0.5": {
+     "n": 20,
+     "detected_before": 20,
+     "detected_after": 20,
+     "latency_changed": 0
+    },
+    "misfire s0.5": {
+     "n": 20,
+     "detected_before": 20,
+     "detected_after": 20,
+     "latency_changed": 0
+    },
+    "valve_tick s0.3": {
+     "n": 20,
+     "detected_before": 1,
+     "detected_after": 1,
+     "latency_changed": 0
+    },
+    "valve_tick s0.6": {
+     "n": 20,
+     "detected_before": 7,
+     "detected_after": 7,
+     "latency_changed": 0
+    },
+    "valve_tick s1": {
+     "n": 20,
+     "detected_before": 20,
+     "detected_after": 20,
+     "latency_changed": 0
+    }
+   }
+  }
+ }
+}

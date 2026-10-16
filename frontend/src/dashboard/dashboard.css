@@ -326,3 +326,19 @@ details summary { cursor: pointer; }
 .sig-observed { transition: stroke var(--dur-state) var(--ease-out); }
 /* an eased number inside a tile is the value, not the small unit label (.tile-val span) */
 .tile-val .tile-num { font-size: inherit; color: inherit; }
+
+/* REAL replay (contract 1.6): source picker, OBD-first layout, OBD branch window trend */
+.src-picker { display: flex; flex-direction: column; gap: 8px; }
+.src-select { background: var(--panel); color: var(--text); border: 1px solid var(--line-2); border-radius: 8px; padding: 6px 10px; font-size: 13px; max-width: 100%; }
+.src-pos { font-size: 12px; color: var(--muted); padding-left: 6px; }
+.replay-note { margin: 0; font-size: 12px; color: var(--text-2); border: 1px dashed var(--line-2); border-radius: 8px; padding: 8px 12px; }
+.obd-wide { flex: 1 1 100%; }
+.trend-panel { flex: 2 1 420px; display: flex; flex-direction: column; gap: 12px; }
+.trend-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+.trend-cell { display: flex; flex-direction: column; gap: 4px; padding: 10px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; }
+.trend-val { font-size: 12px; color: var(--text-2); }
+.trend-val.over { color: var(--text); font-weight: 700; }
+.trend-limit { stroke: var(--text-2); stroke-width: 1; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }
+.trend-label { font-family: var(--mono); font-size: 9px; fill: var(--muted); }
+.trend-dot { fill: #c3cbd6; stroke: var(--panel-2); stroke-width: 1.5; }
+.trend-dot.over { fill: var(--accent); }

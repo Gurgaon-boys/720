@@ -15,6 +15,13 @@ UNCLASSIFIED persistence: like ALARM, UNCLASSIFIED needs UNCLASSIFIED_WINDOWS (2
 `unclassified` windows. The first one is assessed as if there were no anomaly witness (ADVISORY when a
 physics rule fired, else NORMAL), so one stray anomalous window raises nothing.
 
+Corroboration (D134): an anomaly flag does not override a physics rule that recently named a trained
+fault. If a physics rule for misfire, knock or injector_clog fired in any of the last CORROBORATE_WINDOWS
+(3) windows, this one included, an `unclassified` window becomes an `advisory` for that fault (the anomaly
+corroborates it; the classifier still hasn't named it, so it is one witness, not ALARM). UNCLASSIFIED
+needs a hold with no named fault. The valve-tick rule is not a named fault here (valve tick is never
+trained), so it stays a hint on UNCLASSIFIED. Applies to every source.
+
 Latch (decided by Nishant, 2026-10-16):
   - ALARM after 2 consecutive `match` windows for the same fault. The first one is ADVISORY.
   - The alarm stays latched until it is acknowledged and its own fault has stopped matching,
@@ -37,6 +44,7 @@ TRAINED_FAULTS = ("misfire", "knock", "injector_clog")
 RAISE_WINDOWS = 2  # consecutive two-witness windows before ALARM
 CLEAR_WINDOWS = 2  # consecutive windows without a match for the alarm's own fault (after ACK) before reset
 UNCLASSIFIED_WINDOWS = 2  # consecutive anomalous, unnamed windows before UNCLASSIFIED
+CORROBORATE_WINDOWS = 3   # a trained-fault physics rule in this many recent windows turns an anomaly into its ADVISORY
 P_MIN = 0.6  # mean probability the classifier majority needs to count as a witness
 
 # NE 107 asset health for a latched alarm, by fault (DECISIONS.md D14)
@@ -126,8 +134,11 @@ def assess(ev: Evidence) -> Assessment:
 
 
 class RuleLayer:
-    def __init__(self, first_alarm_id: int = 1, unclassified_windows: int = UNCLASSIFIED_WINDOWS) -> None:
+    def __init__(self, first_alarm_id: int = 1, unclassified_windows: int = UNCLASSIFIED_WINDOWS,
+                 corroborate_windows: int = CORROBORATE_WINDOWS) -> None:
         self.unclassified_windows = unclassified_windows
+        self.corroborate_windows = corroborate_windows    # 0 = no corroboration (the behaviour before D134)
+        self._named: list[dict | None] = []                # newest last: a fired trained-fault physics rule per window
         self.alarm: ActiveAlarm | None = None
         self._streak_fault: str | None = None
         self._streak_n = 0
@@ -140,10 +151,16 @@ class RuleLayer:
 
     def step(self, ev: Evidence) -> dict:
         """Evaluate one window and return the contract's `decision` object."""
-        a = assess(ev)
-        self._unclassified_n = self._unclassified_n + 1 if a.kind == "unclassified" else 0
-        if a.kind == "unclassified" and self._unclassified_n < self.unclassified_windows:
+        raw = a = assess(ev)
+        self._unclassified_n = self._unclassified_n + 1 if raw.kind == "unclassified" else 0
+        if raw.kind == "unclassified" and self._unclassified_n < self.unclassified_windows:
             a = assess(replace(ev, anomaly_score=None))      # not yet persistent: no anomaly witness
+        if self.corroborate_windows:
+            fired = [r for r in ev.physics_rules if r["fired"] and r["rule"] in TRAINED_FAULTS]
+            self._named = (self._named + [fired[0] if fired else None])[-self.corroborate_windows:]
+            named = next((r for r in reversed(self._named) if r is not None), None)
+            if raw.kind == "unclassified" and named is not None:   # the anomaly corroborates the named fault
+                a = Assessment("advisory", named["rule"], named["location"], ["physics"])
         self._last, self._last_severity = a, ev.severity
 
         if a.kind == "match":

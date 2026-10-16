@@ -1,0 +1,109 @@
+{
+  "created_at": "2026-10-16T18:02:49Z",
+  "git_commit": "f80ffaa129d3d29447196ba77637d6588af41851",
+  "produced_by": "python -m models.obd.sim_classifier_v2",
+  "status": "POST-HOC (D128): designed after v1's held-out result; held-out files NOT read",
+  "features": [
+    "total_trim",
+    "stft_mean",
+    "ltft_mean",
+    "retard_events"
+  ],
+  "load_range_nm": [
+    3.0,
+    25.0
+  ],
+  "rpm_source": "carOBD calibration windows (5969), clipped to 700-2950",
+  "sim_validation": {
+    "windows": 840,
+    "macro_f1": 0.6084,
+    "recall": {
+      "healthy": 0.9303,
+      "injector_clog": 0.9216,
+      "knock": 0.102
+    },
+    "false_fault_on_healthy_at_p_min": {
+      "k": 0,
+      "n": 330,
+      "rate": 0.0,
+      "wilson95": [
+        0.0,
+        0.01151
+      ]
+    }
+  },
+  "carobd_calibration": {
+    "files": 90,
+    "hours": 29.119,
+    "windows": 6860,
+    "classifier_false_faults": {
+      "windows": {
+        "k": 2080,
+        "n": 6860,
+        "rate": 0.30321,
+        "wilson95": [
+          0.29244,
+          0.31419
+        ]
+      },
+      "episodes": {
+        "count": 772,
+        "hours": 29.119,
+        "per_hour": 26.512,
+        "upper95_per_hour": 28.1361
+      },
+      "by_fault": {
+        "injector_clog": 2080
+      }
+    },
+    "advisories": {
+      "windows": {
+        "k": 2073,
+        "n": 6860,
+        "rate": 0.30219,
+        "wilson95": [
+          0.29143,
+          0.31316
+        ]
+      },
+      "episodes": {
+        "count": 772,
+        "hours": 29.119,
+        "per_hour": 26.512,
+        "upper95_per_hour": 28.1361
+      }
+    },
+    "unclassified": {
+      "windows": {
+        "k": 1,
+        "n": 6860,
+        "rate": 0.00015,
+        "wilson95": [
+          3e-05,
+          0.00083
+        ]
+      },
+      "episodes": {
+        "count": 1,
+        "hours": 29.119,
+        "per_hour": 0.0343,
+        "upper95_per_hour": 0.1629
+      }
+    },
+    "alarms": {
+      "count": 1,
+      "hours": 29.119,
+      "per_hour": 0.0343,
+      "upper95_per_hour": 0.1629
+    }
+  },
+  "v1_on_calibration_for_comparison": {
+    "calls": {
+      "injector_clog": 3662,
+      "healthy": 1874,
+      "knock": 433
+    },
+    "fault_share": 0.686,
+    "source": "eval/obd_sim_real_shift.json (D126)"
+  }
+}

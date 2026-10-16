@@ -1,6 +1,6 @@
 # contract/
 
-**Owner:** Nishant · **schema_version: `1.5`** · Source: plan section 12 (1.4 = 1.3 + `state.injection`, D46; 1.5 = 1.4 + nullable `anomaly.score`, `rule_basis: "obd"` and the optional obd `calibration` tag, D66, proposed by Dipen)
+**Owner:** Nishant · **schema_version: `1.6`** · Source: plan section 12 (1.4 = 1.3 + `state.injection`, D46; 1.5 = 1.4 + nullable `anomaly.score`, `rule_basis: "obd"` and the optional obd `calibration` tag, D66, proposed by Dipen; 1.6 = 1.5 + optional `source_label` and `replay`, `injection` `lean_drift` with `cylinder: null`, obd `real_upload`, D131)
 
 This contract is the only interface between the simulator/DSP/models, the backend and the dashboard. **It is locked.** Any change bumps `schema_version` in every schema and example, gets a line in `docs/DECISIONS.md`, and must pass `python contract/validate.py`.
 
@@ -31,6 +31,9 @@ We send one channel per rate because a single big message per update would choke
 12. **`anomaly.score`** (1.5) is `null` when no healthy (anomaly) model stands behind it, e.g. the live simulator before the healthy model exists. Never send a placeholder number. A null score is not an anomaly witness. `per_location` and `threshold` stay numbers.
 13. **`rule_basis: "obd"`** (1.5) marks a physics rule computed from OBD values (the injector-clog trim-drift rule: 30 s of STFT + LTFT). Trims are bank-wide, so it reports `location: null`.
 14. **`calibration`** (1.5, optional, `obd` channels) is `real_calibrated` (the simulator's constants for that channel were measured on carOBD calibration files) or `sim_only` (no carOBD counterpart, e.g. lambda). Sensor set (sim 2.1.1): **11 physical sensors** (mic, accelerometer, crank position, cam position, MAP, TPS, coolant, O2/lambda, intake air temperature, battery voltage, barometric pressure) **+ 4 ECU-computed values** (calculated load, STFT, LTFT, spark advance) **= 15 variables**; `health.sensors` adds `cam`. The table is `sim.engine.SENSORS`.
+15. **`source_label`** (1.6, optional, `state`, `obd` and each obd channel; on a channel, `*_injected` only where an injection modified its values) is what the source badge says: `simulated`, `real_replay`, `real_replay_injected`, `real_upload` or `real_upload_injected`. Replayed REAL data always has `mode: "replay"`, never `live`. While a fault is added to real data, `source` is `injected` and `state.injection` says which.
+16. **`replay`** (1.6, optional) is present on a REAL log replay: file, type, speed, file position, and which witnesses stand behind the decision. Without an OBD classifier, `max_decision` is `ADVISORY` (single witness; UNCLASSIFIED possible, ALARM never), and `note` says so.
+17. **`injection.fault: "lean_drift"`** (1.6) is a fuel-trim ramp added to a REAL carOBD replay; it is bank-wide, so `injection.cylinder` is `null`. Obd channels from an uploaded log have `source: "real_upload"`.
 
 The schemas enforce rules 5 and 6 for `source: "real"`: `localisation` must be `"none"` and the `signature` arrays must be empty.
 
@@ -40,6 +43,7 @@ The schemas enforce rules 5 and 6 for `source: "real"`: `localisation` must be `
   - `state.json`, `obd.json`, `ack.json`: the examples from plan section 12 (numbers are placeholders, not results)
   - `state_real_p3.json`: an extra example of a real P3 replay (no localisation, empty signature, `firing_event` basis)
   - `state_sim_injection.json`: the live simulator with a misfire injected on cylinder 3 (ADVISORY, physics witness only, `injection` filled)
+  - `state_real_replay_injected.json`, `obd_real_replay.json` (1.6): the REAL carOBD replay (drive2, held-out) with a lean drift injected: ADVISORY from the trim-drift rule, single witness, `source_label` and `replay` filled
   - `signal_header.json`: an example header of a binary `signal` frame
 - `schemas/`: JSON Schema (draft 2020-12), one per message type
 - `signal_frame.md`: the binary frame layout

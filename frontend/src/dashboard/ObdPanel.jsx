@@ -6,8 +6,11 @@ import { fmtNum } from '../lib/format.js';
 // arrived; the line breaks where samples are missing instead of joining across the gap.
 // Grey by ISA-101: OBD values carry no alarm meaning here. Hover shows a sample in place.
 
-const SOURCE = { real_carobd: 'REAL · carOBD', simulator: 'SIMULATOR' };
-const WINDOW_S = 60;
+const SOURCE = { real_carobd: 'REAL · carOBD', real_upload: 'REAL · UPLOAD', simulator: 'SIMULATOR' };
+// 1.6: a channel an injection modified (lean drift on a REAL replay: STFT, LTFT) says so; the rest stay REAL
+const injected = (ch) => ch.source_label?.endsWith('_injected');
+const tag = (ch) => (injected(ch) ? 'REAL + INJECTED' : SOURCE[ch.source] ?? ch.source);
+const WINDOW_S = 60; // default; a REAL replay passes a longer window (file time)
 const W = 200;
 const H = 56;
 const PAD = { t: 6, b: 6, l: 2, r: 6 };
@@ -21,7 +24,7 @@ function median(xs) {
 }
 
 // samples inside the window, the usual spacing, and summary numbers for one channel
-function analyse(ch) {
+function analyse(ch, WINDOW_S) {
   const tEnd = ch.t[ch.t.length - 1];
   const idx = ch.t.map((t, i) => i).filter((i) => ch.t[i] >= tEnd - WINDOW_S);
   const t = idx.map((i) => ch.t[i]);
@@ -30,7 +33,7 @@ function analyse(ch) {
   return { t, v, tEnd, dt, min: Math.min(...v), max: Math.max(...v), last: v[v.length - 1] };
 }
 
-function Spark({ a, unit, hover, setHover }) {
+function Spark({ a, unit, hover, setHover, WINDOW_S }) {
   const { t, v, tEnd, dt } = a;
   // y-range: the data's min–max, but never narrower than 10 % of the typical value, so ±1 %
   // sensor noise on a steady channel (rpm, coolant) draws as a near-flat line, not as big swings
@@ -72,19 +75,19 @@ function Spark({ a, unit, hover, setHover }) {
   );
 }
 
-function Cell({ name, ch }) {
+function Cell({ name, ch, windowS }) {
   const [hover, setHover] = useState(null);
-  const a = analyse(ch);
+  const a = analyse(ch, windowS);
   const shown = hover != null ? a.v[hover] : a.last;
   const when = hover != null ? `${fmtNum(a.t[hover] - a.tEnd)} s` : 'latest';
   return (
     <div className="obd-cell">
       <div className="obd-cell-head">
         <span className="eyebrow">{name}</span>
-        <span className={`obd-src ${ch.source}`}>{SOURCE[ch.source] ?? ch.source}</span>
+        <span className={`obd-src ${ch.source}${injected(ch) ? ' injected' : ''}`}>{tag(ch)}</span>
       </div>
       <div className="tile-val mono">{fmtNum(shown)}<span> {ch.unit}</span></div>
-      <Spark a={a} unit={ch.unit} hover={hover} setHover={setHover} />
+      <Spark a={a} unit={ch.unit} hover={hover} setHover={setHover} WINDOW_S={windowS} />
       <div className="obd-meta mono">
         <span>{when}</span>
         <span>{fmtNum(a.min)}–{fmtNum(a.max)}</span>
@@ -96,9 +99,10 @@ function Cell({ name, ch }) {
 
 // hasObd: the state's health.sensors lists an OBD sensor; if not, this recording has no OBD at all
 // silentFor: seconds since the last obd message, once it passes the stale limit (else null)
-export default function ObdPanel({ obd, source, hasObd, silentFor }) {
+export default function ObdPanel({ obd, source, hasObd, silentFor, windowS = WINDOW_S }) {
   const channels = Object.entries(obd);
-  const separateRecording = source === 'real' && channels.some(([, ch]) => ch.source === 'real_carobd');
+  // an AudioSet clip with carOBD beside it; on a carOBD replay the OBD is the recording itself
+  const separateRecording = source === 'real' && windowS === WINDOW_S && channels.some(([, ch]) => ch.source === 'real_carobd');
 
   return (
     <section className={`panel obd${silentFor != null ? ' stale' : ''}`}>
@@ -112,9 +116,9 @@ export default function ObdPanel({ obd, source, hasObd, silentFor }) {
       ) : (
         <>
           <div className="obd-grid">
-            {channels.map(([name, ch]) => <Cell key={name} name={name} ch={ch} />)}
+            {channels.map(([name, ch]) => <Cell key={name} name={name} ch={ch} windowS={windowS} />)}
           </div>
-          <p className="bank-note mono">Last {WINDOW_S} s per channel, own scale each · line breaks where samples are missing · hover for a sample</p>
+          <p className="bank-note mono">Last {windowS} s per channel{windowS !== WINDOW_S ? ' (file time)' : ''}, own scale each · line breaks where samples are missing · hover for a sample</p>
           <details className="obd-table">
             <summary className="eyebrow">Table</summary>
             <table className="mono">
@@ -123,11 +127,11 @@ export default function ObdPanel({ obd, source, hasObd, silentFor }) {
               </thead>
               <tbody>
                 {channels.map(([name, ch]) => {
-                  const a = analyse(ch);
+                  const a = analyse(ch, windowS);
                   return (
                     <tr key={name}>
                       <th scope="row">{name}</th><td>{fmtNum(a.last)}</td><td>{fmtNum(a.min)}</td><td>{fmtNum(a.max)}</td>
-                      <td>{ch.unit}</td><td>{a.dt ? `${fmtNum(1 / a.dt)} Hz` : '—'}</td><td>{a.t.length}</td><td>{SOURCE[ch.source] ?? ch.source}</td>
+                      <td>{ch.unit}</td><td>{a.dt ? `${fmtNum(1 / a.dt)} Hz` : '—'}</td><td>{a.t.length}</td><td>{tag(ch)}</td>
                     </tr>
                   );
                 })}

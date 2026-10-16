@@ -55,3 +55,18 @@ def test_live_decision_from_the_rule_layer():
     layer.step(m)
     d = layer.step(m)
     assert guidance(d, {"asset_ne107": asset_ne107(d), "sensors": {}}) == "Reduce load; inspect coil and plug on cyl 2"
+
+
+SINGLE = "Single witness on real OBD data: ALARM needs a second witness this source doesn't have."
+
+
+def test_single_witness_real_obd_advisory_never_promises_an_alarm():
+    d = dec("ADVISORY", "injector_clog")
+    assert "watch for ALARM" in guidance(d, h())
+    line = guidance(d, h(), "single_witness_real_obd")
+    assert line == SINGLE and "watch for ALARM" not in line
+    # other states keep their lines; NORMAL stays None
+    assert guidance(dec("UNCLASSIFIED"), h("OFF_SPEC"), "single_witness_real_obd") == guidance(dec("UNCLASSIFIED"), h("OFF_SPEC"))
+    assert guidance(dec("NORMAL"), h(), "single_witness_real_obd") is None
+    with pytest.raises(KeyError):
+        guidance(d, h(), "no_such_capability")

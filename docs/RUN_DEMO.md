@@ -112,3 +112,20 @@ model (never trained on post-knock recovery) shows UNCLASSIFIED for up to ~75 s.
 
 With the hard simulator regimes on (`$env:S720_SIM_REGIMES = "eval"`, not the default), an injection can start
 up to 0.5 s late (D107).
+
+## 6. Real car replay (REAL data, honestly labelled)
+
+The source picker under the header (kept in demo mode) switches between **Simulator**, **Real car replay** and
+**Upload log**. The big badge says what is streaming: `SIMULATED`, `REAL · REPLAY`, `REAL + INJECTED` or
+`REAL · UPLOAD` (uploaded, unverified). Replayed data is never called live (`mode: replay`).
+
+| # | Do | Expect |
+|---|---|---|
+| 1 | **Real car replay**, file **drive2.csv**, speed **10×** | REAL · REPLAY badge; the OBD panel and the OBD-branch trend lead (11 carOBD channels at their own ~0.5 Hz refresh); cylinder, fingerprint and audio panels hidden ("no crank signal in this data"); NORMAL |
+| 2 | Injection console: **Lean drift, 0.50**, Inject | REAL + INJECTED badge; total trim climbs over the 7.4 % limit; **Watch · Injector clog** (trim rule, physics witness) about 7–8 s later at 10×; the healthy model flagging the rising trims corroborates it (D134), so it stays a Watch. Never ALARM: there is no OBD classifier yet (the replay note says so) |
+| 3 | **Stop injection** | REAL · REPLAY again at once; NORMAL about 3 s later at 10× (2 windows) |
+| 4 | **Upload log**, pick a carOBD CSV (≤ 5 MB) | REAL · UPLOAD badge; it streams like a held-out file. A file without the carOBD columns is refused with the reason |
+
+Only the carOBD **held-out** files are offered (display only; nothing is fitted on them). Uploads are stored under
+`data/uploads/` (gitignored). API: `GET /replay/files`, `POST /replay {"file", "speed"}`, `POST /replay/speed`,
+`POST /upload_obd?filename=…` (raw CSV body), `POST /inject {"fault": "lean_drift", "severity"}`.
