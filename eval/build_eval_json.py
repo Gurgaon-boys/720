@@ -113,6 +113,24 @@ def column_a() -> dict:
     return out
 
 
+def operator_projection() -> dict:
+    # carOBD alarms are structurally zero (no classifier on OBD), so the projection uses the simulated
+    # third soak, where both witnesses run (Dipen, eval/alarm_budget.py, DECISIONS D100)
+    ab = load("results/alarm_budget.json")
+    if ab is None:
+        return {"engines": 50, "value": None, "unit": "alarms per hour", "basis": None,
+                "assumptions": None, "column": "C", "split": "held-out files"}
+    p, sim = ab["operator_projection"], ab["healthy"]["sim"]
+    return {"engines": p["engines"], "value": p["fleet_per_hour"], "upper_95": p["fleet_upper_95_per_hour"],
+            "unit": "operator notifications per hour (ALARM + UNCLASSIFIED episodes)",
+            "basis": f"{p['per_engine_operator_notifications']['events']} episodes in {sim['hours']:.2f} engine-h "
+                     f"x {p['engines']} engines ({sim['label']}, {sim['split']}); exact Poisson 95 % upper "
+                     f"{p['fleet_upper_95_per_hour']:.1f} per hour, above the ~12/h manageable guidance: too little "
+                     f"exposure yet to bound a {p['engines']}-engine fleet",
+            "guidance_per_operator_hour": p["guidance_per_operator_hour"], "assumptions": p["assumptions"],
+            "column": "A", "split": sim["split"], "source": "eval/results/alarm_budget.json"}
+
+
 def column_c() -> dict:
     obd = load("obd_carobd.json")
     if obd is None:
@@ -132,9 +150,7 @@ def main() -> None:
         "source_commit": commit,
         "produced_by": "python -m eval.build_eval_json",
         "false_positives": {"headline": headline_fp(), "secondary": secondary_fp()},
-        # alarms are structurally zero without a classifier witness, so a fleet projection would mislead
-        "operator_projection": {"engines": 50, "value": None, "unit": "alarms per hour", "basis": None,
-                                "assumptions": None, "column": "C", "split": "held-out files"},
+        "operator_projection": operator_projection(),
         "column_a": column_a(),
         "column_b": {"knock": null_proportion("B", "grouped by source clip"),
                      "valve_tick": null_proportion("B", "grouped by source clip")},
@@ -143,7 +159,11 @@ def main() -> None:
                               "misfire-only slice (eval/table_a_misfire.json, D63) is an earlier result",
                   "column_c": "headline = the pre-registered OBD branch v1 (eval/obd_carobd.json, D55-D58). A second, "
                               "later read of the same held-out files with a different OBD model (eval/results/column_c.json) "
-                              "is a secondary analysis and not on the panel"},
+                              "is a secondary analysis and not on the panel",
+                  "l3": "L3 (Dipen, D95-D101): UNCLASSIFIED needs 2 windows and the healthy-model threshold comes from "
+                        "engine-to-engine spread on validation engines; the third untouched soak and the alarm budget are "
+                        "in eval/results/soak_l3_fresh3.json and alarm_budget.json. The pre-registered carOBD headline "
+                        "(OBD branch v1) is unchanged"},
     }
     OUT.write_text(json.dumps(d, indent=2) + "\n")
     FRONTEND_COPY.parent.mkdir(parents=True, exist_ok=True)
