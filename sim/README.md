@@ -45,4 +45,54 @@ python -m pytest            # sim/tests
 python -m sim.demo_misfire  # writes docs/figures/sim_v1_misfire.png, prints half-order ratio and timing
 ```
 
-**Not in v1 (API ready):** knock, injector clog, valve tick (`inject` raises `NotImplementedError`), the block accelerometer, ECU/OBD loops, RPM jitter and sensor dropouts.
+*(v1 left knock, clog, valve tick, the accelerometer, the ECU/OBD loops and the harder regimes for v2, below.)*
+
+## v2 (`sim_version` 2.0.0): accelerometer, ECU/OBD, all four faults, harder regimes
+
+The v1 API is unchanged (`EngineSim(params, seed)`, `step`, `inject`, `clear_faults`, `set_operating_point`); v2 adds keyword arguments and output keys.
+
+```python
+from sim import EngineSim, EngineParams
+from sim.params import Regimes
+
+sim = EngineSim(EngineParams(), seed=0, regimes=Regimes.eval(), purpose="eval")   # regimes default OFF
+sim.inject("knock", cylinder=2, severity=0.8)        # misfire | knock | injector_clog | valve_tick (held out)
+chunk = sim.step(0.5)
+```
+
+**New outputs:** `accel` (48 kHz block accelerometer, which is also the knock sensor), `obd` (1 Hz samples of rpm, load_pct, throttle_pct, map_kpa, coolant_c, stft_pct, ltft_pct, spark_adv_deg and lambda), `ecu_fast` (the same values once per firing, `sim_internal`), `dropouts`, and per-cycle labels `knocked`, `knock_intensity`, `clog`, `valve_lash` and `held_out`. With mic and the crank, that covers the plan's 12 quantities.
+
+| Piece | Model |
+|---|---|
+| Accelerometer | Structure-borne combustion response (5 modes, 1.1–8 kHz), knock bursts, valve-closing impacts, coloured noise at `accel_snr_db` |
+| Knock | Damped chamber modes after peak heat release (Draper: ~6.4 / 10.6 / 13.3 kHz for an 80 mm bore), probability = severity × exp(−retard / 4°). The ECU retards that cylinder 3° per knock (max 12°) and recovers at 0.5°/s, so knock suppresses itself and shows in `spark_adv_deg` |
+| Spark | Combustion starts at the engine's timing (+ knock retard); reported advance adds the ignition delay (1.2 ms of crank angle) |
+| Injector clog | That cylinder's fuel × (1 − s): lean, less heat, higher CoV. The lambda sensor sees the exhaust mix (80 ms transport, 20 ms mixing), so STFT integrates 1 − 1/λ and LTFT takes over slowly. Steady trim = s/(4 − s) ≈ s/4 (tested); lambda ripples once per 720° (simulator only: carOBD has no O2) |
+| Valve tick | Louder (× (1 + 10 s)) and earlier (up to 6°) intake-valve seat impact once per 720°. **Held out:** labelled `held_out`, refused by `purpose="calibration"/"training"` and by `sim/guard.py` |
+| Reciprocating inertia | −m x″ x′ ω² per cylinder (0.45 kg), exact slider-crank. It dominates the 2nd order at high rpm, as on a real inline-4 |
+| Regimes (`Regimes.eval()`) | Tooth jitter 2 µs; crank torsional flex 0.02° × (rpm/1000)^1.5 at the wheel; accessory-torque noise 1 N m; sensor dropouts 0.3/min per channel (NaN audio, missing teeth or OBD) |
+
+Every new random source has its own seeded stream, drawn whether or not a fault is active, so v1's streams are untouched and every fault at severity 0 is bit-identical to healthy (tested). ECU/OBD values are set from carOBD calibration files from 2.1 on (below).
+
+```bash
+python -m sim.demo_v2     # docs/figures/sim_v2_knock.png, sim_v2_clog_trim.png, sim_v2_valve_tick.png
+```
+
+
+## 2.1 (`sim_version` 2.1.0): OBD realism from carOBD calibration files
+
+`python -m sim.calibrate_ecu` reads the **90 carOBD calibration files** (29.1 h; never the held-out ones) through `data/carobd.py:load()` and writes `sim/ecu_calibration.json`. `EcuParams` values marked `# carOBD` come from it:
+
+| Quantity | carOBD (calibration files) | Sim 2.1 |
+|---|---|---|
+| PID refresh | 0.45–0.55 Hz per PID (round-robin polling) | 0.55 Hz per PID, staggered; rows at 1 Hz hold each PID's last poll |
+| OBD resolution | STFT/LTFT 0.78 % steps, MAP / coolant 1 unit | same (SAE J1979 scaling) |
+| Idle STFT spread | sd 1.76 % per 30 s (median of 77 files) | O2 limit-cycle dither on fuelling, sd 2.1 %, tau 0.5 s → OBD STFT sd 1.85 % per 30 s |
+| LTFT across files | file means sd 1.56 % | per-engine fuel bias N(0, 1.56 %) drawn for randomised engines (already learned out by LTFT); reference engine 0 |
+| Idle MAP | median 29 kPa, IQR 27–35 | 35 kPa (inside the IQR; idle load unchanged) |
+| Idle throttle / calc. load | 16.5 % / 28.2 % at 29 kPa | throttle 16.5 %; VE 0.985 |
+| Coolant | warm 87 °C; warm-up 11.3 °C/min → first-order τ 183 s | warm start 87 °C, τ 183 s |
+| Timing advance | 5th–95th percentile −4…25°, idle median 1° | 14° at idle … 28° at 2,800 rpm (**idle mismatch kept**: matching it would move combustion phasing and every crank-angle threshold) |
+
+Not identifiable from carOBD (marked `# not in carOBD`): lambda transport delay (no O2 PID), STFT/LTFT time constants (0.5 Hz polls), coolant load gain.
+The dither and fuel bias change combustion slightly, so the misfire thresholds were recalibrated for 2.1. The soak and robustness numbers in D75 are sim 2.0.

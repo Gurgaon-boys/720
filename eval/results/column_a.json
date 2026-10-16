@@ -1,0 +1,152 @@
+{
+ "column_a": {
+  "split_gap": {
+   "random": {
+    "kind": "metric",
+    "value": 0.9547,
+    "unit": "macro-F1 (SVM)",
+    "n": 16006,
+    "ci_95": null,
+    "column": "A",
+    "split": "random split by window",
+    "note": "mean of 3 seeds, sd 0.0017"
+   },
+   "grouped": {
+    "kind": "metric",
+    "value": 0.9165,
+    "unit": "macro-F1 (SVM)",
+    "n": 16006,
+    "ci_95": null,
+    "column": "A",
+    "split": "grouped split by engine",
+    "note": "mean of 3 seeds, sd 0.0086"
+   }
+  },
+  "model_comparison": [
+   {
+    "model": "Baseline",
+    "result": {
+     "kind": "metric",
+     "value": 0.66,
+     "unit": "macro-F1",
+     "n": 16006,
+     "ci_95": null,
+     "column": "A",
+     "split": "TEST split: engines 775-789, grouped by engine",
+     "note": "localisation 0.858; deterministic"
+    },
+    "sd_across_seeds": null
+   },
+   {
+    "model": "SVM",
+    "result": {
+     "kind": "metric",
+     "value": 0.9165,
+     "unit": "macro-F1",
+     "n": 16006,
+     "ci_95": null,
+     "column": "A",
+     "split": "TEST split: engines 775-789, grouped by engine",
+     "note": "localisation 0.937; 3 seeds"
+    },
+    "sd_across_seeds": 0.0086
+   },
+   {
+    "model": "ANN",
+    "result": {
+     "kind": "metric",
+     "value": 0.9247,
+     "unit": "macro-F1",
+     "n": 16006,
+     "ci_95": null,
+     "column": "A",
+     "split": "TEST split: engines 775-789, grouped by engine",
+     "note": "localisation 0.912; 3 seeds"
+    },
+    "sd_across_seeds": 0.0029
+   },
+   {
+    "model": "CNN",
+    "result": {
+     "kind": "metric",
+     "value": 0.6558,
+     "unit": "macro-F1",
+     "n": 16006,
+     "ci_95": null,
+     "column": "A",
+     "split": "TEST split: engines 775-789, grouped by engine",
+     "note": "localisation 0.592; 3 seeds"
+    },
+    "sd_across_seeds": 0.0428
+   }
+  ],
+  "held_out_class": {
+   "valve_tick": {
+    "auroc": {
+     "kind": "metric",
+     "value": 0.9463,
+     "unit": "AUROC",
+     "n": 7497,
+     "ci_95": null,
+     "column": "A",
+     "split": "held-out class: valve_tick (15 test engines) vs healthy test windows",
+     "note": "healthy-model Mahalanobis; unknown n=3776 vs healthy n=3721; at the VAL threshold TPR 0.508, FPR 0.014"
+    },
+    "pauc": {
+     "kind": "metric",
+     "value": 0.8457,
+     "unit": "pAUROC, FPR <= 0.1 (McClish)",
+     "n": 7497,
+     "ci_95": null,
+     "column": "A",
+     "split": "held-out class: valve_tick (15 test engines) vs healthy test windows",
+     "note": "healthy-model Mahalanobis; unknown n=3776 vs healthy n=3721; at the VAL threshold TPR 0.508, FPR 0.014"
+    }
+   },
+   "knock": {
+    "auroc": {
+     "kind": "metric",
+     "value": 0.9996,
+     "unit": "AUROC",
+     "n": 4331,
+     "ci_95": null,
+     "column": "A",
+     "split": "knock (never seen by the healthy model) vs healthy test windows",
+     "note": "healthy-model Mahalanobis; unknown n=610 vs healthy n=3721; at the VAL threshold TPR 0.997, FPR 0.014"
+    },
+    "pauc": {
+     "kind": "metric",
+     "value": 0.9979,
+     "unit": "pAUROC, FPR <= 0.1 (McClish)",
+     "n": 4331,
+     "ci_95": null,
+     "column": "A",
+     "split": "knock (never seen by the healthy model) vs healthy test windows",
+     "note": "healthy-model Mahalanobis; unknown n=610 vs healthy n=3721; at the VAL threshold TPR 0.997, FPR 0.014"
+    }
+   }
+  },
+  "injector_detectability": {
+   "smallest_clog_at_fixed_far": {
+    "kind": "metric",
+    "value": 0.4,
+    "unit": "clog severity s (fuel lost)",
+    "n": 10,
+    "ci_95": null,
+    "column": "A",
+    "split": "robustness engines (unseen), regimes on",
+    "note": "smallest s with a two-witness injector_clog ALARM in >= 50 % of runs (5/10 at s = 0.4); no s reached 90 % (s = None). At s = 0.6 lean misfire takes over (misfire rule, UNCLASSIFIED)"
+   }
+  },
+  "latency_ms": {
+   "kind": "metric",
+   "value": 592,
+   "unit": "ms",
+   "n": 12,
+   "ci_95": null,
+   "column": "A",
+   "split": "robustness engines (unseen), sim 2.1.0",
+   "note": "first true misfire -> ADVISORY window end, p 1.0, idle (the slowest band); median, p95 693 ms. mid 270, high 158, held-out rpm 123 ms. Live take: POST /inject -> ALARM 1090 ms (n = 1)"
+  }
+ }
+}

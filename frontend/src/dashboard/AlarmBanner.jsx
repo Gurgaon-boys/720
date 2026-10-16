@@ -6,7 +6,7 @@ import { decisionColor, decisionText } from '../lib/faults.js';
 // `ack` message and shows "Waiting…" until the rule layer's broadcast says acked. A rejected ACK
 // (`ack_error` from the rule layer) re-enables the button and says why; it never changes the alarm.
 
-const BASIS = { crank_angle: 'crank angle', firing_event: 'firing event' };
+const BASIS = { crank_angle: 'crank angle', firing_event: 'firing event', obd: 'OBD trims' };
 const clock = (unixS) => new Date(unixS * 1000).toLocaleTimeString();
 
 function Witnesses({ list }) {

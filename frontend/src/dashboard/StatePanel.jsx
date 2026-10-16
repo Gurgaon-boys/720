@@ -3,7 +3,7 @@ import SourceBadge from './SourceBadge.jsx';
 // Plain readout of the rest of the schema-1.3 `state` message: anomaly, physics rules, features
 // and stream metadata. Health chips live in the header. Later tasks restyle or absorb these pieces.
 
-const BASIS = { crank_angle: 'crank angle', firing_event: 'firing event' };
+const BASIS = { crank_angle: 'crank angle', firing_event: 'firing event', obd: 'OBD trims' };
 const clock = (unixS) => new Date(unixS * 1000).toLocaleTimeString();
 
 export default function StatePanel({ state }) {
@@ -29,7 +29,11 @@ export default function StatePanel({ state }) {
       </div>
 
       <div className="verdict-block">
-        <div className="eyebrow">Anomaly · score {anomaly.score.toFixed(2)} / threshold {anomaly.threshold.toFixed(2)}</div>
+        <div className="eyebrow">
+          {anomaly.score === null
+            ? 'Anomaly · no healthy model yet (score null, schema 1.5)'
+            : `Anomaly · score ${anomaly.score.toFixed(2)} / threshold ${anomaly.threshold.toFixed(2)}`}
+        </div>
         {localisation === 'cylinder' && <p className="panel-note">Per-cylinder scores are shown under each cylinder in the bank.</p>}
       </div>
 

@@ -103,7 +103,7 @@ def evaluate(clips: list[dict], feats: dict[str, np.ndarray], dur: dict[str, flo
 
 def post_hoc_auroc(pos: list[float], neg: list[float], n_boot: int = 2000) -> dict:
     """Threshold-free separability of the knock score (AUROC, bootstrap 95%). Added AFTER the
-    pre-registered detection rate was seen (D78); the detection rate stays the reported result."""
+    pre-registered detection rate was seen (D96); the detection rate stays the reported result."""
     from sklearn.metrics import roc_auc_score
     if not pos or not neg:
         return {"note": "not computable"}

@@ -183,3 +183,25 @@ def test_check_function_only_in_maintenance_and_never_over_a_fault():
     clog = Evidence(models("injector_clog"), [rule("injector_clog", location=1)], 0.7, 0.6)
     assert asset_ne107(run(RuleLayer(), clog, clog)[-1], maintenance=True) == "MAINTENANCE_REQUIRED"
     assert asset_ne107(RuleLayer().step(VALVE), maintenance=True) == "OFF_SPEC"
+
+
+# ---------------------------------------------------------------- L2: the classifier's cylinder
+
+def test_match_needs_the_same_cylinder_when_both_name_one():
+    agree = Evidence(models("misfire"), [rule("misfire", location=3)], 0.8, 0.5, classifier_location=3)
+    disagree = Evidence(models("misfire"), [rule("misfire", location=3)], 0.8, 0.5, classifier_location=1)
+    assert assess(agree).kind == "match" and assess(agree).location == 3
+    assert assess(disagree).kind != "match"
+    layer = RuleLayer()
+    assert [d["state"] for d in run(layer, disagree, disagree, disagree)] == ["ADVISORY"] * 3
+    assert [d["state"] for d in run(layer, agree, agree)] == ["ADVISORY", "ALARM"]
+
+
+def test_bank_wide_rule_takes_the_classifier_cylinder():
+    trim = {"rule": "injector_clog", "fired": True, "location": None, "rule_basis": "obd"}
+    ev = Evidence(models("injector_clog"), [trim], 0.8, 0.5, classifier_location=2)
+    a = assess(ev)
+    assert a.kind == "match" and a.fault == "injector_clog" and a.location == 2
+    layer = RuleLayer()
+    d = run(layer, ev, ev)[-1]
+    assert d["state"] == "ALARM" and d["location"] == 2

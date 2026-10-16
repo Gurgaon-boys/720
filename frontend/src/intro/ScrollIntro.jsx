@@ -34,7 +34,7 @@ export default function ScrollIntro({ state, onSkip }) {
   const color = decisionColor(d);
   const hints = (state?.physics_rules ?? [])
     .filter((r) => r.fired)
-    .map((r) => `Physics rule "${r.rule}" fired${r.location ? ` on cylinder ${r.location}` : ''} (${r.rule_basis === 'crank_angle' ? 'crank angle' : 'firing event'})`);
+    .map((r) => `Physics rule "${r.rule}" fired${r.location ? ` on cylinder ${r.location}` : ''} (${{ crank_angle: 'crank angle', firing_event: 'firing event', obd: 'OBD trims' }[r.rule_basis] ?? r.rule_basis})`);
   const summary = {
     label: raised ? d.fault : 'healthy',
     cylinder: geometry && raised ? d.location : null,

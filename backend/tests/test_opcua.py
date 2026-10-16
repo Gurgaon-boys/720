@@ -257,7 +257,7 @@ def test_dashboard_and_opcua_agree():
                 alarm_id = await node("EngineAsset.Decision.AlarmId").read_value()
 
                 with connect(f"ws://127.0.0.1:{port}/ws/state") as ws:  # dashboard ACK
-                    ws.send(json.dumps({"schema_version": "1.4", "type": "ack", "alarm_id": alarm_id,
+                    ws.send(json.dumps({"schema_version": "1.5", "type": "ack", "alarm_id": alarm_id,
                                         "operator": "dashboard", "sent_at": time.time()}))
                     await wait_for(lambda: _ok(node("EngineAsset.Decision.AckedBy").read_value(), lambda v: v == "dashboard"), timeout=3)
                 return alarm_id

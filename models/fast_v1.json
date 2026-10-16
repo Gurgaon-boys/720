@@ -1,0 +1,128 @@
+{
+ "model": "fast_v1",
+ "created_at": "2026-10-16T06:10:10+00:00",
+ "dataset": "data\\splits\\sim_v2_dataset.json",
+ "sim_version": "2.1.0",
+ "classes": [
+  "healthy",
+  "misfire",
+  "knock",
+  "injector_clog"
+ ],
+ "features": [
+  "half_order_energy",
+  "roughness_c1",
+  "roughness_c2",
+  "roughness_c3",
+  "roughness_c4",
+  "weak_cyl_c1",
+  "weak_cyl_c2",
+  "weak_cyl_c3",
+  "weak_cyl_c4",
+  "knock_db_c1",
+  "knock_db_c2",
+  "knock_db_c3",
+  "knock_db_c4",
+  "accel_sector_00",
+  "accel_sector_01",
+  "accel_sector_02",
+  "accel_sector_03",
+  "accel_sector_04",
+  "accel_sector_05",
+  "accel_sector_06",
+  "accel_sector_07",
+  "accel_sector_08",
+  "accel_sector_09",
+  "accel_sector_10",
+  "accel_sector_11",
+  "accel_sector_12",
+  "accel_sector_13",
+  "accel_sector_14",
+  "accel_sector_15",
+  "lambda_sd",
+  "trim_mean_pct",
+  "trim_sd_pct",
+  "ltft_pct",
+  "spark_retard_deg",
+  "rpm_mean",
+  "map_kpa"
+ ],
+ "svm": {
+  "kernel": "rbf",
+  "C": 1.0,
+  "gamma": "scale",
+  "class_weight": "balanced",
+  "calibration": "sigmoid, 3 folds grouped by run",
+  "train_windows": 17718,
+  "max_per_class": 3000
+ },
+ "cylinder": "multinomial logistic regression per fault on the same standardised features",
+ "open_set": {
+  "method": "class-conditional Mahalanobis (Ledoit-Wolf) per fault class; the classifier witness abstains (p capped below P_MIN) when a window is outside its predicted class",
+  "threshold": "(1 - 0.001) quantile of val windows of that class",
+  "classes": {
+   "misfire": {
+    "threshold": 29.59116976272481,
+    "n_train": 14722,
+    "n_val": 3400
+   },
+   "knock": {
+    "threshold": 17.507499482215188,
+    "n_train": 2718,
+    "n_val": 767
+   },
+   "injector_clog": {
+    "threshold": 122.12857136255964,
+    "n_train": 15264,
+    "n_val": 3406
+   }
+  }
+ },
+ "healthy_model": {
+  "method": "Mahalanobis per rpm band, Ledoit-Wolf shrinkage, healthy TRAIN runs",
+  "threshold": "(1 - 0.001) quantile on VAL healthy runs",
+  "bands": {
+   "idle": {
+    "threshold": 11.238683481353982,
+    "shrinkage": 0.001865615813250053,
+    "n_train": 3794,
+    "n_val": 1480
+   },
+   "mid": {
+    "threshold": 9.371346693857134,
+    "shrinkage": 0.00021025827095492503,
+    "n_train": 20451,
+    "n_val": 7012
+   },
+   "high": {
+    "threshold": 10.466989334735429,
+    "shrinkage": 0.0004345872654199893,
+    "n_train": 21542,
+    "n_val": 11766
+   }
+  }
+ },
+ "val": {
+  "windows": 16318,
+  "per_class_windows": {
+   "healthy": 8745,
+   "misfire": 3400,
+   "knock": 767,
+   "injector_clog": 3406
+  },
+  "recall": {
+   "healthy": 0.9473985134362493,
+   "misfire": 0.9561764705882353,
+   "knock": 0.9778357235984355,
+   "injector_clog": 0.9292425132119788
+  },
+  "macro_f1": 0.9421445747357069,
+  "localisation_accuracy": 0.9497627686296399,
+  "anomaly_rate_on_faulty_windows": 0.9868349619978285,
+  "anomaly_rate_on_healthy_windows": 0.457736557877436,
+  "false_fault_rate_val_healthy_runs": 0.016595454826924268,
+  "anomaly_note": "valid windows only (no crank or accelerometer dropout); a dropout window has no score"
+ },
+ "cpu_ms_per_window": 0.838,
+ "fit_s": 11.3
+}

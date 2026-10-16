@@ -327,7 +327,8 @@ class OpcuaBridge:
         await self._set("rpm", num(op["rpm"]))
         await self._set("load_pct", num(op["load_pct"]))
         await self._set("regime", op["regime"])
-        await self._set("anomaly_score", float(m["anomaly"]["score"]))
+        score = m["anomaly"]["score"]
+        await self._set("anomaly_score", math.nan if score is None else float(score))  # 1.5 null -> NaN (D40)
         await self._set("anomaly_threshold", float(m["anomaly"]["threshold"]))
         await self._set("per_location", [float(x) for x in m["anomaly"]["per_location"]])
         await self._set("latency_ms", float(m["latency_ms"]))

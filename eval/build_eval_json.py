@@ -91,6 +91,11 @@ def secondary_fp() -> dict:
 
 
 def column_a() -> dict:
+    # sim 2.1, four classes, test split grouped by engine (Dipen, eval/build_eval_l2.py); the earlier
+    # sim v1 misfire-only Table A slice stays in eval/table_a_misfire.json and is named in the note below
+    l2 = load("results/column_a.json")
+    if l2 is not None:
+        return l2["column_a"]
     t = load("table_a_misfire.json")
     gsplit = "grouped by run (identical across models)"
     models = ["Baseline", "SVM", "ANN", "CNN"]
@@ -155,6 +160,11 @@ def main() -> None:
         "column_b": {"knock": null_proportion("B", "grouped by source clip"),
                      "valve_tick": null_proportion("B", "grouped by source clip")},
         "column_c": column_c(),
+        "notes": {"column_a": "sim 2.1 four-class results (eval/results/column_a.json, Dipen, DECISIONS D90-D94); the sim v1 "
+                              "misfire-only slice (eval/table_a_misfire.json, D63) is an earlier result",
+                  "column_c": "headline = the pre-registered OBD branch v1 (eval/obd_carobd.json, D55-D58). A second, "
+                              "later read of the same held-out files with a different OBD model (eval/results/column_c.json) "
+                              "is a secondary analysis and not on the panel"},
     }
     OUT.write_text(json.dumps(d, indent=2) + "\n")
     FRONTEND_COPY.parent.mkdir(parents=True, exist_ok=True)

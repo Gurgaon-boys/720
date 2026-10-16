@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 import numpy as np
 
 _STREAM_KEYS = ("t", "crank_angle_deg", "rpm", "mic")
+_OPTIONAL_KEYS = ("accel",)
 
 
 @dataclass
@@ -28,6 +29,7 @@ class CycleWindow:
     tooth_ids: np.ndarray
     labels: list = field(default_factory=list)
     meta: dict = field(default_factory=dict)
+    accel: np.ndarray | None = None   # sim v2 block accelerometer (None for v1-style chunks)
 
     @property
     def t_start(self) -> float:
@@ -51,7 +53,8 @@ class CycleWindower:
             raise ValueError("n_cycles * (1 - overlap) must be a whole number of cycles >= 1")
         self.n_cycles = n_cycles
         self.hop = int(round(hop))
-        self._buf = {k: np.zeros(0, dtype=np.float32 if k == "mic" else float) for k in _STREAM_KEYS}
+        self._buf = {k: np.zeros(0, dtype=np.float32 if k in ("mic", "accel") else float) for k in _STREAM_KEYS + _OPTIONAL_KEYS}
+        self._has = set(_STREAM_KEYS)
         self._theta = np.zeros(0)
         self._teeth_t = np.zeros(0)
         self._teeth_id = np.zeros(0, dtype=int)
@@ -70,8 +73,10 @@ class CycleWindower:
         self._wraps += int(steps.sum())
         self._last_wrapped = float(wrapped[-1])
 
-        for k in _STREAM_KEYS:
-            self._buf[k] = np.concatenate([self._buf[k], np.asarray(chunk[k], dtype=self._buf[k].dtype)])
+        for k in _STREAM_KEYS + _OPTIONAL_KEYS:
+            if k in chunk:
+                self._has.add(k)
+                self._buf[k] = np.concatenate([self._buf[k], np.asarray(chunk[k], dtype=self._buf[k].dtype)])
         self._theta = np.concatenate([self._theta, theta])
         self._teeth_t = np.concatenate([self._teeth_t, chunk["tooth_times"]])
         self._teeth_id = np.concatenate([self._teeth_id, chunk["tooth_ids"]]).astype(int)
@@ -114,6 +119,7 @@ class CycleWindower:
             tooth_ids=self._teeth_id[keep],
             labels=[self._labels[c] for c in range(c0, c1) if c in self._labels],
             meta=self._meta,
+            accel=self._buf["accel"][i0:i1] if "accel" in self._has else None,
         )
         self._index += 1
         return win
@@ -123,7 +129,7 @@ class CycleWindower:
         i = int(np.searchsorted(self._theta, 720.0 * self._next_cycle, side="left"))
         if i <= 0:
             return
-        for k in _STREAM_KEYS:
+        for k in _STREAM_KEYS + _OPTIONAL_KEYS:
             self._buf[k] = self._buf[k][i:]
         self._theta = self._theta[i:]
         t0 = self._buf["t"][0] if self._buf["t"].size else np.inf

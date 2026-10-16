@@ -1,4 +1,4 @@
-"""Schema 1.4 state.injection: the broadcast echoes an accepted POST /inject and is null otherwise.
+"""Schema 1.4+ state.injection: the broadcast echoes an accepted POST /inject and is null otherwise.
 
 Runs a real uvicorn server (like test_ws.py): Starlette's in-process TestClient intermittently raises
 CancelledError when its WebSocket session closes, which says nothing about the backend.
@@ -58,7 +58,7 @@ def test_injection_echo_on_the_simulator(server):
     host = server("sim")
     with connect(f"ws://{host}/ws/state") as ws:
         m = next_state(ws, lambda m: True)
-        assert m["schema_version"] == "1.4" and m["injection"] is None
+        assert m["schema_version"] == "1.5" and m["injection"] is None
 
         before = time.time()
         r = httpx.post(f"http://{host}/inject", json={"fault": "misfire", "cylinder": 3, "severity": 1.0})
@@ -68,9 +68,9 @@ def test_injection_echo_on_the_simulator(server):
             {"active": True, "fault": "misfire", "cylinder": 3, "severity": 1.0}
         assert before - 1 <= inj["started_at"] <= time.time() + 1
 
-        # a rejected request (not in sim v1) is not echoed; the accepted one stays
-        r = httpx.post(f"http://{host}/inject", json={"fault": "injector_clog", "cylinder": 1, "severity": 1.0})
-        assert r.status_code == 501
+        # a rejected request (invalid cylinder; sim v2 accepts every fault type) is not echoed; the accepted one stays
+        r = httpx.post(f"http://{host}/inject", json={"fault": "injector_clog", "cylinder": 9, "severity": 1.0})
+        assert r.status_code == 422
         assert next_state(ws, lambda m: True)["injection"]["fault"] == "misfire"
 
         assert httpx.post(f"http://{host}/clear_faults").status_code == 200
@@ -88,4 +88,4 @@ def test_inject_refused_without_a_simulator(server):
         r = httpx.post(f"http://{host}/inject", json={"fault": "misfire", "cylinder": 3, "severity": 1.0})
         assert r.status_code == 409
         m = next_state(ws, lambda m: True)
-        assert m["schema_version"] == "1.4" and m["injection"] is None
+        assert m["schema_version"] == "1.5" and m["injection"] is None

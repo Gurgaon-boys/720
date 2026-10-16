@@ -6,7 +6,7 @@
   "additionalProperties": false,
   "required": ["schema_version", "sent_at", "channels"],
   "properties": {
-    "schema_version": { "const": "1.4" },
+    "schema_version": { "const": "1.5" },
     "sent_at": { "type": "number", "description": "unix seconds" },
     "channels": {
       "type": "object",

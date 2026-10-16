@@ -4,6 +4,10 @@ Every rule has two versions (DECISIONS.md D13):
   crank_angle   simulator / injected data, which carry a crank reference
   firing_event  real audio, relative to detected firing pulses (not built yet)
 Each rule returns a contract `physics_rules` entry; the `rule` field is the fault name.
+
+Thresholds come from models/thresholds/misfire_half_order.json. From sim v2 they are per rpm band
+(normal at idle is not normal at 3000 rpm, plan section 10); the v1 file format (one global
+threshold, kept as misfire_half_order_v1.json) is still accepted.
 """
 
 from __future__ import annotations
@@ -15,6 +19,10 @@ import numpy as np
 
 THRESHOLDS_DIR = Path(__file__).resolve().parents[1] / "models" / "thresholds"
 MISFIRE_HALF_ORDER = THRESHOLDS_DIR / "misfire_half_order.json"
+MISFIRE_HALF_ORDER_V1 = THRESHOLDS_DIR / "misfire_half_order_v1.json"
+KNOCK_BAND_ENERGY = THRESHOLDS_DIR / "knock_band_energy.json"
+TRIM_DRIFT = THRESHOLDS_DIR / "trim_drift.json"
+PER_LOCATION_THRESHOLD = 0.5
 
 
 def load_thresholds(path: Path = MISFIRE_HALF_ORDER) -> dict:
@@ -22,13 +30,36 @@ def load_thresholds(path: Path = MISFIRE_HALF_ORDER) -> dict:
         return json.load(f)
 
 
+def band_for(thresholds: dict, rpm: float | None, map_kpa: float | None = None) -> dict:
+    """The threshold set for an operating point: the rpm x load (MAP) band containing it, else the
+    nearest one. An rpm outside every calibrated band (the held-out 3000-3500 rpm) uses the closest
+    band: extrapolation, reported separately. A missing MAP uses the low-load band."""
+    bands = thresholds.get("bands")
+    if not bands:
+        return thresholds                                   # v1 format: one global threshold
+    rpm = bands[0]["rpm_lo"] if rpm is None else rpm
+    m = 0.0 if map_kpa is None else map_kpa
+
+    def dist(b):
+        dr = 0.0 if b["rpm_lo"] <= rpm < b["rpm_hi"] else min(abs(rpm - b["rpm_lo"]), abs(rpm - b["rpm_hi"]))
+        dm = 0.0 if b.get("map_lo", -1e9) <= m < b.get("map_hi", 1e9) else 1.0
+        return (dr, dm)
+
+    return min(bands, key=dist)
+
+
 def misfire_half_order(features: dict, thresholds: dict) -> dict:
     """Misfire rule, crank-angle version.
 
     Fires when the window's half-order ratio of crank speed exceeds the threshold calibrated on
-    healthy simulator runs. Location = the cylinder with the largest crank roughness.
+    healthy simulator runs for that rpm band. Location = the cylinder with the largest crank roughness.
     """
-    fired = bool(features["half_order_ratio"] > thresholds["half_order_ratio"]["threshold"])
+    if not features.get("crank_valid", True):
+        # crank data missing (sensor dropout): the rule can't run, so it can't be a witness
+        return {"rule": "misfire", "fired": False, "location": None, "rule_basis": "crank_angle"}
+    band = band_for(thresholds, features.get("rpm_mean"), features.get("map_kpa"))
+    feature = thresholds.get("feature", "half_order_ratio")     # v1 files predate the key
+    fired = bool(features[feature] > band[feature]["threshold"])
     location = int(np.argmax(features["roughness"]) + 1) if fired else None
     return {"rule": "misfire", "fired": fired, "location": location, "rule_basis": "crank_angle"}
 
@@ -42,10 +73,46 @@ def misfire_firing_event(pulse_times: np.ndarray, pulse_strengths: np.ndarray, t
     raise NotImplementedError("firing-event misfire rule: needs the firing-pulse detector (dsp, later)")
 
 
-def per_location(roughness: np.ndarray, thresholds: dict) -> list[float]:
-    """Roughness scaled for the dashboard bars: 0..1, with the calibrated limit at 0.5."""
-    lim = thresholds["roughness"]["threshold"]
+def per_location(roughness: np.ndarray, thresholds: dict, rpm: float | None = None,
+                 map_kpa: float | None = None) -> list[float]:
+    """Roughness scaled for the dashboard bars: 0..1, with the band's calibrated limit at 0.5."""
+    lim = band_for(thresholds, rpm, map_kpa)["roughness"]["threshold"]
     return [round(float(np.clip(r / (2 * lim), 0.0, 1.0)), 3) for r in roughness]
 
 
-PER_LOCATION_THRESHOLD = 0.5
+def knock_band_energy(features: dict, thresholds: dict) -> dict:
+    """Knock rule, crank-angle version: a cylinder's knock-band ringing energy right after its TDC
+    (features["knock_db"]) exceeds that cylinder's healthy baseline for the rpm band by more than the
+    calibrated excess. Location = the cylinder with the largest excess."""
+    if not features.get("accel_valid", True):
+        return {"rule": "knock", "fired": False, "location": None, "rule_basis": "crank_angle"}
+    band = band_for(thresholds, features.get("rpm_mean"))["knock_db"]
+    excess = np.asarray(features["knock_db"]) - np.asarray(band["baseline_per_cylinder"])
+    fired = bool(excess.max() > band["threshold_excess_db"])
+    return {"rule": "knock", "fired": fired, "location": int(np.argmax(excess) + 1) if fired else None,
+            "rule_basis": "crank_angle"}
+
+
+def trim_drift(obd: dict, thresholds: dict) -> dict:
+    """Injector-clog rule, OBD version: the bank's total fuel trim (1 + STFT)(1 + LTFT) - 1, averaged
+    over the last 30 s of OBD, sits above the healthy range measured on carOBD calibration files.
+
+    Trims are bank-wide, so the rule names no cylinder (the classifier's weak-cylinder evidence does).
+    It doesn't run while the ECU is pulling spark (knock control), so knock can't read as clog, nor
+    without a full 30 s of OBD. obd: {"trim_mean_pct", "n", "spark_retard_deg"} from dsp.obd_window."""
+    off = {"rule": "injector_clog", "fired": False, "location": None, "rule_basis": "obd"}
+    if obd.get("n", 0) < thresholds["min_samples"] or obd.get("spark_retard_deg", 0.0) > thresholds["retard_exclude_deg"]:
+        return off
+    return {**off, "fired": bool(obd["trim_mean_pct"] > thresholds["threshold_pct"])}
+
+
+def load_all() -> dict:
+    """Every physics rule's thresholds, by fault name."""
+    return {"misfire": load_thresholds(MISFIRE_HALF_ORDER), "knock": load_thresholds(KNOCK_BAND_ENERGY),
+            "injector_clog": load_thresholds(TRIM_DRIFT)}
+
+
+def all_rules(features: dict, obd: dict, th: dict) -> list[dict]:
+    """The physics witnesses for one window, in contract order (misfire, knock, injector_clog)."""
+    return [misfire_half_order(features, th["misfire"]), knock_band_energy(features, th["knock"]),
+            trim_drift(obd, th["injector_clog"])]

@@ -1,8 +1,8 @@
 {
   "eval_version": "0.1",
   "placeholder": false,
-  "generated_at": "2026-10-16T07:40:00Z",
-  "source_commit": "e8706b8",
+  "generated_at": "2026-10-16T14:55:25Z",
+  "source_commit": "845e212",
   "produced_by": "python -m eval.build_eval_json",
   "false_positives": {
     "headline": {
@@ -132,27 +132,23 @@
     "split_gap": {
       "random": {
         "kind": "metric",
-        "value": 0.9673,
-        "unit": "balanced accuracy",
-        "n": 11230,
+        "value": 0.9547,
+        "unit": "macro-F1 (SVM)",
+        "n": 16006,
         "ci_95": null,
         "column": "A",
-        "split": "random (by window)",
-        "model": "SVM",
-        "task": "misfire vs healthy, per 4-cycle window (balanced accuracy), sim 1.0.0",
-        "source": "eval/table_a_misfire.json"
+        "split": "random split by window",
+        "note": "mean of 3 seeds, sd 0.0017"
       },
       "grouped": {
         "kind": "metric",
-        "value": 0.9663,
-        "unit": "balanced accuracy",
-        "n": 11230,
+        "value": 0.9165,
+        "unit": "macro-F1 (SVM)",
+        "n": 16006,
         "ci_95": null,
         "column": "A",
-        "split": "grouped by run",
-        "model": "SVM",
-        "task": "misfire vs healthy, per 4-cycle window (balanced accuracy), sim 1.0.0",
-        "source": "eval/table_a_misfire.json"
+        "split": "grouped split by engine",
+        "note": "mean of 3 seeds, sd 0.0086"
       }
     },
     "model_comparison": [
@@ -160,122 +156,126 @@
         "model": "Baseline",
         "result": {
           "kind": "metric",
-          "value": 0.8986,
-          "unit": "balanced accuracy",
-          "n": 11230,
+          "value": 0.66,
+          "unit": "macro-F1",
+          "n": 16006,
           "ci_95": null,
           "column": "A",
-          "split": "grouped by run (identical across models)",
-          "task": "misfire vs healthy, per 4-cycle window (balanced accuracy), sim 1.0.0",
-          "source": "eval/table_a_misfire.json"
+          "split": "TEST split: engines 775-789, grouped by engine",
+          "note": "localisation 0.858; deterministic"
         },
-        "sd_across_seeds": 0.0005
+        "sd_across_seeds": null
       },
       {
         "model": "SVM",
         "result": {
           "kind": "metric",
-          "value": 0.9663,
-          "unit": "balanced accuracy",
-          "n": 11230,
+          "value": 0.9165,
+          "unit": "macro-F1",
+          "n": 16006,
           "ci_95": null,
           "column": "A",
-          "split": "grouped by run (identical across models)",
-          "task": "misfire vs healthy, per 4-cycle window (balanced accuracy), sim 1.0.0",
-          "source": "eval/table_a_misfire.json"
+          "split": "TEST split: engines 775-789, grouped by engine",
+          "note": "localisation 0.937; 3 seeds"
         },
-        "sd_across_seeds": 0.0003
+        "sd_across_seeds": 0.0086
       },
       {
         "model": "ANN",
         "result": {
           "kind": "metric",
-          "value": 0.9618,
-          "unit": "balanced accuracy",
-          "n": 11230,
+          "value": 0.9247,
+          "unit": "macro-F1",
+          "n": 16006,
           "ci_95": null,
           "column": "A",
-          "split": "grouped by run (identical across models)",
-          "task": "misfire vs healthy, per 4-cycle window (balanced accuracy), sim 1.0.0",
-          "source": "eval/table_a_misfire.json"
+          "split": "TEST split: engines 775-789, grouped by engine",
+          "note": "localisation 0.912; 3 seeds"
         },
-        "sd_across_seeds": 0.0016
+        "sd_across_seeds": 0.0029
       },
       {
         "model": "CNN",
         "result": {
           "kind": "metric",
-          "value": null,
-          "unit": null,
-          "n": null,
+          "value": 0.6558,
+          "unit": "macro-F1",
+          "n": 16006,
           "ci_95": null,
           "column": "A",
-          "split": "grouped by run (identical across models)"
+          "split": "TEST split: engines 775-789, grouped by engine",
+          "note": "localisation 0.592; 3 seeds"
         },
-        "sd_across_seeds": null
+        "sd_across_seeds": 0.0428
       }
     ],
     "held_out_class": {
       "valve_tick": {
         "auroc": {
           "kind": "metric",
-          "value": null,
-          "unit": null,
-          "n": null,
+          "value": 0.9463,
+          "unit": "AUROC",
+          "n": 7497,
           "ci_95": null,
           "column": "A",
-          "split": "held-out class"
+          "split": "held-out class: valve_tick (15 test engines) vs healthy test windows",
+          "note": "healthy-model Mahalanobis; unknown n=3776 vs healthy n=3721; at the VAL threshold TPR 0.508, FPR 0.014"
         },
         "pauc": {
           "kind": "metric",
-          "value": null,
-          "unit": null,
-          "n": null,
+          "value": 0.8457,
+          "unit": "pAUROC, FPR <= 0.1 (McClish)",
+          "n": 7497,
           "ci_95": null,
           "column": "A",
-          "split": "held-out class"
+          "split": "held-out class: valve_tick (15 test engines) vs healthy test windows",
+          "note": "healthy-model Mahalanobis; unknown n=3776 vs healthy n=3721; at the VAL threshold TPR 0.508, FPR 0.014"
         }
       },
       "knock": {
         "auroc": {
           "kind": "metric",
-          "value": null,
-          "unit": null,
-          "n": null,
+          "value": 0.9996,
+          "unit": "AUROC",
+          "n": 4331,
           "ci_95": null,
           "column": "A",
-          "split": "held-out class"
+          "split": "knock (never seen by the healthy model) vs healthy test windows",
+          "note": "healthy-model Mahalanobis; unknown n=610 vs healthy n=3721; at the VAL threshold TPR 0.997, FPR 0.014"
         },
         "pauc": {
           "kind": "metric",
-          "value": null,
-          "unit": null,
-          "n": null,
+          "value": 0.9979,
+          "unit": "pAUROC, FPR <= 0.1 (McClish)",
+          "n": 4331,
           "ci_95": null,
           "column": "A",
-          "split": "held-out class"
+          "split": "knock (never seen by the healthy model) vs healthy test windows",
+          "note": "healthy-model Mahalanobis; unknown n=610 vs healthy n=3721; at the VAL threshold TPR 0.997, FPR 0.014"
         }
       }
     },
     "injector_detectability": {
       "smallest_clog_at_fixed_far": {
         "kind": "metric",
-        "value": null,
-        "unit": null,
-        "n": null,
+        "value": 0.4,
+        "unit": "clog severity s (fuel lost)",
+        "n": 10,
         "ci_95": null,
         "column": "A",
-        "split": "grouped by run"
+        "split": "robustness engines (unseen), regimes on",
+        "note": "smallest s with a two-witness injector_clog ALARM in >= 50 % of runs (5/10 at s = 0.4); no s reached 90 % (s = None). At s = 0.6 lean misfire takes over (misfire rule, UNCLASSIFIED)"
       }
     },
     "latency_ms": {
       "kind": "metric",
-      "value": null,
+      "value": 592,
       "unit": "ms",
-      "n": null,
+      "n": 12,
       "ci_95": null,
       "column": "A",
-      "split": "live pipeline"
+      "split": "robustness engines (unseen), sim 2.1.0",
+      "note": "first true misfire -> ADVISORY window end, p 1.0, idle (the slowest band); median, p95 693 ms. mid 270, high 158, held-out rpm 123 ms. Live take: POST /inject -> ALARM 1090 ms (n = 1)"
     }
   },
   "column_b": {
@@ -329,5 +329,9 @@
       "split": "held-out carOBD files (by file)",
       "source": "eval/obd_carobd.json"
     }
+  },
+  "notes": {
+    "column_a": "sim 2.1 four-class results (eval/results/column_a.json, Dipen, DECISIONS D90-D94); the sim v1 misfire-only slice (eval/table_a_misfire.json, D63) is an earlier result",
+    "column_c": "headline = the pre-registered OBD branch v1 (eval/obd_carobd.json, D55-D58). A second, later read of the same held-out files with a different OBD model (eval/results/column_c.json) is a secondary analysis and not on the panel"
   }
 }

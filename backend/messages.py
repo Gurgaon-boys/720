@@ -1,4 +1,4 @@
-"""Builders for the contract's messages (schema_version 1.4) and validation against contract/schemas.
+"""Builders for the contract's messages (schema_version 1.5) and validation against contract/schemas.
 
 The schemas are read from contract/ at runtime, never copied, so the backend can't drift from them.
 """
@@ -11,7 +11,7 @@ from pathlib import Path
 
 from jsonschema import Draft202012Validator
 
-SCHEMA_VERSION = "1.4"
+SCHEMA_VERSION = "1.5"
 SCHEMAS = Path(__file__).resolve().parent.parent / "contract" / "schemas"
 
 UNITS = {"t": "s", "sent_at": "unix s", "rpm": "rev/min", "load_pct": "%", "latency_ms": "ms", "severity": "0-1", "crank_deg": "deg"}

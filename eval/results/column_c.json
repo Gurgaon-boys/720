@@ -1,0 +1,345 @@
+{
+ "false_positives": {
+  "headline": {
+   "dataset": "carOBD held-out files",
+   "anomaly_flags": {
+    "kind": "rate",
+    "events": 14,
+    "exposure_hours": 12.5447,
+    "per_hour": 1.116007174331835,
+    "upper_95_per_hour": 1.74467680711977,
+    "bound_method": "poisson_exact_one_sided_95",
+    "column": "C",
+    "split": "carOBD held-out files",
+    "unit": "windows",
+    "n_files": 39
+   },
+   "advisories": {
+    "kind": "rate",
+    "events": 0,
+    "exposure_hours": 12.5447,
+    "per_hour": 0.0,
+    "upper_95_per_hour": 0.2388041935474051,
+    "bound_method": "poisson_exact_one_sided_95",
+    "column": "C",
+    "split": "carOBD held-out files",
+    "unit": "episodes",
+    "windows": 0,
+    "n_files": 39
+   },
+   "classifier_false_faults": null,
+   "alarms": {
+    "kind": "rate",
+    "events": 0,
+    "exposure_hours": 12.5447,
+    "per_hour": 0.0,
+    "upper_95_per_hour": 0.2388041935474051,
+    "bound_method": "poisson_exact_one_sided_95",
+    "column": "C",
+    "split": "carOBD held-out files",
+    "unit": "episodes",
+    "structurally_limited": true,
+    "note": "no classifier on carOBD: ALARM needs two witnesses, so it cannot occur",
+    "n_files": 39
+   }
+  }
+ },
+ "column_c": {
+  "obd_branch": {
+   "kind": "rate",
+   "events": 10,
+   "exposure_hours": 12.5447,
+   "per_hour": 0.7971479816655964,
+   "upper_95_per_hour": 1.352139882832507,
+   "bound_method": "poisson_exact_one_sided_95",
+   "column": "C",
+   "split": "carOBD held-out files",
+   "unit": "episodes",
+   "windows": 14,
+   "n_files": 39
+  },
+  "by_file_type": {
+   "drive": {
+    "anomaly_flags": {
+     "kind": "rate",
+     "events": 11,
+     "exposure_hours": 1.7758,
+     "per_hour": 6.194274988268418,
+     "upper_95_per_hour": 10.252940920264846,
+     "bound_method": "poisson_exact_one_sided_95",
+     "column": "C",
+     "split": "carOBD held-out files",
+     "unit": "windows",
+     "n_files": 39
+    },
+    "advisories": {
+     "kind": "rate",
+     "events": 0,
+     "exposure_hours": 1.7758,
+     "per_hour": 0.0,
+     "upper_95_per_hour": 1.6869444994203602,
+     "bound_method": "poisson_exact_one_sided_95",
+     "column": "C",
+     "split": "carOBD held-out files",
+     "unit": "episodes",
+     "windows": 0,
+     "n_files": 39
+    },
+    "unclassified": {
+     "kind": "rate",
+     "events": 8,
+     "exposure_hours": 1.7758,
+     "per_hour": 4.504927264195214,
+     "upper_95_per_hour": 8.128380881386942,
+     "bound_method": "poisson_exact_one_sided_95",
+     "column": "C",
+     "split": "carOBD held-out files",
+     "unit": "episodes",
+     "windows": 11,
+     "n_files": 39
+    },
+    "alarms": {
+     "kind": "rate",
+     "events": 0,
+     "exposure_hours": 1.7758,
+     "per_hour": 0.0,
+     "upper_95_per_hour": 1.6869444994203602,
+     "bound_method": "poisson_exact_one_sided_95",
+     "column": "C",
+     "split": "carOBD held-out files",
+     "unit": "episodes",
+     "structurally_limited": true,
+     "note": "no classifier on carOBD: ALARM needs two witnesses, so it cannot occur",
+     "n_files": 39
+    }
+   },
+   "idle": {
+    "anomaly_flags": {
+     "kind": "rate",
+     "events": 0,
+     "exposure_hours": 2.9997,
+     "per_hour": 0.0,
+     "upper_95_per_hour": 0.9986698939526217,
+     "bound_method": "poisson_exact_one_sided_95",
+     "column": "C",
+     "split": "carOBD held-out files",
+     "unit": "windows",
+     "n_files": 39
+    },
+    "advisories": {
+     "kind": "rate",
+     "events": 0,
+     "exposure_hours": 2.9997,
+     "per_hour": 0.0,
+     "upper_95_per_hour": 0.9986698939526217,
+     "bound_method": "poisson_exact_one_sided_95",
+     "column": "C",
+     "split": "carOBD held-out files",
+     "unit": "episodes",
+     "windows": 0,
+     "n_files": 39
+    },
+    "unclassified": {
+     "kind": "rate",
+     "events": 0,
+     "exposure_hours": 2.9997,
+     "per_hour": 0.0,
+     "upper_95_per_hour": 0.9986698939526217,
+     "bound_method": "poisson_exact_one_sided_95",
+     "column": "C",
+     "split": "carOBD held-out files",
+     "unit": "episodes",
+     "windows": 0,
+     "n_files": 39
+    },
+    "alarms": {
+     "kind": "rate",
+     "events": 0,
+     "exposure_hours": 2.9997,
+     "per_hour": 0.0,
+     "upper_95_per_hour": 0.9986698939526217,
+     "bound_method": "poisson_exact_one_sided_95",
+     "column": "C",
+     "split": "carOBD held-out files",
+     "unit": "episodes",
+     "structurally_limited": true,
+     "note": "no classifier on carOBD: ALARM needs two witnesses, so it cannot occur",
+     "n_files": 39
+    }
+   },
+   "live": {
+    "anomaly_flags": {
+     "kind": "rate",
+     "events": 3,
+     "exposure_hours": 3.9858,
+     "per_hour": 0.7526656909889191,
+     "upper_95_per_hour": 1.9453037494290761,
+     "bound_method": "poisson_exact_one_sided_95",
+     "column": "C",
+     "split": "carOBD held-out files",
+     "unit": "windows",
+     "n_files": 39
+    },
+    "advisories": {
+     "kind": "rate",
+     "events": 0,
+     "exposure_hours": 3.9858,
+     "per_hour": 0.0,
+     "upper_95_per_hour": 0.751594967230773,
+     "bound_method": "poisson_exact_one_sided_95",
+     "column": "C",
+     "split": "carOBD held-out files",
+     "unit": "episodes",
+     "windows": 0,
+     "n_files": 39
+    },
+    "unclassified": {
+     "kind": "rate",
+     "events": 2,
+     "exposure_hours": 3.9858,
+     "per_hour": 0.501777127325946,
+     "upper_95_per_hour": 1.57954261890997,
+     "bound_method": "poisson_exact_one_sided_95",
+     "column": "C",
+     "split": "carOBD held-out files",
+     "unit": "episodes",
+     "windows": 3,
+     "n_files": 39
+    },
+    "alarms": {
+     "kind": "rate",
+     "events": 0,
+     "exposure_hours": 3.9858,
+     "per_hour": 0.0,
+     "upper_95_per_hour": 0.751594967230773,
+     "bound_method": "poisson_exact_one_sided_95",
+     "column": "C",
+     "split": "carOBD held-out files",
+     "unit": "episodes",
+     "structurally_limited": true,
+     "note": "no classifier on carOBD: ALARM needs two witnesses, so it cannot occur",
+     "n_files": 39
+    }
+   },
+   "long": {
+    "anomaly_flags": {
+     "kind": "rate",
+     "events": 0,
+     "exposure_hours": 2.3939,
+     "per_hour": 0.0,
+     "upper_95_per_hour": 1.2514082368060295,
+     "bound_method": "poisson_exact_one_sided_95",
+     "column": "C",
+     "split": "carOBD held-out files",
+     "unit": "windows",
+     "n_files": 39
+    },
+    "advisories": {
+     "kind": "rate",
+     "events": 0,
+     "exposure_hours": 2.3939,
+     "per_hour": 0.0,
+     "upper_95_per_hour": 1.2514082368060295,
+     "bound_method": "poisson_exact_one_sided_95",
+     "column": "C",
+     "split": "carOBD held-out files",
+     "unit": "episodes",
+     "windows": 0,
+     "n_files": 39
+    },
+    "unclassified": {
+     "kind": "rate",
+     "events": 0,
+     "exposure_hours": 2.3939,
+     "per_hour": 0.0,
+     "upper_95_per_hour": 1.2514082368060295,
+     "bound_method": "poisson_exact_one_sided_95",
+     "column": "C",
+     "split": "carOBD held-out files",
+     "unit": "episodes",
+     "windows": 0,
+     "n_files": 39
+    },
+    "alarms": {
+     "kind": "rate",
+     "events": 0,
+     "exposure_hours": 2.3939,
+     "per_hour": 0.0,
+     "upper_95_per_hour": 1.2514082368060295,
+     "bound_method": "poisson_exact_one_sided_95",
+     "column": "C",
+     "split": "carOBD held-out files",
+     "unit": "episodes",
+     "structurally_limited": true,
+     "note": "no classifier on carOBD: ALARM needs two witnesses, so it cannot occur",
+     "n_files": 39
+    }
+   },
+   "ufpe": {
+    "anomaly_flags": {
+     "kind": "rate",
+     "events": 0,
+     "exposure_hours": 1.3894,
+     "per_hour": 0.0,
+     "upper_95_per_hour": 2.1560648110344585,
+     "bound_method": "poisson_exact_one_sided_95",
+     "column": "C",
+     "split": "carOBD held-out files",
+     "unit": "windows",
+     "n_files": 39
+    },
+    "advisories": {
+     "kind": "rate",
+     "events": 0,
+     "exposure_hours": 1.3894,
+     "per_hour": 0.0,
+     "upper_95_per_hour": 2.1560648110344585,
+     "bound_method": "poisson_exact_one_sided_95",
+     "column": "C",
+     "split": "carOBD held-out files",
+     "unit": "episodes",
+     "windows": 0,
+     "n_files": 39
+    },
+    "unclassified": {
+     "kind": "rate",
+     "events": 0,
+     "exposure_hours": 1.3894,
+     "per_hour": 0.0,
+     "upper_95_per_hour": 2.1560648110344585,
+     "bound_method": "poisson_exact_one_sided_95",
+     "column": "C",
+     "split": "carOBD held-out files",
+     "unit": "episodes",
+     "windows": 0,
+     "n_files": 39
+    },
+    "alarms": {
+     "kind": "rate",
+     "events": 0,
+     "exposure_hours": 1.3894,
+     "per_hour": 0.0,
+     "upper_95_per_hour": 2.1560648110344585,
+     "bound_method": "poisson_exact_one_sided_95",
+     "column": "C",
+     "split": "carOBD held-out files",
+     "unit": "episodes",
+     "structurally_limited": true,
+     "note": "no classifier on carOBD: ALARM needs two witnesses, so it cannot occur",
+     "n_files": 39
+    }
+   }
+  },
+  "rpm_transition_check": {
+   "transition_windows": 1310,
+   "transition_flagged": 9,
+   "steady_windows": 1317,
+   "steady_flagged": 5,
+   "transition_rule": "rpm range > 600 in the 30 s window"
+  }
+ },
+ "notes": {
+  "classifier_false_faults": "no classifier on carOBD: not measured",
+  "obd_branch": "UNCLASSIFIED episodes from the OBD healthy model (no fault named)"
+ }
+}

@@ -40,6 +40,12 @@ These come from `720_Final_Plan.md` (v1.4), which wins wherever this file and th
 
 Data and checkpoints are git-ignored. Only scripts and split lists are committed.
 
+## Where things live
+
+- **Rule layer:** `backend/rule_layer.py` (the only one; there is no `backend/app/`). Physics rules: `dsp/rules.py`. Thresholds: `models/thresholds/*.json`.
+- **Seeds:** calibration, validation and evaluation engine-seed ranges are in `eval/common.py` (`SEEDS`), disjoint and asserted. Never tune on evaluation seeds.
+- **Held out:** the `valve_tick` fault, 3000–3500 rpm and the `"test"` parameter region. `sim/guard.py` refuses them in calibration and training.
+
 ## Git
 
 - Branches: `feature/<owner>-<thing>` (e.g. `feature/dipen-crank-model`)
