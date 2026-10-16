@@ -21,6 +21,10 @@ Evaluation: 5 folds BY SOURCE CLIP x 3 seeds (every window of a clip, healthy or
               "mislabelled" if the knock SVM calls them knock, otherwise "missed".
 Headline (pre-registered): level 0 dB, severities pooled, seed 0, Wilson 95% over windows
 (windows of one clip are correlated: also read the clip counts).
+
+--posthoc-levels (D98, chosen AFTER the pre-registered run was seen): the same method with levels
+0..+30 dB, written to eval/table_b_levels_posthoc.json as a detectability curve. The pre-registered
+eval/table_b.json stays the headline.
 """
 from __future__ import annotations
 
@@ -62,8 +66,11 @@ ANOMALY_QUANTILE = 0.99
 HEADLINE_LEVEL = 0.0
 
 
-def versions() -> list[tuple[str, float, float]]:
-    return [("healthy", 0.0, 0.0)] + [(f, s, lv) for f in ("knock", "valve_tick") for s in SEVERITIES for lv in LEVELS_DB]
+POSTHOC_LEVELS_DB = (0.0, 6.0, 12.0, 18.0, 24.0, 30.0)
+
+
+def versions(levels=LEVELS_DB) -> list[tuple[str, float, float]]:
+    return [("healthy", 0.0, 0.0)] + [(f, s, lv) for f in ("knock", "valve_tick") for s in SEVERITIES for lv in levels]
 
 
 def _seed(*parts) -> int:
@@ -71,10 +78,10 @@ def _seed(*parts) -> int:
 
 
 def clip_rows(args) -> list[dict]:
-    clip_id, path, bw = args
+    clip_id, path, bw, levels = args
     x = load(path)
     out = []
-    for fault, sev, lv in versions():
+    for fault, sev, lv in versions(levels):
         if fault == "healthy":
             y, times = x, np.zeros(0)
         else:
@@ -124,13 +131,13 @@ def run_seed(rows: list[dict], clips: list[str], seed: int) -> dict:
             "severity": np.array([r["severity"] for r in rows]), "level": np.array([r["level"] for r in rows])}
 
 
-def summarise(r: dict) -> dict:
+def summarise(r: dict, levels=LEVELS_DB) -> dict:
     f, ev, kp, an = r["fault"], r["event"], r["knock_pred"], r["anomalous"]
     healthy = f == "healthy"
     out = {"knock_false_positive_on_healthy": proportion_summary(int(kp[healthy].sum()), int(healthy.sum())),
            "anomaly_flag_on_healthy": proportion_summary(int(an[healthy].sum()), int(healthy.sum())),
            "knock_detection": {}, "valve_tick": {}}
-    for lv in LEVELS_DB:
+    for lv in levels:
         for s in (*SEVERITIES, "pooled"):
             m = (f == "knock") & ev & (r["level"] == lv) & (True if s == "pooled" else r["severity"] == s)
             out["knock_detection"][f"{lv:+.0f}dB_p{s}"] = proportion_summary(int(kp[m].sum()), int(m.sum()))
@@ -152,6 +159,12 @@ def summarise(r: dict) -> dict:
 
 
 def main() -> None:
+    import argparse
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--posthoc-levels", action="store_true", help="D98 detectability curve (post-hoc)")
+    args = ap.parse_args()
+    levels = POSTHOC_LEVELS_DB if args.posthoc_levels else LEVELS_DB
+    out_path = OUT.with_name("table_b_levels_posthoc.json") if args.posthoc_levels else OUT
     pools = json.loads(POOLS.read_text())
     with open(MANIFEST, newline="") as fh:
         man = {f"{r['video_id']}_{r['start']}": r for r in csv.DictReader(fh)}
@@ -161,10 +174,10 @@ def main() -> None:
 
     t0 = time.time()
     with ProcessPoolExecutor() as ex:
-        rows = [r for rs in ex.map(clip_rows, [(c, REPO / man[c]["path"], bw[c]) for c in clips]) for r in rs]
-    print(f"{len(clips)} P2 clips, {len(rows)} windows ({len(versions())} versions per clip) in {time.time() - t0:.0f} s")
+        rows = [r for rs in ex.map(clip_rows, [(c, REPO / man[c]["path"], bw[c], levels) for c in clips]) for r in rs]
+    print(f"{len(clips)} P2 clips, {len(rows)} windows ({len(versions(levels))} versions per clip) in {time.time() - t0:.0f} s")
 
-    per_seed = {s: summarise(run_seed(rows, clips, s)) for s in SEEDS}
+    per_seed = {s: summarise(run_seed(rows, clips, s), levels) for s in SEEDS}
     hk = f"{HEADLINE_LEVEL:+.0f}dB_ppooled"
     hv = f"{HEADLINE_LEVEL:+.0f}dB_spooled"
     across = {
@@ -173,13 +186,16 @@ def main() -> None:
         "valve_tick_unknown_headline": [per_seed[s]["valve_tick"][hv]["unknown"]["rate"] for s in SEEDS],
     }
     s0 = per_seed[SEEDS[0]]
-    write_json(OUT, {
-        "created_at": utc_now_iso(), "git_commit": git_commit(), "produced_by": "python -m models.real_audio.table_b",
+    write_json(out_path, {
+        "created_at": utc_now_iso(), "git_commit": git_commit(),
+        "produced_by": "python -m models.real_audio.table_b" + (" --posthoc-levels" if args.posthoc_levels else ""),
+        "status": ("POST-HOC detectability curve (D98): levels extended after the pre-registered run; "
+                   "eval/table_b.json is the headline") if args.posthoc_levels else "pre-registered (D97)",
         "column": "B (simulated additive faults injected onto real audio): knock and valve tick only",
         "base": {"pool": "P2 (single-rater vetted)", "min_bandwidth_hz": MIN_BW_HZ, "clips": len(clips),
                  "windows_per_version": "1 s, 0.5 s hop"},
         "injection": {"model": "sim 2.1 EngineParams knock / valve modes (models/real_audio/inject.py)",
-                      "severities": list(SEVERITIES), "levels_db_re_clip_5_15k_rms": list(LEVELS_DB)},
+                      "severities": list(SEVERITIES), "levels_db_re_clip_5_15k_rms": list(levels)},
         "split": f"{N_FOLDS} folds by source clip x seeds {list(SEEDS)}",
         "headline": {"level_db": HEADLINE_LEVEL, "severities": "pooled", "seed": SEEDS[0],
                      "knock_detection": s0["knock_detection"][hk],
@@ -194,14 +210,14 @@ def main() -> None:
     h = s0
     print(f"knock detection @0 dB pooled: {h['knock_detection'][hk]['rate']:.3f} {h['knock_detection'][hk]['wilson95']} "
           f"(n {h['knock_detection'][hk]['n']}); healthy FP {h['knock_false_positive_on_healthy']['rate']:.3f}")
-    for lv in LEVELS_DB:
+    for lv in levels:
         print(f"  {lv:+.0f} dB: knock det " + " ".join(f"p{s}={h['knock_detection'][f'{lv:+.0f}dB_p{s}']['rate']:.2f}"
                                                     for s in SEVERITIES) +
               f" | valve unknown {h['valve_tick'][f'{lv:+.0f}dB_spooled']['unknown']['rate']:.2f}"
               f" mislabelled {h['valve_tick'][f'{lv:+.0f}dB_spooled']['mislabelled_knock']['rate']:.2f}")
     print(f"valve tick anomaly AUROC {h['valve_tick_anomaly_auroc_vs_healthy']}; across seeds: "
-          f"{ {k: v['mean'] for k, v in json.loads(OUT.read_text())['across_seeds'].items()} }")
-    print(f"Wrote {OUT.relative_to(REPO)}")
+          f"{ {k: v['mean'] for k, v in json.loads(out_path.read_text())['across_seeds'].items()} }")
+    print(f"Wrote {out_path.relative_to(REPO)}")
 
 
 if __name__ == "__main__":

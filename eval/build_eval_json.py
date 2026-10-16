@@ -126,6 +126,22 @@ def column_a() -> dict:
     return out
 
 
+def column_b() -> dict:
+    t = load("table_b.json")
+    split = "5 folds by source clip (vetted P2, >= 8 kHz)"
+    if t is None:
+        return {"knock": null_proportion("B", split), "valve_tick": null_proportion("B", split)}
+    h, src = t["headline"], "eval/table_b.json"
+    prop = lambda d, **kw: {"kind": "proportion", "successes": d["k"], "n": d["n"], "value": d["rate"],
+                            "ci_95": d["wilson95"], "ci_method": "wilson_95", "column": "B", "split": split,
+                            "source": src, **kw}
+    cond = f"injected at {h['level_db']:+.0f} dB re clip 5-15 kHz RMS, severities pooled, windows"
+    return {"knock": prop(h["knock_detection"], measure="detection", condition=cond,
+                          false_positive_on_healthy=h["knock_false_positive_on_healthy"]["rate"]),
+            "valve_tick": prop(h["valve_tick_unknown"], measure="sent to unknown (held-out class)", condition=cond,
+                               mislabelled_knock=h["valve_tick_mislabelled_knock"]["rate"])}
+
+
 def column_c() -> dict:
     obd = load("obd_carobd.json")
     if obd is None:
@@ -157,8 +173,7 @@ def main() -> None:
         "operator_projection": {"engines": 50, "value": None, "unit": "alarms per hour", "basis": None,
                                 "assumptions": None, "column": "C", "split": "held-out files"},
         "column_a": column_a(),
-        "column_b": {"knock": null_proportion("B", "grouped by source clip"),
-                     "valve_tick": null_proportion("B", "grouped by source clip")},
+        "column_b": column_b(),
         "column_c": column_c(),
         "notes": {"column_a": "sim 2.1 four-class results (eval/results/column_a.json, Dipen, DECISIONS D90-D94); the sim v1 "
                               "misfire-only slice (eval/table_a_misfire.json, D63) is an earlier result",
