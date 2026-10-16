@@ -151,3 +151,31 @@ def test_opcua_commands_are_tagged_and_events_counted():
 
 async def asyncio_sleep0():
     return None
+
+
+@pytest.mark.skipif(not __import__("backend.report_pdf", fromlist=["AVAILABLE"]).AVAILABLE, reason="reportlab not installed")
+def test_pdf_report_download_and_content():
+    from fastapi.testclient import TestClient
+
+    from backend.main import create_app
+    from backend.report_pdf import build_pdf
+
+    with TestClient(create_app("healthy", opcua=False)) as c:
+        c.post("/scenario/sim")
+        c.post("/sensor/accel/off")
+        res = c.get("/report.pdf")
+        assert res.status_code == 200 and res.headers["content-type"] == "application/pdf"
+        assert res.content[:5] == b"%PDF-"
+        assert 'attachment; filename="720_incident_' in res.headers["content-disposition"]
+
+    r = _sim_run().advance(2.0)
+    r.rt.disable_sensor("accel", via="http")
+    r.advance(4.0)
+    pdf = build_pdf(r.rt)
+    pypdf = pytest.importorskip("pypdf")
+    import io
+    text = "".join(p.extract_text() for p in pypdf.PdfReader(io.BytesIO(pdf)).pages)
+    assert "720 · INCIDENT REPORT" in text or "INCIDENT REPORT" in text
+    assert "ACCEL" in text and "Disable ACCEL" in text and "FAILURE" in text
+    for banned in ("remaining useful life", "cost", "accuracy of"):
+        assert banned not in text.lower()

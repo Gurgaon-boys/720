@@ -82,13 +82,13 @@ th{{background:#eef1f5}} .bad{{color:#b3261e;font-weight:700}} .meta{{color:#4b5
 <div>Alarm IDs this session: {_e(', '.join(alarms) or 'none')}</div>
 <div>Evidence availability: <span class="lvl">{_e(avail.get('level'))}</span></div><div>New confirmed alarm possible: {'yes' if avail.get('new_alarm_possible') else 'no'}</div></div>
 <h2>Summary</h2><p>{_e(inv.get('headline'))}</p>
-<h2>Fault episodes (injections)</h2><table><tr><th>Time</th><th>Via</th><th>Action</th></tr>{rows(eps, [lambda e: _e(_t(e['t'])), lambda e: _e(e['via']), lambda e: _e(e['text'])])}</table>
+<h2>Fault episodes (injections)</h2><table><tr><th>Time</th><th>Via</th><th>Action</th></tr>{rows(eps, [lambda e: _e(_t(e['t'])), lambda e: _e(e['via'] or ('broadcast' if e['phase'] == 'confirmed' else None)), lambda e: _e(e['text'])])}</table>
 <h2>Sensor availability (last state)</h2><table><tr><th>Sensor</th><th>Watchdog health</th><th>Switched off by operator</th></tr>{sensors_rows or "<tr><td colspan='3'>unavailable</td></tr>"}</table>
 <h2>Physics evidence (last window)</h2><table><tr><th>Rule</th><th>State</th><th>Cylinder</th><th>Basis</th></tr>{physics_rows or "<tr><td colspan='4'>unavailable</td></tr>"}</table>
 <h2>ML evidence (last window)</h2><table><tr><th>Model</th><th>Label</th><th>p</th></tr>{models_rows}</table>
-<h2>Operator acknowledgement</h2><table><tr><th>Time</th><th>Phase</th><th>Via</th><th>Event</th></tr>{rows(acks, [lambda e: _e(_t(e['t'])), phase, lambda e: _e(e['via']), lambda e: _e(e['text'])])}</table>
+<h2>Operator acknowledgement</h2><table><tr><th>Time</th><th>Phase</th><th>Via</th><th>Event</th></tr>{rows(acks, [lambda e: _e(_t(e['t'])), phase, lambda e: _e(e['via'] or ('broadcast' if e['phase'] == 'confirmed' else None)), lambda e: _e(e['text'])])}</table>
 <h2>Timeline (requested · accepted · confirmed)</h2><table><tr><th>Time</th><th>Stream t</th><th>Phase</th><th>Via</th><th>Event</th></tr>
-{rows(trans, [lambda e: _e(_t(e['t'])), lambda e: _e(e['stream_t']), phase, lambda e: _e(e['via']), lambda e: _e(e['text'])])}</table>
+{rows(trans, [lambda e: _e(_t(e['t'])), lambda e: _e(e['stream_t']), phase, lambda e: _e(e['via'] or ('broadcast' if e['phase'] == 'confirmed' else None)), lambda e: _e(e['text'])])}</table>
 <h2>Reliability Agent findings</h2>{answers or '<p>unavailable</p>'}
 <h2>Data-quality limitations</h2><ul>{''.join(f'<li>{html.escape(x)}</li>' for x in LIMITATIONS)}</ul>
 <p class="meta">{_e(inv.get('authority'))}</p></body></html>"""

@@ -1,3 +1,5 @@
+import ExportButton from './ExportButton.jsx';
+
 // LIVE INCIDENT TIMELINE (D138): the backend's incident record (GET /events), newest first, with the three
 // phases kept apart: REQUESTED (a command arrived), ACCEPTED (the backend applied it), CONFIRMED (the
 // broadcast shows the change). Times are the backend clock. A confirmation shows how long after its
@@ -32,16 +34,19 @@ function causeOf(e, list) {
   return null;
 }
 
-export default function Incident({ events, error, reportUrl, showOpc }) {
+export default function Incident({ events, error, api, showOpc }) {
   const list = events.filter((e) => SHOWN.has(e.kind) && (showOpc || e.kind !== 'opcua_event'));
   const rows = list.slice(-80).reverse();
   return (
     <section className="lab-card incident" aria-label="Live incident timeline">
       <div className="lab-card-head">
         <h3>Live incident timeline</h3>
-        {reportUrl
-          ? <a className="lab-btn primary" href={reportUrl} target="_blank" rel="noreferrer">Export incident report</a>
-          : <span className="lab-tag mono">BACKEND ONLY</span>}
+        {api ? (
+          <span className="inc-actions">
+            <a className="lab-btn ghost" href={api.reportUrl} target="_blank" rel="noreferrer">View report</a>
+            <ExportButton api={api} />
+          </span>
+        ) : <span className="lab-tag mono">BACKEND ONLY</span>}
       </div>
       <div className="inc-legend mono"><span className="ph requested">requested</span><span className="ph accepted">accepted</span><span className="ph confirmed">confirmed</span></div>
       {error && <p className="lab-note err">{error}</p>}

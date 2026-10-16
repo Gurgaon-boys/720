@@ -6,6 +6,7 @@
 //   GET  /investigate           Reliability Agent: read-only tools, deterministic answers
 //   GET  /industrial            OPC UA server facts (endpoint, last publish, last event, last command)
 //   GET  /report                printable incident report (HTML)
+//   GET  /report.pdf            the same report as a PDF download (D140)
 // A reply only says a command was ACCEPTED. Whether a sensor is actually offline or live again is read
 // from state.health.sensors (the backend watchdog), never from this reply.
 
@@ -35,5 +36,6 @@ export function createSensorApi(apiUrl) {
     investigate: (trigger) => call('GET', `/investigate${trigger ? `?trigger=${encodeURIComponent(trigger)}` : ''}`),
     industrial: () => call('GET', '/industrial'),
     reportUrl: `${http}/report`,
+    pdfUrl: `${http}/report.pdf`,
   };
 }

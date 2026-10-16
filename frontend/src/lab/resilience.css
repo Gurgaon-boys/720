@@ -235,3 +235,13 @@
 .ox-chip.lost { border-color: rgba(255, 77, 79, 0.55); color: #ffb3b3; text-decoration: line-through; text-decoration-color: rgba(255, 77, 79, 0.8); }
 .ox-chip.kept::before { content: '✓ '; color: #c3cbd6; }
 @media (max-width: 1100px) { .ox-cols { grid-template-columns: 1fr; } }
+
+/* ---------------------------------------------------------------- PDF export (D140) */
+.rl-head { grid-template-columns: auto auto 1fr auto; }
+.rl-head .export { justify-self: end; }
+.export { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+.export-note { font-family: var(--mono); font-size: 10.5px; color: var(--muted); max-width: 260px; text-align: right; }
+.rl-export { min-height: 40px; border-color: #4a5b74; }
+.inc-actions { display: inline-flex; gap: 8px; align-items: flex-start; }
+.inc-actions a.lab-btn { text-decoration: none; display: inline-flex; align-items: center; }
+@media (max-width: 860px) { .rl-head .export { justify-self: start; align-items: flex-start; } }

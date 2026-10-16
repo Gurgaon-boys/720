@@ -14,6 +14,7 @@ import Incident from './Incident.jsx';
 import LabSignals from './LabSignals.jsx';
 import Guide, { currentStep } from './Guide.jsx';
 import Details from './Details.jsx';
+import ExportButton from './ExportButton.jsx';
 import './sabotage.css';
 import './resilience.css';
 
@@ -139,7 +140,7 @@ export default function SabotageLab({
 
   return (
     <section className={`lab rl${offline ? ' lab-offline' : ''}`} aria-label="720 Industrial Resilience Lab">
-      <LabHeader level={level} scripted={String(state.run_id).startsWith('fake_')} />
+      <LabHeader level={level} scripted={String(state.run_id).startsWith('fake_')} api={api} />
       <Guide step={currentStep(state, sensors)} />
 
       <div className="rl-grid">
@@ -173,7 +174,7 @@ export default function SabotageLab({
           { id: 'agent', label: 'Reliability Agent', body: <AgentPanel api={api} events={events} active={active} /> },
           {
             id: 'timeline', label: 'Incident timeline', badge: events.length ? String(events.filter((e) => e.kind !== 'opcua_event').length) : null,
-            body: <Incident events={events} error={evError} reportUrl={api?.reportUrl} showOpc={false} />,
+            body: <Incident events={events} error={evError} api={api} showOpc={false} />,
           },
           {
             id: 'opcua', label: 'OPC UA link', badge: industrial ? (industrial.running ? 'UP' : 'DOWN') : null, badgeTone: industrial?.running ? 'ok' : 'red',
@@ -189,7 +190,7 @@ export default function SabotageLab({
 
 // ------------------------------------------------------------ header
 
-function LabHeader({ level, scripted }) {
+function LabHeader({ level, scripted, api }) {
   const lv = level ? LEVEL_TEXT[level] : null;
   return (
     <header className="lab-head rl-head">
@@ -202,6 +203,7 @@ function LabHeader({ level, scripted }) {
       ) : (
         <span className="lab-simbadge mono" title="Everything in this tab runs on the engine simulator">SIMULATED TEST ENVIRONMENT</span>
       )}
+      <ExportButton api={api} className="lab-btn ghost rl-export" />
       {lv && (
         <div className={`lab-level lv-${level.toLowerCase()}`} role="status" aria-live="polite">
           <span className="lab-level-title">{lv.title}</span>
