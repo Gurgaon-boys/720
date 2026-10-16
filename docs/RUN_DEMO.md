@@ -24,7 +24,9 @@ Without the checkpoint the backend still starts, but the classifier witness is o
 (it needs two witnesses), the anomaly score is null and nothing becomes UNCLASSIFIED.
 
 **Option A: copy it** from the laptop that has it (same scikit-learn version: the file was written with
-scikit-learn 1.9.0 and NumPy 2.4.6) into `models\checkpoints\fast_v1.pkl`.
+scikit-learn 1.9.0 and NumPy 2.4.6) into `models\checkpoints\fast_v1.pkl`. `requirements.txt` pins
+scikit-learn 1.9.0 for this reason: with 1.9.1 the backend logs `InconsistentVersionWarning` ("might lead to invalid
+results") when it loads the file. Tested: the file loads without warnings on scikit-learn 1.9.0 with NumPy 2.5.4.
 
 **Option B: rebuild it** from the committed manifest (simulates the whole sim 2.1 dataset, then trains; long, run
 it the day before, not on stage):

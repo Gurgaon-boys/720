@@ -136,8 +136,11 @@ class SimSource:
             if ch not in live:
                 continue
             x = np.zeros(n, dtype=np.float32)
-            seg = self._disp[ch][max(i0, 0): i0 + n]
-            x[: seg.size] = seg
+            # i0 < 0 before the display buffer starts (start-up): clamp both ends, or a negative stop
+            # index slices from the end of the buffer and the frame no longer fits
+            lo, hi = max(i0, 0), max(i0 + n, 0)
+            seg = self._disp[ch][lo:hi]
+            x[lo - i0: lo - i0 + seg.size] = seg
             out.append(({"channel": ch, "kind": "waveform", "t0": t0, "sample_rate_hz": SIGNAL_RATE_HZ, "n_samples": n}, x))
             if ch == "mic":
                 spec = np.abs(np.fft.rfft(x * np.hanning(n))) / (n / 4)

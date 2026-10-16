@@ -18,7 +18,7 @@ import './dashboard.css';
 
 const STALE_S = 3; // a data stream silent this long gets a panel notice (same limit as the UI watchdog)
 
-export default function Dashboard({ state, obd, signal, error, scenarioError, links, apiUrl, ages, scenarios, scenarioId, onSelectScenario, onAck, onStartInjection, onStopInjection, ackError, offline, lastStateAt, sound, onToggleSound, audioAvailable, mock }) {
+export default function Dashboard({ state, obd, signal, error, scenarioError, links, apiUrl, ages, scenarios, scenarioId, onSelectScenario, onAck, onStartInjection, onStopInjection, ackError, offline, lastStateAt, sound, onToggleSound, audioKind, mock }) {
   const color = decisionColor(state?.decision);
   const run = state?.run_id; // a new run clears any panel error
 
@@ -61,7 +61,7 @@ export default function Dashboard({ state, obd, signal, error, scenarioError, li
           )}
           {state && (
             <PanelBoundary name="Sound" variant="inline" resetKey={run}>
-              <SoundControls sound={sound} onToggle={onToggleSound} audioAvailable={audioAvailable} source={state.source} />
+              <SoundControls sound={sound} onToggle={onToggleSound} audioKind={audioKind} source={state.source} />
             </PanelBoundary>
           )}
         </div>
