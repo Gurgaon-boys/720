@@ -1,8 +1,8 @@
 {
   "eval_version": "0.1",
   "placeholder": false,
-  "generated_at": "2026-10-16T15:18:38Z",
-  "source_commit": "362dbfe",
+  "generated_at": "2026-10-16T15:18:47Z",
+  "source_commit": "0cbc2a2",
   "produced_by": "python -m eval.build_eval_json",
   "false_positives": {
     "headline": {
