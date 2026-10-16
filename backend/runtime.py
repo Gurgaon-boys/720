@@ -177,7 +177,9 @@ class Runtime:
             return
         now = self.clock()
         self.watchdog.feed("obd", now)
-        channels = {name: {"t": [t], "v": [v], "unit": unit, "source": "simulator"}
+        cal = getattr(self.scenario, "channel_calibration", {})
+        channels = {name: {"t": [t], "v": [v], "unit": unit, "source": "simulator",
+                           **({"calibration": cal[name]} if name in cal else {})}
                     for name, (v, unit) in self.scenario.obd_sample(i).items()}
         self._send(self.obd_hub, "obd", messages.obd_message(sent_at=now, channels=channels))
 
