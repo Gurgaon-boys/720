@@ -16,3 +16,7 @@ All models use identical grouped splits (by run, by source clip) across several 
 Checkpoints (`*.pt`, `*.pkl`, `*.onnx`) are not committed.
 
 `thresholds/`: calibrated rule thresholds with their calibration metadata (committed; JSON, small). `misfire_half_order.json` comes from `python -m dsp.calibrate_misfire`.
+
+## OBD branch v1 (`models/obd/`, Diljit)
+
+`python -m models.obd.run_carobd` (~25 s) calibrates on carOBD calibration files (fit / validation by file) and evaluates once on the 39 held-out files → `models/thresholds/obd_branch.json`, `eval/obd_carobd.json`. Every result goes through the real `backend/rule_layer.py`. No OBD classifier yet (needs simulator OBD channels), so ALARM is structurally impossible on carOBD; report anomaly flags, UNCLASSIFIED and ADVISORY rates. See DECISIONS D55–D58.
