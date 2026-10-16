@@ -7,16 +7,18 @@ go into the same Runtime.ack() as dashboard ACKs.
 Address space (namespace urn:720:hackhive), under Objects/EngineAsset:
   RunId, Source, Mode, StreamTimeS, SchemaVersion, DiagnosticTimestamp, MaintenanceMode
   OperatingPoint/  Rpm, LoadPct (AnalogItems with EURange + EngineeringUnits), Regime
-  Obd/             one AnalogItem per OBD channel, each with a Source property
-  Diagnostics/     AnomalyScore, AnomalyThreshold, CylinderAnomaly[], LatencyMs, DiagnosticsOnline
+  Obd/             one AnalogItem per OBD channel, each with Source and Calibration properties
+  Diagnostics/     AnomalyScore, AnomalyThreshold, CylinderAnomaly[], LatencyMs, DiagnosticsOnline,
+                   ClassifierFault, ClassifierP, ClassifierCylinder, Models[], PhysicsRulesFired[]
   Decision/        State, Fault, Cylinder, Severity, AlarmId, Latched, Acked, AckedBy, AckedAt,
-                   Witnesses[], ConsecutiveWindows, RootCause
+                   Witnesses[], ConsecutiveWindows, RootCause, Guidance
+  Injection/       Active, Fault, Cylinder, Severity, StartedAt (echo of state.injection)
   AssetHealth      NE 107 enum (asset layer) + AssetHealthText
   SensorHealth/    one NE 107 enum per sensor (sensor layer, kept separate); a sensor the current
                    recording doesn't have reads Bad_NotConnected. DiagnosticStream (NE 107: FAILURE
                    after 3 s with no state) and LastStateAgeS give the stream's freshness
   Acknowledge(AlarmId, Operator) -> (Accepted, Reason)
-  Inject(Fault, Cylinder, Severity) -> (Accepted, Reason)   not supported until L1
+  Inject(Fault, Cylinder, Severity) -> (Accepted, Reason)   live simulator only, same path as POST /inject
 
 NE 107 values match the OPC UA DI DeviceHealthEnumeration: NORMAL 0, FAILURE 1, CHECK_FUNCTION 2,
 OFF_SPEC 3, MAINTENANCE_REQUIRED 4. It's a custom enum with those values; the DI nodeset isn't loaded.
@@ -91,7 +93,6 @@ def reachable_endpoints(endpoint: str) -> list[str]:
 OFFLINE_S = 3.0  # same threshold as the UI watchdog
 NE107 = ["NORMAL", "FAILURE", "CHECK_FUNCTION", "OFF_SPEC", "MAINTENANCE_REQUIRED"]  # DI values 0..4
 NULL_DATETIME = datetime(1601, 1, 1, tzinfo=timezone.utc)
-NOT_SUPPORTED = "not supported until L1"
 
 # OPC UA event severity (1-1000)
 SEV_ALARM_ACUTE = 800  # misfire / knock alarm (OFF_SPEC)
@@ -113,7 +114,12 @@ OBD_SPEC = {
     "ltft_pct": (-100, 99.2, "P1", "%"),
     "spark_adv_deg": (-64, 63.5, "DD", "°"),
     "o2_v": (0, 1.275, "VLT", "V"),
+    "lambda": (0, 2, "C62", "1"),
+    "intake_air_temp_c": (-40, 215, "CEL", "°C"),
+    "battery_v": (0, 20, "VLT", "V"),
+    "baro_kpa": (0, 255, "KPA", "kPa"),
 }
+SENSORS = ("mic", "accel", "obd", "crank", "cam")  # pre-created; any other sensor a source reports is added on the fly
 
 EVENT_FIELDS = [
     ("AlarmId", ua.VariantType.String),
@@ -253,6 +259,12 @@ class OpcuaBridge:
         await self._var(dg, "EngineAsset.Diagnostics.CylinderAnomaly", "per_location", [], V.Double)
         await self._analog(dg, "EngineAsset.Diagnostics.LatencyMs", "latency_ms", 0, 1000, "C26", "ms")
         await self._var(dg, "EngineAsset.Diagnostics.DiagnosticsOnline", "online", False, V.Boolean)
+        # the two witnesses, as the rule layer saw them this window
+        await self._var(dg, "EngineAsset.Diagnostics.ClassifierFault", "clf_fault", "", V.String)
+        await self._analog(dg, "EngineAsset.Diagnostics.ClassifierP", "clf_p", 0, 1, "C62", "1", math.nan)
+        await self._var(dg, "EngineAsset.Diagnostics.ClassifierCylinder", "clf_cyl", 0, V.Int32)
+        await self._var(dg, "EngineAsset.Diagnostics.Models", "models", [], V.String)
+        await self._var(dg, "EngineAsset.Diagnostics.PhysicsRulesFired", "rules_fired", [], V.String)
 
         de = await eng.add_object(self._nid("EngineAsset.Decision"), self._qn("Decision"))
         await self._var(de, "EngineAsset.Decision.State", "state", "NORMAL", V.String)
@@ -267,11 +279,19 @@ class OpcuaBridge:
         await self._var(de, "EngineAsset.Decision.Witnesses", "witnesses", [], V.String)
         await self._var(de, "EngineAsset.Decision.ConsecutiveWindows", "consecutive_windows", 0, V.UInt32)
         await self._var(de, "EngineAsset.Decision.RootCause", "root_cause", "", V.String)
+        await self._var(de, "EngineAsset.Decision.Guidance", "guidance", "", V.String)
+
+        ij = await eng.add_object(self._nid("EngineAsset.Injection"), self._qn("Injection"))
+        await self._var(ij, "EngineAsset.Injection.Active", "inj_active", False, V.Boolean)
+        await self._var(ij, "EngineAsset.Injection.Fault", "inj_fault", "", V.String)
+        await self._var(ij, "EngineAsset.Injection.Cylinder", "inj_cyl", 0, V.Int32)
+        await self._analog(ij, "EngineAsset.Injection.Severity", "inj_sev", 0, 1, "C62", "0-1", math.nan)
+        await self._var(ij, "EngineAsset.Injection.StartedAt", "inj_started", NULL_DATETIME, V.DateTime)
 
         await self._var(eng, "EngineAsset.AssetHealth", "asset_ne107", 0, V.Int32, datatype=self.ne107.nodeid)
         await self._var(eng, "EngineAsset.AssetHealthText", "asset_ne107_text", "NORMAL", V.String)
         self.sensors = await eng.add_object(self._nid("EngineAsset.SensorHealth"), self._qn("SensorHealth"))
-        for sensor in ("mic", "accel", "obd"):
+        for sensor in SENSORS:
             await self._sensor(sensor)
         await self._var(self.sensors, "EngineAsset.SensorHealth.DiagnosticStream", "stream", 0, V.Int32,
                         datatype=self.ne107.nodeid)
@@ -302,6 +322,8 @@ class OpcuaBridge:
         node = await self._analog(self.obd, f"EngineAsset.Obd.{name}", f"obd.{name}", lo, hi, code, unit, math.nan)
         src = await node.add_property(self._nid(f"EngineAsset.Obd.{name}.Source"), self._qn("Source"), "")
         self._vars[f"obd.{name}.source"] = [src, ua.VariantType.String, "", True]
+        cal = await node.add_property(self._nid(f"EngineAsset.Obd.{name}.Calibration"), self._qn("Calibration"), "")
+        self._vars[f"obd.{name}.calibration"] = [cal, ua.VariantType.String, "", True]
 
     async def _sensor(self, sensor):
         await self._var(self.sensors, f"EngineAsset.SensorHealth.{sensor}", f"sensor.{sensor}", 0, ua.VariantType.Int32,
@@ -351,7 +373,7 @@ class OpcuaBridge:
         if self._prev is not None and self._prev["run_id"] != m["run_id"]:
             # a new run: OBD values from the old one stay visible but not as current data, until
             # this run sends its own (a real AudioSet clip has no OBD at all)
-            for key in [k for k in self._vars if k.startswith("obd.") and not k.endswith(".source")]:
+            for key in [k for k in self._vars if k.startswith("obd.") and not k.endswith((".source", ".calibration"))]:
                 await self._not_connected(key)
         num = lambda x: math.nan if x is None else float(x)  # noqa: E731
 
@@ -382,6 +404,23 @@ class OpcuaBridge:
         await self._set("consecutive_windows", int(d["consecutive_windows"]))
         root = "unclassified" if d["state"] == "UNCLASSIFIED" else (d["fault"] or "") if d["state"] == "ALARM" else ""
         await self._set("root_cause", root)
+        await self._set("guidance", d.get("guidance") or "")
+
+        models = m.get("models") or []
+        top = max(models, key=lambda e: e["p"]) if models else None
+        await self._set("clf_fault", top["label"] if top else "")
+        await self._set("clf_p", float(top["p"]) if top else math.nan)
+        await self._set("clf_cyl", int((m.get("features_summary") or {}).get("classifier_cylinder") or 0))
+        await self._set("models", [f"{e['model']} {e['label']} {e['p']:.2f}" for e in models])
+        await self._set("rules_fired", [f"{r['rule']}" + (f" cyl {r['location']}" if r["location"] else "") + f" ({r['rule_basis']})"
+                                        for r in m.get("physics_rules") or [] if r["fired"]])
+
+        inj = m.get("injection")
+        await self._set("inj_active", bool(inj))
+        await self._set("inj_fault", inj["fault"] if inj else "")
+        await self._set("inj_cyl", int(inj["cylinder"]) if inj else 0)
+        await self._set("inj_sev", float(inj["severity"]) if inj else math.nan)
+        await self._set("inj_started", _dt(inj["started_at"]) if inj else NULL_DATETIME)
 
         await self._set("asset_ne107", NE107.index(h["asset_ne107"]))
         await self._set("asset_ne107_text", h["asset_ne107"])
@@ -409,6 +448,7 @@ class OpcuaBridge:
             if ch["v"]:
                 await self._set(f"obd.{name}", float(ch["v"][-1]))
             await self._set(f"obd.{name}.source", ch["source"])
+            await self._set(f"obd.{name}.calibration", ch.get("calibration", ""))
 
     async def _transitions(self, m: dict) -> None:
         """Fire events on changes only: alarm raised / acked / cleared, advisory, unclassified, sensors."""
@@ -500,8 +540,19 @@ class OpcuaBridge:
         return self._reply(res.ok, "" if res.ok else f"{res.reason}: {res.detail}")
 
     def _inject(self, fault, cylinder, severity):
-        log.info("OPC UA Inject(%s, %s, %s) refused: %s", fault, cylinder, severity, NOT_SUPPORTED)
-        return self._reply(False, NOT_SUPPORTED)
+        """Same path as POST /inject: the live simulator only, the simulator's own validation, echoed in
+        state.injection (D46), so the dashboard and OPC UA both confirm it from the broadcast."""
+        if not hasattr(self.runtime.scenario, "inject"):
+            reason = f"source {self.runtime.scenario.name!r} has no simulator; switch to sim first"
+        else:
+            try:
+                self.runtime.inject(str(fault), int(cylinder), float(severity))
+                log.info("OPC UA Inject(%s, %s, %s) accepted", fault, cylinder, severity)
+                return self._reply(True, "")
+            except (NotImplementedError, ValueError, TypeError) as e:
+                reason = str(e)
+        log.info("OPC UA Inject(%s, %s, %s) refused: %s", fault, cylinder, severity, reason)
+        return self._reply(False, reason)
 
     @staticmethod
     def _reply(ok: bool, reason: str):
