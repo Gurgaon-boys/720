@@ -63,7 +63,12 @@ export default function App() {
   const lastStateRef = useRef(performance.now()); // counts from mount, so a dead backend also trips it
   const runIdRef = useRef(null);
   const [sound, setSound] = useState({ engine: false, alarm: false });
-  const [audioAvailable, setAudioAvailable] = useState(false);
+  // what "Listen" can play: 'full' = the stream's mic_audio channel; 'display' = no mic_audio, so
+  // the 4 kHz mic waveform the plots use (firing rhythm audible, nothing above 2 kHz); null = nothing
+  const [audioKind, setAudioKind] = useState(null);
+  const audioKindRef = useRef(null);
+  const sourceRef = useRef(null);
+  const setAudio = (kind) => { audioKindRef.current = kind; setAudioKind(kind); };
   const playerRef = useRef(null);
   const toneRef = useRef(null);
   const dashRef = useRef(null);
@@ -119,9 +124,11 @@ export default function App() {
             setObd({});
             setSignal({});
             arrivedRef.current = {};
+            setAudio(null);
           }
           runIdRef.current = msg.run_id;
         }
+        sourceRef.current = msg.source;
         setState(msg);
       }),
       transport.subscribe('ack_error', (msg) => {
@@ -135,9 +142,15 @@ export default function App() {
       transport.subscribe('signal', (f) => {
         // audio goes straight to the player, not through React state
         if (f.channel === 'mic_audio') {
-          setAudioAvailable(true);
+          if (audioKindRef.current !== 'full') setAudio('full');
           playerRef.current.push(f);
           return;
+        }
+        // no mic_audio on this stream: play the display mic instead. Never for REAL: until the
+        // recording itself is streamed, sound under a REAL badge would not be that recording
+        if (f.channel === 'mic' && audioKindRef.current !== 'full' && sourceRef.current && sourceRef.current !== 'real') {
+          if (audioKindRef.current !== 'display') setAudio('display');
+          playerRef.current.push(f);
         }
         arrivedRef.current[f.channel] = performance.now();
         setSignal((p) => appendSignal(p, f));
@@ -168,7 +181,7 @@ export default function App() {
     // clear buffers so the new run doesn't mix with the old one
     setObd({});
     setSignal({});
-    setAudioAvailable(false);
+    setAudio(null);
     setAckError(null);
     arrivedRef.current = {};
     // .then() so a synchronous throw (mock) lands in .catch like an async one (backend)
@@ -194,8 +207,8 @@ export default function App() {
     transportRef.current ? transportRef.current.stopInjection() : Promise.reject(new Error('no transport'))
   ), []);
 
-  // engine audio: stop when switched off or when the stream has no audio channel
-  const listening = sound.engine && audioAvailable;
+  // engine audio: stop when switched off or when the stream has nothing to play
+  const listening = sound.engine && audioKind != null;
   useEffect(() => {
     playerRef.current.setEnabled(listening);
   }, [listening]);
@@ -251,7 +264,7 @@ export default function App() {
             lastStateAt={lastStateAt}
             sound={sound}
             onToggleSound={toggleSound}
-            audioAvailable={audioAvailable}
+            audioKind={audioKind}
             mock={usingMock}
           />
         </PanelBoundary>
