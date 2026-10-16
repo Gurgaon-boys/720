@@ -11,13 +11,18 @@ anomaly score becomes UNCLASSIFIED instead of a confident wrong name.
 
 from __future__ import annotations
 
+import json
 import time
 from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
 
-from models.classifier import CHECKPOINT, load
+from models.classifier import CHECKPOINT, band_of, load
+
+# per-rpm-band healthy-model thresholds set from engine-to-engine spread on validation engines
+# (models/calibrate_healthy.py); without the file, the checkpoint's pooled-window thresholds apply
+HEALTHY_THRESHOLDS = Path(__file__).resolve().parent / "thresholds" / "healthy_model.json"
 
 ANOMALY_LIMIT = 0.5
 MIN_OBD_ROWS = 20     # enable condition: the classifier only saw windows with a full OBD history (30 s warm-up),
@@ -33,11 +38,15 @@ class WitnessOut:
     location: int | None    # classifier's cylinder for a named fault
     score: float | None     # None when no model is loaded (schema 1.5)
     cpu_ms: float
+    distance: float | None = None   # raw Mahalanobis distance (recorded by eval/chain.py)
 
 
 class ClassifierWitness:
-    def __init__(self, path: Path | None = CHECKPOINT):
+    def __init__(self, path: Path | None = CHECKPOINT, thresholds: dict | Path | None = HEALTHY_THRESHOLDS):
         self.model = load(path) if path is not None and path.exists() else None
+        if isinstance(thresholds, Path):
+            thresholds = json.loads(thresholds.read_text())["bands"] if thresholds.exists() else None
+        self.thresholds = thresholds          # {band: threshold} or None (checkpoint thresholds)
 
     @property
     def available(self) -> bool:
@@ -57,5 +66,6 @@ class ClassifierWitness:
             pv = min(pv, OPEN_SET_P)      # not confident, or outside that fault's training data: abstain
         loc = int(cyl[0]) if label != "healthy" and cyl[0] > 0 and pv > OPEN_SET_P else None
         # a window with a crank or accelerometer dropout gets no anomaly score (sensor health covers it)
-        score = round(float(ANOMALY_LIMIT * d[0] / thr[0]), 4) if valid else None
-        return WitnessOut([{"model": "SVM", "label": label, "p": round(pv, 3)}], loc, score, ms)
+        t = self.thresholds[band_of(float(rpm))] if self.thresholds else thr[0]
+        score = round(float(ANOMALY_LIMIT * d[0] / t), 4) if valid else None
+        return WitnessOut([{"model": "SVM", "label": label, "p": round(pv, 3)}], loc, score, ms, float(d[0]))

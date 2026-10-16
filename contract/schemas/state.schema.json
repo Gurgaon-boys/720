@@ -94,7 +94,11 @@
         "latched": { "type": "boolean" },
         "acked": { "type": "boolean" },
         "acked_by": { "type": ["string", "null"] },
-        "acked_at": { "type": ["number", "null"], "description": "unix seconds" }
+        "acked_at": { "type": ["number", "null"], "description": "unix seconds" },
+        "guidance": {
+          "type": ["string", "null"],
+          "description": "1.5 (optional): one-line operator action for this decision and NE 107 state (models/guidance.json, deterministic); null when NORMAL"
+        }
       },
       "allOf": [
         {

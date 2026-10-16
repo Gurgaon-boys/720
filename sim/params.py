@@ -89,3 +89,15 @@ class Regimes:
 
 HELD_OUT_FAULTS = ("valve_tick",)
 HELD_OUT_RPM = (3000.0, 3500.0)               # never used for calibration or training
+
+
+# Slow OBD sensors added in L3, from the carOBD CALIBRATION files (python -m sim.calibrate_sensors ->
+# sim/sensor_calibration.json; 90 files, engine running). Per channel: level mean, level sd across files
+# (one level drawn per engine run), slow wander sd (30 s means around the file level), fast noise sd
+# (inside 30 s windows) and the reporting step. No physics coupling: statistics only.
+SLOW_SENSORS = {
+    "intake_air_temp_c": {"level": 45.5, "level_sd": 7.57, "wander_sd": 3.88, "noise_sd": 0.49, "step": 1.0},
+    "battery_v": {"level": 13.77, "level_sd": 0.149, "wander_sd": 0.111, "noise_sd": 0.048, "step": 0.019},
+    "baro_kpa": {"level": 100.84, "level_sd": 0.82, "wander_sd": 0.234, "noise_sd": 0.0, "step": 1.0},
+}
+

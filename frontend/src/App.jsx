@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { apiUrl, createTransport, usingMock } from './api/transport.js';
 import ScrollIntro from './intro/ScrollIntro.jsx';
 import Dashboard from './dashboard/Dashboard.jsx';
 import PanelBoundary from './dashboard/PanelBoundary.jsx';
+import ViewTabs, { panelId, tabId, useViewTab } from './dashboard/ViewTabs.jsx';
 import { audioContext, createAlarmTone, createEnginePlayer } from './lib/audio.js';
 
 const OPERATOR = 'operator';
@@ -10,6 +11,9 @@ const OBD_KEEP = 60; // samples per channel (~60 s at 1 Hz)
 const OFFLINE_MS = 3000; // UI watchdog: no `state` for 3 s → diagnostics offline (contract rule 4)
 const WATCHDOG_TICK_MS = 250;
 const LIST_RETRY_MS = 5000; // scenario list: retry interval after a failed load
+
+// 3D engine view: its own chunk (three.js), fetched the first time its tab opens
+const Engine3D = lazy(() => import('./dashboard/Engine3D.jsx'));
 
 // obd messages carry new samples; keep a short history per channel
 function appendObd(prev, msg) {
@@ -60,6 +64,9 @@ export default function App() {
   const playerRef = useRef(null);
   const toneRef = useRef(null);
   const dashRef = useRef(null);
+  const [view, setView] = useViewTab();
+  const [opened3d, setOpened3d] = useState(view === '3d'); // keep it mounted (paused) once opened
+  useEffect(() => { if (view === '3d') setOpened3d(true); }, [view]);
   if (!playerRef.current) playerRef.current = createEnginePlayer();
   if (!toneRef.current) toneRef.current = createAlarmTone();
 
@@ -207,6 +214,9 @@ export default function App() {
         <ScrollIntro state={state} onSkip={goToDashboard} />
       </PanelBoundary>
       <div ref={dashRef}>
+        <ViewTabs view={view} onChange={setView} />
+        {/* the 2D dashboard stays mounted while the 3D tab is open, so its buffers keep filling */}
+        <div role="tabpanel" id={panelId('2d')} aria-labelledby={tabId('2d')} hidden={view !== '2d'}>
         {/* last resort: anything outside the per-panel boundaries (e.g. the header text) */}
         <PanelBoundary name="Dashboard" resetKey={state?.run_id}>
           <Dashboard
@@ -233,6 +243,17 @@ export default function App() {
             mock={usingMock}
           />
         </PanelBoundary>
+        </div>
+        {opened3d && (
+          <div role="tabpanel" id={panelId('3d')} aria-labelledby={tabId('3d')} hidden={view !== '3d'} className="view-3d">
+            {/* its own boundary: a WebGL or chunk-load failure stays in this tab */}
+            <PanelBoundary name="3D engine view">
+              <Suspense fallback={<div className="view-loading">Loading the 3D view…</div>}>
+                <Engine3D state={state} offline={offline} active={view === '3d'} />
+              </Suspense>
+            </PanelBoundary>
+          </div>
+        )}
       </div>
     </>
   );

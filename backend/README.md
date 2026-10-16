@@ -76,7 +76,15 @@ Pick a scenario with `S720_SCENARIO=<name>` before starting, or switch while run
 
 ## OPC UA (`opcua_bridge.py`)
 
-An asyncua server starts with the backend at **`opc.tcp://127.0.0.1:4840/720/`** (no security, anonymous: local demo only). `S720_OPCUA=0` turns it off and `S720_OPCUA_ENDPOINT` moves it. If it can't start (port taken), the backend logs the error and the dashboard keeps working; `GET /health` reports `"opcua": null`.
+An asyncua server starts with the backend at **`opc.tcp://127.0.0.1:4840/720/`** (no security, anonymous: local demo only). `S720_OPCUA=0` turns it off and `S720_OPCUA_ENDPOINT` moves it.
+
+**On a LAN** (UaExpert on another laptop): start with `S720_OPCUA_HOST=0.0.0.0` (listen on every interface; the default 127.0.0.1 is reachable from this machine only). At startup the backend prints `OPC UA reachable at opc.tcp://<lan-ip>:4840/720/` for each address; dial that one. The server is still **no security, anonymous**, so do this only on a network you trust. **Windows firewall:** the first start on 0.0.0.0 makes Windows ask whether Python may accept connections; allow it on *Private* networks only. If you missed the prompt, allow inbound TCP 4840 from an admin PowerShell:
+
+```powershell
+New-NetFirewallRule -DisplayName "720 OPC UA" -Direction Inbound -Protocol TCP -LocalPort 4840 -Action Allow -Profile Private
+```
+
+Some clients read the endpoint URL the server advertises (`opc.tcp://0.0.0.0:4840/720/`) and try to reconnect to it; in UaExpert, answer "use the discovery URL" (or set `S720_OPCUA_ENDPOINT=opc.tcp://<lan-ip>:4840/720/` so the advertised URL is the LAN address). If it can't start (port taken), the backend logs the error and the dashboard keeps working; `GET /health` reports `"opcua": null`.
 
 It mirrors the same `state`/`obd` broadcast the dashboard gets and decides nothing. An ACK through OPC UA goes through the same `Runtime.ack()` as a dashboard ACK, so both always show the same alarm state.
 

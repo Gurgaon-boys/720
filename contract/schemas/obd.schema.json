@@ -19,7 +19,11 @@
           "t": { "type": "array", "items": { "type": "number" }, "description": "stream time, s" },
           "v": { "type": "array", "items": { "type": "number" } },
           "unit": { "type": "string" },
-          "source": { "enum": ["real_carobd", "simulator"] }
+          "source": { "enum": ["real_carobd", "simulator"] },
+          "calibration": {
+            "enum": ["real_calibrated", "sim_only"],
+            "description": "1.5 (optional): for simulator channels, real_calibrated = constants measured on carOBD calibration files, sim_only = no carOBD counterpart"
+          }
         }
       }
     }

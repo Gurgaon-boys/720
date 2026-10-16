@@ -101,7 +101,7 @@ def test_ack_flow_through_runtime():
                         (json.dumps({"type": "ack", "alarm_id": alarm_id}), "invalid_message")):
         err = r.rt.handle_ack(bad)
         assert err["type"] == "ack_error" and err["reason"] == reason
-        assert r.rt.rules.decision() == before
+        assert {**r.rt.rules.decision(), "guidance": before["guidance"]} == before   # the broadcast adds guidance
 
     assert r.rt.handle_ack(ack(alarm_id)) is None
     r._drain()
@@ -124,7 +124,8 @@ def test_advisory_and_conflict_never_alarm():
 
 def test_unclassified_scenario():
     r = Run("unclassified").advance(14)
-    assert r.seq() == ["NORMAL", "UNCLASSIFIED", "NORMAL"]
+    # the first anomalous window is not yet persistent: the physics hint alone shows as ADVISORY
+    assert r.seq() == ["NORMAL", "ADVISORY", "UNCLASSIFIED", "NORMAL"]
     u = next(m for m in r.states if m["decision"]["state"] == "UNCLASSIFIED")
     assert u["decision"]["fault"] == "valve_tick" and u["health"]["asset_ne107"] == "OFF_SPEC"
 

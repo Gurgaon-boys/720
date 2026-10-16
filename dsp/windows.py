@@ -3,6 +3,12 @@
 A window is `n_cycles` complete 720 deg cycles (default 4) with 50% overlap, so a new window
 starts every `n_cycles / 2` cycles. Cycle boundaries come from the crank angle (cylinder 1 firing
 TDC, crank angle 0), never from wall time, so a window always holds whole cycles whatever the rpm.
+
+Cycle phase (L3): a crank wheel only knows the angle within one revolution (its missing tooth repeats every
+360 deg); which of the two revolutions of a 720 deg cycle we are in comes from the cam sensor, one pulse per
+cycle at CAM_OFFSET_DEG. When chunks carry `cam_times`, the windower takes the crank angle modulo 360 and
+derives the revolution from the cam: revolution = (360 deg wraps since the last cam pulse) mod 2. Chunks
+without `cam_times` (v1-style) keep using the given 0-720 deg angle. `phase_source` says which was used.
 """
 
 from __future__ import annotations
@@ -44,6 +50,37 @@ class CycleWindow:
         return 720.0 * self.first_cycle
 
 
+CAM_OFFSET_DEG = 90.0       # crank angle of the cam pulse (sim.engine.CAM_OFFSET_DEG); a sensor-mounting constant
+
+
+class CamPhase:
+    """0-720 deg cycle phase from a 0-360 deg crank angle plus cam pulses (one per 720 deg)."""
+
+    def __init__(self):
+        self._wraps = 0                 # 360 deg wraps of the crank angle seen so far
+        self._last_a = None
+        self._cam_wraps = None          # wrap count at the last cam pulse
+
+    def __call__(self, t, angle_deg, cam_times) -> np.ndarray | None:
+        a = np.mod(np.asarray(angle_deg, dtype=float), 360.0)
+        prev = a[:1] if self._last_a is None else np.array([self._last_a])
+        w = self._wraps + np.cumsum(np.diff(np.concatenate([prev, a])) < -180.0)
+        self._wraps, self._last_a = int(w[-1]), float(a[-1])
+        cams = np.asarray(cam_times, dtype=float)
+        if cams.size:
+            idx = np.searchsorted(t, cams, side="right") - 1          # last sample at or before each pulse
+            cam_w = w[np.clip(idx, 0, len(w) - 1)]
+            j = np.searchsorted(cams, t, side="right") - 1             # last pulse at or before each sample
+            ref = np.where(j >= 0, cam_w[np.clip(j, 0, None)], cam_w[0] if self._cam_wraps is None else self._cam_wraps)
+            self._cam_wraps = int(cam_w[-1])
+        elif self._cam_wraps is not None:
+            ref = np.full(len(w), self._cam_wraps)
+        else:
+            return None                                                # no cam seen yet: phase unknown
+        rev = np.mod(w - ref, 2)
+        return a + 360.0 * rev
+
+
 class CycleWindower:
     """Incremental windower: push simulator chunks in order, get finished windows back."""
 
@@ -64,9 +101,26 @@ class CycleWindower:
         self._last_wrapped = None
         self._next_cycle = None   # first cycle of the next window
         self._index = 0
+        self._cam = CamPhase()
+        self.phase_source = None  # "cam" | "given": where the 720 deg phase of the last chunk came from
+
+    def _phase(self, chunk: dict) -> np.ndarray:
+        given = np.asarray(chunk["crank_angle_deg"], dtype=float)
+        if "cam_times" not in chunk:
+            self.phase_source = "given"
+            return given
+        cam = self._cam(np.asarray(chunk["t"], dtype=float), given, chunk["cam_times"])
+        if cam is None:
+            self.phase_source = "given"
+            return given
+        self.phase_source = "cam"
+        # keep the given value where it agrees with the cam (bit-identical), else the cam-derived one
+        return np.where(np.floor(given / 360.0) == np.floor(cam / 360.0), given, cam)
 
     def push(self, chunk: dict) -> list[CycleWindow]:
-        wrapped = np.asarray(chunk["crank_angle_deg"], dtype=float)
+        wrapped = self._phase(chunk)
+        if "cam_times" in chunk:
+            chunk = {**chunk, "crank_angle_deg": wrapped}
         prev = wrapped[:1] if self._last_wrapped is None else np.array([self._last_wrapped])
         steps = np.diff(np.concatenate([prev, wrapped])) < -360.0
         theta = wrapped + 720.0 * (self._wraps + np.cumsum(steps))

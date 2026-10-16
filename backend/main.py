@@ -6,7 +6,8 @@ Environment:
     S720_SCENARIO         fake scenario to start with (default: misfire); see GET /scenarios
     S720_VALIDATE         1 = check every outgoing message against contract/schemas and log violations
     S720_OPCUA            0 = don't start the OPC UA server (default: on)
-    S720_OPCUA_ENDPOINT   default opc.tcp://127.0.0.1:4840/720/
+    S720_OPCUA_HOST       interface for OPC UA (default 127.0.0.1; 0.0.0.0 = every interface, for a LAN client)
+    S720_OPCUA_ENDPOINT   full endpoint, overrides the host (default opc.tcp://<host>:4840/720/)
     S720_SCENARIO   source to start with (default: misfire): a fake scenario, or "sim" for the live
                     simulator (L1); see GET /scenarios
     S720_SIM_SEED, S720_SIM_ENGINE   simulator run seed / randomised engine seed (sim only)
@@ -26,7 +27,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from backend.messages import SCHEMA_VERSION
-from backend.opcua_bridge import DEFAULT_ENDPOINT, OpcuaBridge
+from backend.opcua_bridge import OpcuaBridge, endpoint_from_env
 from backend.runtime import Hub, Runtime, put_latest
 from backend.sources import describe, make_source, source_names
 
@@ -40,7 +41,7 @@ def create_app(scenario: str | None = None, validate: bool | None = None, opcua:
     if validate is None:
         validate = os.environ.get("S720_VALIDATE", "0") == "1"
     if opcua is None:
-        opcua = os.environ.get("S720_OPCUA_ENDPOINT", DEFAULT_ENDPOINT) if os.environ.get("S720_OPCUA", "1") != "0" else False
+        opcua = endpoint_from_env() if os.environ.get("S720_OPCUA", "1") != "0" else False
     runtime = Runtime(scenario, validate=validate)
     bridge = OpcuaBridge(runtime, opcua) if opcua else None
 
