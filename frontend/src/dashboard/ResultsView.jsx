@@ -4,6 +4,8 @@ import FalseAlarms from './results/FalseAlarms.jsx';
 import Projection from './results/Projection.jsx';
 import DetectionTable from './results/DetectionTable.jsx';
 import Tradeoff from './results/Tradeoff.jsx';
+import Models from './results/Models.jsx';
+import { ClogSweep, MisfireSweep } from './results/Sweeps.jsx';
 import './results/results.css';
 
 // Results tab: the team's committed results, drawn from eval/results/*.json (copied at dev/build).
@@ -12,7 +14,7 @@ import './results/results.css';
 // split and counts beside it; simulated and real are never on one axis. Nothing is computed here
 // except drawing: no new thresholds, no blended numbers.
 
-const FILES = ['alarm_budget.json', 'valve_tick_cost.json'];
+const FILES = ['alarm_budget.json', 'valve_tick_cost.json', 'model_comparison.json', 'column_a.json', 'robustness_v2.json', 'clog_sweep.json'];
 
 export default function ResultsView() {
   const [files, setFiles] = useState({});
@@ -44,6 +46,13 @@ export default function ResultsView() {
 
       <h3 className="ev-h">3 · The operating point</h3>
       <Tradeoff loaded={files['valve_tick_cost.json']} />
+
+      <h3 className="ev-h">4 · Models and the split</h3>
+      <Models comparison={files['model_comparison.json']} columnA={files['column_a.json']} />
+
+      <h3 className="ev-h">5 · How small a fault is caught</h3>
+      <MisfireSweep loaded={files['robustness_v2.json']} />
+      <ClogSweep loaded={files['clog_sweep.json']} />
     </section>
   );
 }
