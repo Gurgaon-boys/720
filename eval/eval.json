@@ -1,8 +1,8 @@
 {
   "eval_version": "0.1",
   "placeholder": false,
-  "generated_at": "2026-10-16T07:50:56Z",
-  "source_commit": "30a588a",
+  "generated_at": "2026-10-16T07:51:10Z",
+  "source_commit": "b1d795f",
   "produced_by": "python -m eval.build_eval_json",
   "false_positives": {
     "headline": {
@@ -197,20 +197,6 @@
           "note": "localisation 0.592; 3 seeds"
         },
         "sd_across_seeds": 0.0428
-      },
-      {
-        "model": "CNN_6_epochs",
-        "result": {
-          "kind": "metric",
-          "value": 0.5944,
-          "unit": "macro-F1",
-          "n": 16006,
-          "ci_95": null,
-          "column": "A",
-          "split": "TEST split: engines 775-789, grouped by engine",
-          "note": "localisation 0.531; 3 seeds"
-        },
-        "sd_across_seeds": 0.0509
       }
     ],
     "held_out_class": {
