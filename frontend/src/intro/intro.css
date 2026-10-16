@@ -1,4 +1,5 @@
-.intro-track { position: relative; height: 700vh; }
+/* ~2.2 viewports of scrolling: ~1.65 for the video (VIDEO_SHARE 0.75), the rest for the signature */
+.intro-track { position: relative; height: 320vh; }
 .intro-stage { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; background: var(--ink); }
 
 /* video layer: canvas covers the viewport; .intro-frame matches that cover box so
@@ -25,19 +26,34 @@
   position: absolute; z-index: 5; top: 18px; left: 16px;
   font-family: var(--display); font-weight: 700; letter-spacing: 0.18em; font-size: 13px; color: var(--text-2);
 }
-.intro-skip {
-  position: absolute; z-index: 5; top: 12px; right: 16px; min-height: 40px; padding: 10px 16px; cursor: pointer;
+.intro-controls { position: absolute; z-index: 5; top: 12px; right: 16px; display: flex; gap: 8px; }
+.intro-skip, .intro-play {
+  min-height: 40px; padding: 10px 16px; cursor: pointer;
   font-family: var(--display); font-weight: 600; letter-spacing: 0.06em; font-size: 13px;
   color: var(--text); background: rgba(14, 19, 28, 0.8); border: 1px solid var(--line); border-radius: 999px;
   backdrop-filter: blur(6px);
 }
-.intro-skip:hover { border-color: var(--scan); color: var(--scan); }
+.intro-skip:hover, .intro-play:hover { border-color: var(--scan); color: var(--scan); }
+.intro-play { display: inline-flex; align-items: center; gap: 8px; }
+.intro-play span { display: inline-block; width: 1em; text-align: center; font-size: 11px; }
+.intro-play[aria-pressed='true'] { border-color: var(--scan); }
+
+/* ?demo=1: one obvious way in */
+.intro-play-hero {
+  position: absolute; z-index: 6; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  display: inline-flex; align-items: center; gap: 14px; padding: 18px 30px 18px 24px; cursor: pointer;
+  font-family: var(--display); font-weight: 700; letter-spacing: 0.08em; font-size: clamp(18px, 2vw, 26px);
+  color: var(--text); background: rgba(14, 19, 28, 0.82); border: 1px solid var(--scan); border-radius: 999px;
+  backdrop-filter: blur(8px); animation: cap-in 0.3s var(--ease-out) both;
+}
+.intro-play-hero span { color: var(--scan); font-size: 0.9em; }
+.intro-play-hero:hover { background: rgba(23, 32, 46, 0.9); }
 
 .intro-caption {
   position: absolute; z-index: 5; left: 16px; bottom: 24px; width: min(460px, calc(100% - 32px));
   display: flex; flex-direction: column; gap: 6px; padding: 18px 20px;
   background: rgba(14, 19, 28, 0.82); border: 1px solid var(--line); border-radius: var(--radius);
-  backdrop-filter: blur(8px); animation: cap-in 0.5s var(--ease-out) both;
+  backdrop-filter: blur(8px); animation: cap-in 0.3s var(--ease-out) both;
 }
 @keyframes cap-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 .intro-eyebrow { color: var(--scan); }
@@ -52,7 +68,10 @@
 
 .intro-hint { position: absolute; z-index: 5; right: 16px; bottom: 30px; font-family: var(--mono); font-size: 11px; color: var(--text-2); letter-spacing: 0.1em; }
 .intro-loading { position: absolute; z-index: 5; left: 50%; top: 18px; transform: translateX(-50%); font-size: 11px; color: var(--muted); letter-spacing: 0.08em; }
-@media (max-width: 640px) { .intro-rail em, .intro-hint { display: none; } }
+@media (max-width: 640px) {
+  .intro-rail em, .intro-hint { display: none; }
+  .intro-skip { padding: 10px 12px; }
+}
 
 /* data overlays */
 .ov-card, .ov-text, .ov-cyl, .ov-sensor { position: absolute; }
