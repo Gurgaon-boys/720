@@ -14,6 +14,11 @@ Protocol (plan sections 4, 10.1, 13; CONVENTIONS "Splits" and "Evidence"):
   * carOBD is all healthy, so every flag, advisory and alarm is a false positive.
 
 Writes models/thresholds/obd_branch.json (model + thresholds) and eval/obd_carobd.json (results).
+
+Versions (--version):
+  v1  pre-registered: the first and only run before anyone saw held-out results.
+  v2  POST-HOC (DECISIONS D58/D62): v1 without `ltft_slope`, which is almost always 0 and explodes on an
+      LTFT adaptation step. Written to *_v2.json and always reported next to v1, never instead of it.
 """
 from __future__ import annotations
 
@@ -35,11 +40,14 @@ from backend.rule_layer import Evidence, RuleLayer  # noqa: E402
 from eval.stats import episodes, proportion_summary, rate_summary  # noqa: E402
 from models.obd import rules  # noqa: E402
 from models.obd.features import HOP_S, REGIMES, WINDOW_S, MapModel, windows  # noqa: E402
-from models.obd.healthy import HealthyModel  # noqa: E402
+from models.obd.healthy import FEATURES, HealthyModel  # noqa: E402
 
 SPLIT = REPO / "data" / "splits" / "carobd_split.json"
-THRESHOLDS = REPO / "models" / "thresholds" / "obd_branch.json"
-RESULTS = REPO / "eval" / "obd_carobd.json"
+VERSIONS = {
+    "v1": {"features": FEATURES, "suffix": "", "status": "pre-registered (first held-out run)"},
+    "v2": {"features": tuple(f for f in FEATURES if f != "ltft_slope"), "suffix": "_v2",
+           "status": "POST-HOC revision after seeing v1 held-out results: ltft_slope removed (D62)"},
+}
 
 ANOMALY_QUANTILE = 0.995  # per-regime threshold on validation distances
 RULE_QUANTILE = 0.999  # rule thresholds: healthy validation quantile ...
@@ -125,7 +133,11 @@ def evaluate(files: dict[str, list[dict]], hours: dict[str, float], types: dict[
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--seed", type=int, default=720)
+    ap.add_argument("--version", choices=sorted(VERSIONS), default="v1")
     args = ap.parse_args()
+    ver = VERSIONS[args.version]
+    THRESHOLDS = REPO / "models" / "thresholds" / f"obd_branch{ver['suffix']}.json"
+    RESULTS = REPO / "eval" / f"obd_carobd{ver['suffix']}.json"
 
     split = json.loads(SPLIT.read_text())
     names = split["calibration"] + split["heldout"]
@@ -143,12 +155,13 @@ def main() -> None:
     fit_w = [w for f in fit_files for w in W[f]]
     val_w = [w for f in val_files for w in W[f]]
 
-    model = HealthyModel().fit(fit_w)
+    model = HealthyModel(ver["features"]).fit(fit_w)
     model.set_thresholds(val_w, ANOMALY_QUANTILE)
     th = calibrate_rules(val_w)
 
     meta = {"created_at": utc_now_iso(), "git_commit": git_commit(), "seed": args.seed,
-            "produced_by": "python -m models.obd.run_carobd"}
+            "version": args.version, "version_status": ver["status"],
+            "produced_by": f"python -m models.obd.run_carobd --version {args.version}"}
     write_json(THRESHOLDS, {
         **meta,
         "rule_basis": rules.RULE_BASIS,
