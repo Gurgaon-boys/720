@@ -34,6 +34,9 @@ SEEDS = {
     # fresh soak engines (L2 stage 2): never used for calibration, training, tuning or any earlier evaluation
     "soak_fresh": (list(range(900, 940)), 40000),
     "soak_fresh2": (list(range(940, 980)), 41000),   # after the start-up enable condition (D89)
+    # OBD-only classifier trained on simulated OBD (models/obd/sim_classifier.py, Diljit)
+    "obd_clf_train": (list(range(2000, 2060)), 60000),
+    "obd_clf_val": (list(range(2060, 2075)), 61000),
 }
 _used = [e for k, (es, _) in SEEDS.items() for e in es]
 assert len(_used) == len(set(_used)), "seed ranges overlap"

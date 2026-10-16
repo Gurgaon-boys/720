@@ -62,3 +62,15 @@ def test_rules():
     assert trim["fired"] and trim["rule"] == "injector_clog" and trim["location"] is None
     assert not ret["fired"] and ret["rule"] == "knock"
     assert not rules.trim_drift({**w, "regime": "warmup"}, th)["fired"]  # open loop: rule off
+
+
+def test_obd_classifier_jobs_respect_held_out_rules():
+    from eval.common import SEEDS
+    from models.obd import sim_classifier as C
+    js = C.jobs()
+    tr, va = set(SEEDS["obd_clf_train"][0]), set(SEEDS["obd_clf_val"][0])
+    assert {j["engine"] for j in js if j["split"] == "train"} == tr and {j["engine"] for j in js if j["split"] == "val"} == va
+    assert not tr & va
+    assert {j["fault"] for j in js} == set(C.CLASSES)  # never valve_tick
+    assert all(not 3000 <= rpm <= 3500 for j in js for rpm, _ in j["schedule"])  # held-out rpm band
+    assert set(C.SIM_TO_CAROBD.values()) <= {F.RPM, F.LOAD, F.MAP, F.STFT, F.LTFT, F.TIMING, F.COOLANT}
