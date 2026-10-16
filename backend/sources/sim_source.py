@@ -175,7 +175,7 @@ class SimSource:
     def _process(self, w) -> Window:
         win, f = w.win, w.features
         rules = all_rules(f, w.obd, self.thresholds)
-        wit = self.witness(w.vector, f["rpm_mean"], f["crank_valid"] and f["accel_valid"])
+        wit = self.witness(w.vector, f["rpm_mean"], f["crank_valid"] and f["accel_valid"], w.obd["n"])
         if wit.cpu_ms:
             self.classifier_ms = (self.classifier_ms + [wit.cpu_ms])[-500:]
         _, fp = fingerprint(win)

@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy import signal as sps
 
-from sim import FS, EngineParams, EngineSim
+from sim import FS, SIM_VERSION, EngineParams, EngineSim
 
 OUT = Path(__file__).resolve().parents[1] / "docs" / "figures"
 GREY, RED, BLUE = "#5f6368", "#c62828", "#1a73e8"
@@ -67,7 +67,7 @@ def knock_figure():
     ax[2].set(title=f"ECU knock control: retard per detected knock, slow recovery; knock suppressed ({n_k} bursts in 36 s)",
               xlabel="s (knock injected at 4 s, cyl 2, p = 0.8)", ylabel="deg BTDC")
     ax[2].legend(loc="lower right")
-    fig.suptitle("720 sim v2 (SIMULATED): knock", fontsize=12)
+    fig.suptitle(f"720 sim {SIM_VERSION} (SIMULATED): knock", fontsize=12)
     fig.tight_layout()
     fig.savefig(OUT / "sim_v2_knock.png", dpi=110)
     plt.close(fig)
@@ -95,7 +95,7 @@ def clog_figure():
     ax[1].plot(np.concatenate([x["t"] for x in e]), np.concatenate([x["lambda"] for x in e]), ".-", color=BLUE, ms=3)
     ax[1].set(title="Lambda, one sample per firing: ripple once per 720 deg (s = 0.4)\nsimulator only: carOBD has no O2",
               xlabel="s", ylabel="lambda")
-    fig.suptitle("720 sim v2 (SIMULATED): injector clog", fontsize=12)
+    fig.suptitle(f"720 sim {SIM_VERSION} (SIMULATED): injector clog", fontsize=12)
     fig.tight_layout()
     fig.savefig(OUT / "sim_v2_clog_trim.png", dpi=110)
     plt.close(fig)
@@ -115,7 +115,7 @@ def valve_figure():
     ax.set(title="Valve tick, HELD OUT (never in calibration or training): a sharper, earlier seat impact once per 720 deg",
            xlabel="s from cyl 1 TDC (~800 rpm)", ylabel="accel (offset)")
     ax.legend(loc="lower right")
-    fig.suptitle("720 sim v2 (SIMULATED, held-out fault): valve tick", fontsize=12)
+    fig.suptitle(f"720 sim {SIM_VERSION} (SIMULATED, held-out fault): valve tick", fontsize=12)
     fig.tight_layout()
     fig.savefig(OUT / "sim_v2_valve_tick.png", dpi=110)
     plt.close(fig)

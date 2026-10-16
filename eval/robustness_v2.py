@@ -1,4 +1,4 @@
-"""Robustness of the crank-angle misfire rule at the recalibrated thresholds (sim v2, regimes on).
+"""Robustness of the crank-angle misfire rule at the recalibrated thresholds (sim v2.x, regimes on; the figure title carries the exact sim_version).
 
 Evaluation engines only (disjoint from calibration). For each condition, runs start healthy, the
 misfire is injected after warm-up, and every window that holds a TRUE misfired cycle (ground truth)
@@ -106,7 +106,7 @@ def main():
     jobs.sort(key=lambda j: -j[3])
     t0 = time.perf_counter()
     rows = []
-    with Pool() as pool:
+    with Pool(int(__import__("os").environ.get("S720_WORKERS", 10))) as pool:
         for k, r in enumerate(pool.imap_unordered(job, jobs), 1):
             rows.append(r)
             if k % 50 == 0 or k == len(jobs):
@@ -195,7 +195,7 @@ def plot(res):
     ax[1, 1].set_xticks(range(len(keys)), [k.replace("_", "\n") for k in keys], fontsize=7)
     ax[1, 1].set(title="Latency: first true misfire -> ADVISORY window end", ylabel="ms")
     ax[1, 1].legend()
-    fig.suptitle("720 misfire rule, sim v2 (SIMULATED, column A), evaluation engines only, regimes on", fontsize=11)
+    fig.suptitle(f"720 misfire rule, sim {SIM_VERSION} (SIMULATED, column A), evaluation engines only, regimes on", fontsize=11)
     fig.tight_layout()
     fig.savefig(RESULTS / "robustness_v2.png", dpi=110)
     FIG.parent.mkdir(parents=True, exist_ok=True)

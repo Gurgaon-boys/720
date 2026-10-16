@@ -31,10 +31,13 @@ SEEDS = {
     "dataset_train": (list(range(700, 760)), 10000),
     "dataset_val": (list(range(760, 775)), 20000),
     "dataset_test": (list(range(775, 790)), 30000),
+    # fresh soak engines (L2 stage 2): never used for calibration, training, tuning or any earlier evaluation
+    "soak_fresh": (list(range(900, 940)), 40000),
+    "soak_fresh2": (list(range(940, 980)), 41000),   # after the start-up enable condition (D78)
 }
 _used = [e for k, (es, _) in SEEDS.items() for e in es]
 assert len(_used) == len(set(_used)), "seed ranges overlap"
-EVAL_RANGES = ("soak", "robustness", "held_out_region")
+EVAL_RANGES = ("soak", "robustness", "held_out_region", "soak_fresh", "soak_fresh2")
 
 
 def eval_engine(kind: str, i: int) -> tuple[EngineParams, int]:

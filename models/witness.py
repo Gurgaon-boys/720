@@ -20,6 +20,8 @@ import numpy as np
 from models.classifier import CHECKPOINT, load
 
 ANOMALY_LIMIT = 0.5
+MIN_OBD_ROWS = 20     # enable condition: the classifier only saw windows with a full OBD history (30 s warm-up),
+                      # so before the OBD window holds 20 rows (the trim rule's own minimum) it abstains
 OPEN_SET_P = 0.5      # below the rule layer's P_MIN (0.6): an abstaining classifier is no witness
 WITNESS_P = 0.8       # a named fault below this calibrated p abstains. Chosen on VAL: false faults on healthy
                       # val runs 1.9 % -> 0.01 % of windows; per-window recall misfire 0.92, knock 0.92, clog 0.70
@@ -41,7 +43,7 @@ class ClassifierWitness:
     def available(self) -> bool:
         return self.model is not None
 
-    def __call__(self, vec: np.ndarray, rpm: float, valid: bool = True) -> WitnessOut:
+    def __call__(self, vec: np.ndarray, rpm: float, valid: bool = True, obd_rows: int | None = None) -> WitnessOut:
         if self.model is None:
             return WitnessOut([], None, None, 0.0)
         t0 = time.perf_counter()
@@ -50,7 +52,8 @@ class ClassifierWitness:
         ms = (time.perf_counter() - t0) * 1e3
         label = labels[0]
         pv = float(p[0])
-        if label != "healthy" and (pv < WITNESS_P or not self.model.in_class(vec[None, :], [label])[0]):
+        short = obd_rows is not None and obd_rows < MIN_OBD_ROWS
+        if label != "healthy" and (short or pv < WITNESS_P or not self.model.in_class(vec[None, :], [label])[0]):
             pv = min(pv, OPEN_SET_P)      # not confident, or outside that fault's training data: abstain
         loc = int(cyl[0]) if label != "healthy" and cyl[0] > 0 and pv > OPEN_SET_P else None
         # a window with a crank or accelerometer dropout gets no anomaly score (sensor health covers it)
