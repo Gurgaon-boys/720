@@ -18,8 +18,12 @@ import math
 
 import numpy as np
 
-import enginefaultdb as efdb
-from _common import SPLITS, git_commit, utc_now_iso, write_json
+if __package__:
+    from . import enginefaultdb as efdb
+    from ._common import SPLITS, git_commit, utc_now_iso, write_json
+else:
+    import enginefaultdb as efdb
+    from _common import SPLITS, git_commit, utc_now_iso, write_json
 
 TRAIN_FRAC, GAP_FRAC, TEST_FRAC = 0.70, 0.05, 0.25
 
