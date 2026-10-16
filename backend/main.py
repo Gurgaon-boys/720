@@ -178,6 +178,18 @@ def create_app(scenario: str | None = None, validate: bool | None = None, opcua:
                                           body.severity, src.stream_t)
         return {"injected": body.model_dump(), "t": round(src.stream_t, 3)}
 
+    @app.post("/reset_engine")
+    async def reset_engine():
+        """A fresh healthy simulator engine, same seed (trims, LTFT and the rule layer start over). Simulator only.
+        Guidance says "warming up" for the first 20 s, while the classifier waits for a full OBD window."""
+        from backend.sources.sim_source import SimSource
+
+        if not isinstance(runtime.scenario, SimSource):
+            raise HTTPException(409, f"source {runtime.scenario.name!r} is not the simulator; POST /scenario/sim first")
+        source = await run_in_threadpool(SimSource.from_env, runtime.resets + 1)   # built off the event loop
+        runtime.reset_engine(source)
+        return {"reset": True, "resets": runtime.resets}
+
     @app.post("/clear_faults")
     async def clear_faults():
         src = runtime.scenario

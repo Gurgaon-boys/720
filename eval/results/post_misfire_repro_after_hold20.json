@@ -1,0 +1,52 @@
+{
+ "label": "SIM 2.1 (live demo backend)",
+ "hold_s": 20.0,
+ "misfire_alarm_s": 0.75,
+ "first_alarm_id": "a_0002",
+ "new_alarms_after_clear": [],
+ "first_normal_after_clear_s": 76.24,
+ "state_messages_after_clear": {
+  "ALARM": 12,
+  "ADVISORY": 750,
+  "NORMAL": 440
+ },
+ "classifier_cylinder_sequence": [
+  3,
+  1,
+  4,
+  1,
+  4,
+  2,
+  1,
+  4,
+  1,
+  4,
+  3
+ ],
+ "changes": [
+  {
+   "t_after_clear_s": 0.04,
+   "state": "ALARM",
+   "fault": "misfire",
+   "location": 3,
+   "alarm_id": "a_0002",
+   "guidance": "Reduce load; inspect coil and plug on cyl 3"
+  },
+  {
+   "t_after_clear_s": 1.24,
+   "state": "ADVISORY",
+   "fault": null,
+   "location": null,
+   "alarm_id": null,
+   "guidance": "Recovering after misfire: fuel trims re-adapting"
+  },
+  {
+   "t_after_clear_s": 76.24,
+   "state": "NORMAL",
+   "fault": null,
+   "location": null,
+   "alarm_id": null,
+   "guidance": null
+  }
+ ]
+}

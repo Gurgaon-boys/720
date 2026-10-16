@@ -106,6 +106,26 @@ def trim_drift(obd: dict, thresholds: dict) -> dict:
     return {**off, "fired": bool(obd["trim_mean_pct"] > thresholds["threshold_pct"])}
 
 
+# Post-misfire recovery gate (backend/rule_layer.py, decisions_pending/post_misfire_recovery.md).
+# The trims count as settled when STFT and LTFT (5 s means) are within +-TRIM_SETTLED_PCT and the trim rule's own
+# 30 s window is back under its threshold. 2.5 % ~ the healthy simulator's 99th percentile of total trim
+# (models/thresholds/trim_drift.json sim_check p99 = 2.21 %), rounded up.
+TRIM_SETTLED_PCT = 2.5
+
+
+def trim_recovery(obd: dict, thresholds: dict) -> dict | None:
+    """What the trims say now, for the rule layer's post-misfire recovery gate (None without a full OBD window).
+    removing_fuel: the ECU is taking fuel out (STFT <= 0 over the last 5 s), i.e. trims re-adapting back after a
+    misfire made the O2 sensor read lean. A clog does the opposite: STFT stays positive (adding fuel).
+    settled: STFT and LTFT are back in the healthy band and the 30 s trim mean is under the rule threshold."""
+    if obd.get("n", 0) < thresholds["min_samples"] or "stft_recent_pct" not in obd:
+        return None
+    s, l = obd["stft_recent_pct"], obd["ltft_recent_pct"]
+    return {"removing_fuel": bool(s <= 0.0),
+            "settled": bool(abs(s) <= TRIM_SETTLED_PCT and abs(l) <= TRIM_SETTLED_PCT
+                            and obd["trim_mean_pct"] <= thresholds["threshold_pct"])}
+
+
 def load_all() -> dict:
     """Every physics rule's thresholds, by fault name."""
     return {"misfire": load_thresholds(MISFIRE_HALF_ORDER), "knock": load_thresholds(KNOCK_BAND_ENERGY),

@@ -7,6 +7,8 @@ Job sets:
   long      400 healthy runs (3 min) on a FOURTH untouched range (engines 1300-1399, 4 runs each): 20 engine-hours
   faults    fault runs on robustness engines (unseen): misfire p 0.5, knock 0.5, injector_clog s 0.5, valve_tick
             0.3 / 0.6 / 1.0; 20 runs each, 30 s healthy then 90 s of fault
+  faults_trims  the same fault runs again, recorded with the trims (STFT / LTFT 5 s means, 30 s trim mean) that the
+            post-misfire recovery gate reads; every other column must equal the "faults" recording
 
 Usage:  python -m eval.record_runs val_thr fresh2 fresh3 faults      (S720_WORKERS caps the pool)
 """
@@ -35,14 +37,14 @@ def jobs(name: str) -> list[tuple]:
         return [("soak_fresh3", i, None, 0.0, 180.0) for i in range(40)]
     if name == "long":                       # 100 engines x 4 runs x 3 min = 20 engine-hours
         return [("soak_long", i, None, 0.0, 180.0) for i in range(400)]
-    if name == "faults":
-        return [("robustness", k, f, s, FAULT_S) for f, s in FAULTS for k in range(FAULT_RUNS)]
+    if name in ("faults", "faults_trims"):
+        return [("robustness", k, f, s, FAULT_S, name) for f, s in FAULTS for k in range(FAULT_RUNS)]
     raise ValueError(name)
 
 
 def _one(job):
-    rng, i, fault, sev, run_s = job
-    return str(record(rng, i, fault=fault, severity=sev, run_s=run_s, tag="faults" if fault else "soak"))
+    rng, i, fault, sev, run_s, *tag = job
+    return str(record(rng, i, fault=fault, severity=sev, run_s=run_s, tag=tag[0] if tag else "soak"))
 
 
 def main():

@@ -226,6 +226,9 @@ export default function App() {
   const startInjection = useCallback((req) => (
     transportRef.current ? transportRef.current.startInjection(req) : Promise.reject(new Error('no transport'))
   ), []);
+  const resetEngine = useCallback(() => (
+    transportRef.current?.resetEngine ? transportRef.current.resetEngine() : Promise.reject(new Error('reset needs the backend'))
+  ), []);
   const stopInjection = useCallback(() => (
     transportRef.current ? transportRef.current.stopInjection() : Promise.reject(new Error('no transport'))
   ), []);
@@ -284,6 +287,7 @@ export default function App() {
             onAck={sendAck}
             onStartInjection={startInjection}
             onStopInjection={stopInjection}
+            onResetEngine={usingMock ? null : resetEngine /* the mock has no engine to reset */}
             ackError={ackError}
             offline={offline}
             lastStateAt={lastStateAt}
