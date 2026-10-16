@@ -1,0 +1,107 @@
+{
+  "schema_version": "1.6",
+  "sent_at": 1760551234.5,
+  "units": {
+    "t": "s",
+    "sent_at": "unix s",
+    "rpm": "rev/min",
+    "load_pct": "%",
+    "latency_ms": "ms",
+    "severity": "0-1",
+    "crank_deg": "deg"
+  },
+  "run_id": "carobd_drive2_p1",
+  "source": "injected",
+  "audioset_pool": null,
+  "engine_tag": null,
+  "mode": "replay",
+  "t": 449.0,
+  "operating_point": {
+    "rpm": 1341.2,
+    "load_pct": 27.5,
+    "regime": "idle"
+  },
+  "localisation": "none",
+  "features_summary": {
+    "total_trim_pct": 11.51,
+    "stft_mean_pct": 6.26,
+    "ltft_mean_pct": 5.24,
+    "trim_rule_max_pct": 7.397,
+    "retard_events": 0,
+    "timing_mean_deg": 3.17,
+    "mahalanobis": 6.109,
+    "mahalanobis_threshold": 9.382,
+    "window_t0_s": 406.0
+  },
+  "anomaly": {
+    "score": 0.3256,
+    "threshold": 0.5,
+    "per_location": []
+  },
+  "models": [],
+  "physics_rules": [
+    {
+      "rule": "injector_clog",
+      "fired": true,
+      "location": null,
+      "rule_basis": "obd"
+    },
+    {
+      "rule": "knock",
+      "fired": false,
+      "location": null,
+      "rule_basis": "obd"
+    }
+  ],
+  "decision": {
+    "state": "ADVISORY",
+    "alarm_id": null,
+    "fault": "injector_clog",
+    "location": null,
+    "severity": null,
+    "witnesses": [
+      "physics"
+    ],
+    "consecutive_windows": 0,
+    "latched": false,
+    "acked": false,
+    "acked_by": null,
+    "acked_at": null,
+    "guidance": "One witness only (injector_clog): keep running, watch for ALARM"
+  },
+  "health": {
+    "asset_ne107": "NORMAL",
+    "sensors": {
+      "obd": "NORMAL"
+    }
+  },
+  "latency_ms": 0.4,
+  "signature": {
+    "crank_deg": [],
+    "amplitude": [],
+    "baseline_amplitude": []
+  },
+  "injection": {
+    "active": true,
+    "fault": "lean_drift",
+    "cylinder": null,
+    "severity": 0.5,
+    "started_at": 1760551234.5
+  },
+  "source_label": "real_replay_injected",
+  "replay": {
+    "file": "drive2.csv",
+    "file_type": "drive",
+    "uploaded": false,
+    "speed": 10.0,
+    "position_s": 449.0,
+    "duration_s": 1141.0,
+    "loop": 0,
+    "witnesses": [
+      "physics",
+      "anomaly"
+    ],
+    "max_decision": "ADVISORY",
+    "note": "No crank or audio in carOBD: no cylinder localisation, no fingerprint. No OBD classifier loaded: single witness (OBD rules + healthy model), ADVISORY or UNCLASSIFIED at most, never ALARM."
+  }
+}

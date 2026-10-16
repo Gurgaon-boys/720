@@ -43,6 +43,7 @@ The schemas enforce rules 5 and 6 for `source: "real"`: `localisation` must be `
   - `state.json`, `obd.json`, `ack.json`: the examples from plan section 12 (numbers are placeholders, not results)
   - `state_real_p3.json`: an extra example of a real P3 replay (no localisation, empty signature, `firing_event` basis)
   - `state_sim_injection.json`: the live simulator with a misfire injected on cylinder 3 (ADVISORY, physics witness only, `injection` filled)
+  - `state_real_replay_injected.json`, `obd_real_replay.json` (1.6): the REAL carOBD replay (drive2, held-out) with a lean drift injected: ADVISORY from the trim-drift rule, single witness, `source_label` and `replay` filled
   - `signal_header.json`: an example header of a binary `signal` frame
 - `schemas/`: JSON Schema (draft 2020-12), one per message type
 - `signal_frame.md`: the binary frame layout
