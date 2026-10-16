@@ -1,0 +1,86 @@
+{
+  "rule": "misfire_half_order",
+  "rule_basis": "crank_angle",
+  "created_at": "2026-10-15T20:24:26+00:00",
+  "sim_version": "1.0.0",
+  "source": "simulated (healthy runs only)",
+  "window": {
+    "n_cycles": 4,
+    "overlap": 0.5
+  },
+  "target_fpr_per_window": 0.001,
+  "margin": 1.25,
+  "half_order_ratio": {
+    "definition": "half-order / 2nd-order amplitude of tooth-time crank speed, per window",
+    "threshold": 0.39485,
+    "healthy_quantile": 0.31588,
+    "healthy_max_calibration": 0.51082
+  },
+  "roughness": {
+    "definition": "max over cylinders of the relative speed drop after TDC minus its neighbours' mean, per window",
+    "threshold": 0.008152,
+    "healthy_quantile": 0.006522,
+    "healthy_max_calibration": 0.008113
+  },
+  "calibration": {
+    "engine_seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "run_seeds": [
+      1000,
+      1001,
+      1002,
+      1003,
+      1004,
+      1005,
+      1006,
+      1007,
+      1008,
+      1009
+    ],
+    "param_region": "train",
+    "rpm_targets": [
+      800,
+      1500,
+      2500
+    ],
+    "warmup_s": 3.0,
+    "record_s_per_run": 40.0,
+    "n_windows": 7942
+  },
+  "held_out": {
+    "engine_seeds": [
+      100,
+      101,
+      102,
+      103
+    ],
+    "run_seeds": [
+      5100,
+      5101,
+      5102,
+      5103
+    ],
+    "param_region": "train",
+    "rpm_targets": [
+      800,
+      1500,
+      2500
+    ],
+    "n_windows": 3177,
+    "false_positives": 0,
+    "fpr": 0.0,
+    "fpr_upper_95": 0.0009442870632672333,
+    "healthy_max": 0.18334
+  },
+  "limits": "Steady speed only (idle PI controller at fixed targets); no transients, knock or other faults in the healthy set; one simulator. A sim-to-real check needs real crank data."
+}

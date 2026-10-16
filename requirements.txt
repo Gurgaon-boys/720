@@ -13,6 +13,7 @@ asyncua
 jsonschema
 yt-dlp
 tqdm
+pytest
+httpx
 pyarrow
 huggingface_hub
-pytest

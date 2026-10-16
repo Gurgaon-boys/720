@@ -10,7 +10,7 @@ Timestamped split lists, committed at H0 before any training. Never edit them af
   - `P3`: held-out real test (false alarms, knock check, demo replay). Never touched by training or the simulator.
 - **carOBD, split by file:** calibration vs held-out, with at least one held-out file of each type (idle, drive, campus, long trip)
 
-Files (JSON, each with `created_at` in UTC, `git_commit` and `seed` inside; see DECISIONS D30):
+Files (JSON, each with `created_at` in UTC, `git_commit` and `seed` inside; see DECISIONS D53):
 
 - `carobd_split.json`: `calibration` / `heldout` file lists, per-type rows and hours (`data/carobd_split.py`)
 - `audioset_pools.json`: P1 / P2 / P3 / `knock_check` entries `{clip_id, video_id, start, engine_tag}` with counts (`data/make_pools.py`, after vetting)

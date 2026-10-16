@@ -1,6 +1,6 @@
 # contract/
 
-**Owner:** Nishant · **schema_version: `1.3`** · Source: plan section 12
+**Owner:** Nishant · **schema_version: `1.4`** · Source: plan section 12 (1.4 = 1.3 + `state.injection`, DECISIONS.md D46)
 
 This contract is the only interface between the simulator/DSP/models, the backend and the dashboard. **It is locked.** Any change bumps `schema_version` in every schema and example, gets a line in `docs/DECISIONS.md`, and must pass `python contract/validate.py`.
 
@@ -27,6 +27,7 @@ We send one channel per rate because a single big message per update would choke
 8. **`rule_basis`** is `crank_angle` (simulator/injected) or `firing_event` (real audio), recorded for every physics rule that fires.
 9. **`decision.state`** is `ALARM`, `ADVISORY`, `UNCLASSIFIED` or `NORMAL`. ALARM needs both witnesses (physics + classifier) for 2 consecutive windows.
 10. **Health** uses the NAMUR NE 107 states `NORMAL`, `FAILURE`, `CHECK_FUNCTION`, `OFF_SPEC` and `MAINTENANCE_REQUIRED`. `health.asset_ne107` is asset (engine) health. `health.sensors` is sensor health, kept separate.
+11. **`injection`** (1.4, required) echoes the accepted `POST /inject` body while a simulator fault is injected: `{active: true, fault, cylinder, severity, started_at}`, and is `null` otherwise (after `POST /clear_faults`, on a scenario switch, and on every non-simulator source). `severity` is the **requested** value, not a measurement; the rule layer's estimate stays in `decision.severity`. An injected fault goes through the normal rule layer, and clearing it doesn't clear a latched alarm. CHECK_FUNCTION is not tied to injection (D44: explicit maintenance mode only).
 
 The schemas enforce rules 5 and 6 for `source: "real"`: `localisation` must be `"none"` and the `signature` arrays must be empty.
 
@@ -35,6 +36,7 @@ The schemas enforce rules 5 and 6 for `source: "real"`: `localisation` must be `
 - `examples/`: example messages. The schema is picked by filename prefix (`state*.json` → `state.schema.json`).
   - `state.json`, `obd.json`, `ack.json`: the examples from plan section 12 (numbers are placeholders, not results)
   - `state_real_p3.json`: an extra example of a real P3 replay (no localisation, empty signature, `firing_event` basis)
+  - `state_sim_injection.json`: the live simulator with a misfire injected on cylinder 3 (ADVISORY, physics witness only, `injection` filled)
   - `signal_header.json`: an example header of a binary `signal` frame
 - `schemas/`: JSON Schema (draft 2020-12), one per message type
 - `signal_frame.md`: the binary frame layout
