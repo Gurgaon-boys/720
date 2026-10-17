@@ -162,6 +162,10 @@ export function createWsTransport(apiUrl) {
       return post('/clear_faults');
     },
     // a fresh healthy simulator engine, same seed; the new run arrives as a new run_id
+    // simulator time-lapse (pending T1): { mode: 'auto' } or { mode: 'manual', speed: 1 | 5 | 10 }
+    setTimeLapse(body) {
+      return post('/time_lapse', body);
+    },
     resetEngine() {
       return post('/reset_engine');
     },

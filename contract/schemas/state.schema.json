@@ -27,6 +27,17 @@
       "enum": ["simulated", "real_replay", "real_replay_injected", "real_upload", "real_upload_injected"],
       "description": "1.6 (optional): what the dashboard badge says. real_replay = a recorded REAL log replayed (never 'live'); *_injected = a fault added on top of real data (state.injection says which); real_upload = a user-uploaded log, unverified"
     },
+    "time_lapse": {
+      "description": "1.6 (optional, additive): present while the source is the live simulator. Stream time runs speed x wall time; the rule layer, OBD windows and recovery windows all count stream time, so a time-lapse shows the same decisions sooner (pending T1).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "speed", "reason"],
+      "properties": {
+        "mode": {"enum": ["auto", "manual"]},
+        "speed": {"enum": [1, 5, 10], "description": "stream seconds per wall second"},
+        "reason": {"enum": [null, "manual", "warming_up", "recovering", "building"], "description": "why the speed is not 1 (null at 1x)"}
+      }
+    },
     "replay": {
       "description": "1.6 (optional): present on a REAL log replay (mode 'replay')",
       "type": "object",

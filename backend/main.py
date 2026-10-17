@@ -5,6 +5,7 @@
 Environment:
     S720_SCENARIO         fake scenario to start with (default: misfire); see GET /scenarios
     S720_VALIDATE         1 = check every outgoing message against contract/schemas and log violations
+    S720_TIME_LAPSE       off = the simulator always runs in real time (default: auto, pending T1)
     S720_OPCUA            0 = don't start the OPC UA server (default: on)
     S720_OPCUA_HOST       interface for OPC UA (default 127.0.0.1; 0.0.0.0 = every interface, for a LAN client)
     S720_OPCUA_ENDPOINT   full endpoint, overrides the host (default opc.tcp://<host>:4840/720/)
@@ -48,6 +49,8 @@ def create_app(scenario: str | None = None, validate: bool | None = None, opcua:
     if opcua is None:
         opcua = endpoint_from_env() if os.environ.get("S720_OPCUA", "1") != "0" else False
     runtime = Runtime(scenario, validate=validate)
+    if os.environ.get("S720_TIME_LAPSE", "auto") != "off":
+        runtime._tl_mode = "auto"   # simulator time-lapse (pending T1); applies whenever the source is the simulator
     bridge = OpcuaBridge(runtime, opcua) if opcua else None
 
     @asynccontextmanager
@@ -191,6 +194,17 @@ def create_app(scenario: str | None = None, validate: bool | None = None, opcua:
         source = await run_in_threadpool(SimSource.from_env, runtime.resets + 1)   # built off the event loop
         runtime.reset_engine(source)
         return {"reset": True, "resets": runtime.resets}
+
+    @app.post("/time_lapse")
+    async def time_lapse(body: dict):
+        """Simulator time-lapse (pending T1): {"mode": "auto"} or {"mode": "manual", "speed": 1 | 5 | 10}.
+        Stream time runs `speed` x wall time; decisions are unchanged, only shown sooner. 409 off the simulator."""
+        try:
+            return runtime.set_time_lapse(body.get("mode", "auto"), body.get("speed"), via="http")
+        except TypeError as e:
+            raise HTTPException(409, str(e)) from e
+        except ValueError as e:
+            raise HTTPException(422, str(e)) from e
 
     @app.post("/clear_faults")
     async def clear_faults():

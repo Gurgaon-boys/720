@@ -126,13 +126,15 @@ def scores(rec: dict, thresholds: dict | None) -> np.ndarray:
 
 
 def replay(rec: dict, thresholds: dict | None = None, unclassified_windows: int = 2,
-           corroborate_windows: int | None = None, recovery: bool = True) -> dict:
+           corroborate_windows: int | None = None, recovery: bool = True, knock_recovery: bool = True,
+           clog_recovery: bool = True) -> dict:
     """Step the real rule layer over a recording. thresholds: {band: distance threshold}; None = the
-    checkpoint's pooled-window thresholds (the configuration before L3)."""
+    checkpoint's pooled-window thresholds (the configuration before L3). Recordings carry no spark advance, so a
+    post-knock recovery window always runs its full RECOVERY_MAX_S (the live source ends it once spark settles)."""
     sc = scores(rec, thresholds)
-    layer = (RuleLayer(unclassified_windows=unclassified_windows, recovery=recovery) if corroborate_windows is None else
-             RuleLayer(unclassified_windows=unclassified_windows, corroborate_windows=corroborate_windows,
-                       recovery=recovery))
+    gates = {"recovery": recovery, "knock_recovery": knock_recovery, "clog_recovery": clog_recovery}
+    layer = (RuleLayer(unclassified_windows=unclassified_windows, **gates) if corroborate_windows is None else
+             RuleLayer(unclassified_windows=unclassified_windows, corroborate_windows=corroborate_windows, **gates))
     n = len(sc)
     out = {k: np.zeros(n, dtype=bool) for k in ("counted", "anomaly_flags", "classifier_false_faults", "physics_windows",
                                                  "advisory", "unclassified", "alarm", "alarm_raised", "advisory_persist2",

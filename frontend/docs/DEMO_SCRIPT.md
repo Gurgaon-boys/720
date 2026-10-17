@@ -11,7 +11,7 @@ targets; the "Expect" column is what was observed on 2026-10-17 against the real
 3. Open `http://127.0.0.1:5173/?demo=1`, click **Skip to diagnostics**, turn **Alarm tone on**.
 4. `Invoke-RestMethod http://127.0.0.1:8000/health` shows `scenario: sim`; the model row shows `SVM` with a p.
    If it is empty, `models/checkpoints/fast_v1.pkl` is missing (RUN_DEMO section 2): no ALARM is possible.
-5. Wait for the header guidance "Warming up (20 s)" to disappear: the engine is NORMAL, grey.
+5. Wait for the header guidance "Warming up (20 s)" to disappear: the engine is NORMAL, grey. With Time-lapse on Auto (default) this takes about 3 s; the header shows **⏩ TIME-LAPSE 10× · warming up** meanwhile.
 6. Fonts load from Google Fonts. Without Wi-Fi the page falls back to system fonts (layout still works).
 
 ## Live script (about 3 min)
@@ -22,9 +22,9 @@ targets; the "Expect" column is what was observed on 2026-10-17 against the real
 | 0:15 | Injection console: **Misfire**, cylinder **3**, **1.00**, **Inject** | Console shows "INJECTING Misfire · cyl 3" only once the backend echoes it; ADVISORY, then **ALARM Misfire · Cyl 3** within ~1 s; physics ✓ classifier ✓; "What to do: Reduce load; inspect coil and plug on cyl 3"; tone beeps | "Two independent witnesses agree, so the rule layer raises an alarm and tells the operator what to do." |
 | 0:45 | **3D engine** tab (10 s), back to **2D dashboard** | Cylinder 3 marked | "Same decision, shown on the engine." |
 | 1:00 | **Acknowledge** | Button waits, then "Acknowledged by operator · condition still active"; tone stops; event list shows *Acknowledged* | "The UI never clears an alarm; ACK goes to the rule layer and comes back as a broadcast." |
-| 1:15 | **Stop injection** | ALARM resets (only if acknowledged; an unacknowledged alarm stays latched); **Watch · "Recovering after misfire: fuel trims re-adapting"** ("No fault witness", not an alarm) for 20–90 s, then NORMAL. The SVM row may say *Injector clog* meanwhile; the rule layer does not raise it | "After the fault it says it is recovering instead of inventing a new fault." |
+| 1:15 | **Stop injection** | ALARM resets (only if acknowledged; an unacknowledged alarm stays latched); **Watch · "Recovering after misfire: fuel trims re-adapting"** ("No fault witness", not an alarm) with **⏩ TIME-LAPSE 10× · recovering after the fault**, then NORMAL about 3 s later. The SVM row may say *Injector clog* meanwhile; the rule layer does not raise it | "After the fault it says it is recovering instead of inventing a new fault." |
 | 1:30 | **Valve tick**, any cylinder, 1.00, **Inject** | **Abnormal, unclassified: inspect** with a physics hint, never a named fault; then **Stop injection** | "Valve tick was never trained. 720 says it doesn't know." |
-| 2:00 | **Knock**, cylinder 2, 1.00, **Inject** (last on purpose) | **ALARM Knock · Cyl 2**; ACK and stop here | (knock recovery shows Unclassified for up to ~75 s; don't wait for it) |
+| 2:00 | **Knock**, cylinder 2, 1.00, **Inject** (last on purpose) | **ALARM Knock · Cyl 2**; ACK and stop here | (after Stop injection it shows **Watch · "Recovering after knock: spark timing re-advancing"** under time-lapse, NORMAL about 6 s later) |
 | 2:30 | Optional: source picker → **Real car replay** (only if the pre-check below passed) | **REAL · REPLAY** badge; OBD panels lead; lean drift 0.50 gives **Watch · Injector clog**, never ALARM | "Real ECU data. One witness, so a watch, not an alarm." |
 
 **Real car replay pre-check** (do it before going on stage): the picker must list files. On the laptop used for the

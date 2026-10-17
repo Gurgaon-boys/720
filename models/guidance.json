@@ -22,6 +22,12 @@
     "recovering_after_misfire": {
       "advisory|NORMAL": "Recovering after misfire: fuel trims re-adapting"
     },
+    "recovering_after_knock": {
+      "advisory|NORMAL": "Recovering after knock: spark timing re-advancing"
+    },
+    "recovering_after_injector_clog": {
+      "advisory|NORMAL": "Recovering after injector clog: fuel trims re-adapting"
+    },
     "warming_up": {
       "normal|NORMAL": "Warming up (20 s): diagnostics settling",
       "advisory|NORMAL": "Warming up (20 s): diagnostics settling"
