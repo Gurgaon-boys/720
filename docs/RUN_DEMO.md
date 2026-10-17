@@ -106,9 +106,11 @@ Use the injection console. Each step starts from a healthy engine.
 | 6 | Inject **injector clog, cylinder 1, severity 0.5** | ADVISORY first, **ALARM injector_clog** after about 22 s (the 30 s fuel-trim window), asset health **MAINTENANCE_REQUIRED**, guidance "Schedule injector inspection; safe to run". ACK, clear |
 | 7 | Inject **knock, cylinder 2, severity 1.0** — **last** | **ALARM knock cyl 2** in about 1 s. ACK and stop here |
 
-**Knock goes last on purpose.** After knock is cleared, the ECU's spark retard recovers slowly, and the healthy
-model (never trained on post-knock recovery) shows UNCLASSIFIED for up to ~75 s. This is a known limitation
-(DECISIONS: alarm budget and demo notes); don't wait for it to recover on stage.
+**Knock goes last on purpose.** After knock is cleared, the ECU's spark retard recovers slowly, so the dashboard
+shows **Watch · "Recovering after knock: spark timing re-advancing"** (no fault witness, not an alarm) for 60–90 s
+before NORMAL (pending decision K1, `docs/decisions_pending/post_knock_recovery.md`; it used to show UNCLASSIFIED
+for ~20–45 s). Inside that window an anomaly shows as recovery, so a valve tick injected then would not read
+UNCLASSIFIED; don't wait for it on stage.
 
 With the hard simulator regimes on (`$env:S720_SIM_REGIMES = "eval"`, not the default), an injection can start
 up to 0.5 s late (D107).

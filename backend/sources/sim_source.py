@@ -30,7 +30,7 @@ from scipy import signal as sps
 from backend.rule_layer import Evidence
 from backend.scenarios import SIGNAL_RATE_HZ, SIGNAL_S, WINDOW_S, Phase, Window
 from dsp.features import fingerprint
-from dsp.rules import PER_LOCATION_THRESHOLD, all_rules, load_all, per_location, trim_recovery
+from dsp.rules import PER_LOCATION_THRESHOLD, all_rules, load_all, per_location, spark_recovery, trim_recovery
 from dsp.windows import CycleWindower
 from models.features import StreamFeatures
 from models.witness import ClassifierWitness, WitnessOut
@@ -272,7 +272,8 @@ class SimSource:
         score = None if win.t_end < WARMUP_S else wit.score
         evidence = Evidence(models=wit.models, physics_rules=rules, anomaly_score=score,
                             anomaly_threshold=PER_LOCATION_THRESHOLD, severity=None, classifier_location=wit.location,
-                            t=round(win.t_end, 3), trims=trim_recovery(w.obd, self.thresholds["injector_clog"]))
+                            t=round(win.t_end, 3), trims=trim_recovery(w.obd, self.thresholds["injector_clog"]),
+                            spark=spark_recovery(w.obd, self.thresholds["injector_clog"]))
         return Window(round(win.t_end, 3), _RUNNING, evidence, fields)
 
 

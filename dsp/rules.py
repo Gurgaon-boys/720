@@ -126,6 +126,22 @@ def trim_recovery(obd: dict, thresholds: dict) -> dict | None:
                             and obd["trim_mean_pct"] <= thresholds["threshold_pct"])}
 
 
+# Post-knock recovery gate (backend/rule_layer.py, pending K1). Knock control pulls spark on the knocking cylinder
+# (sim: 3 deg per knock, up to 12 deg) and gives it back slowly (0.5 deg/s); the 30 s OBD window's spark_retard_deg
+# (median spark advance over the 30 s before minus inside) holds that. Healthy calibration engines (dsp/calibrate_trim.py
+# grid, engines 0-11, sim 2.1.1, 3234 windows at 1 s steps): |spark_retard_deg| <= 0.5 deg in every window (p50 0,
+# max 0.5 = one OBD quantisation step), so 0.5 deg is the healthy band.
+SPARK_SETTLED_DEG = 0.5
+
+
+def spark_recovery(obd: dict, thresholds: dict) -> dict | None:
+    """What spark timing says now, for the rule layer's post-knock recovery gate (None without a full OBD window).
+    settled: the 30 s window's spark advance matches the 30 s before it (|spark_retard_deg| in the healthy band)."""
+    if obd.get("n", 0) < thresholds["min_samples"] or "spark_retard_deg" not in obd:
+        return None
+    return {"settled": bool(abs(obd["spark_retard_deg"]) <= SPARK_SETTLED_DEG)}
+
+
 def load_all() -> dict:
     """Every physics rule's thresholds, by fault name."""
     return {"misfire": load_thresholds(MISFIRE_HALF_ORDER), "knock": load_thresholds(KNOCK_BAND_ENERGY),
