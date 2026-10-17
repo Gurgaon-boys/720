@@ -115,10 +115,13 @@ export default function SabotageLab({
     return [ch, { commanded, health: health[ch], status }];
   })), [ctl.commanded, ctl.inflight, ctl.restoring, health]);
 
-  // a re-enabled sensor stops "recovering" once the watchdog says NORMAL
+  // a re-enabled sensor stops "recovering" once the watchdog says NORMAL. Only touch sensors that are
+  // actually recovering, and depend on the stable pieces (not the whole ctl object, which is new every
+  // render), or the effect re-runs and queues a state update on every render
+  const { settle, restoring, commanded } = ctl;
   useEffect(() => {
-    LAB_SENSORS.forEach((ch) => { if (health[ch] === 'NORMAL' && !ctl.commanded.has(ch)) ctl.settle(ch); });
-  }, [health, ctl]);
+    restoring.forEach((ch) => { if (health[ch] === 'NORMAL' && !commanded.has(ch)) settle(ch); });
+  }, [health, restoring, commanded, settle]);
 
   const off = useMemo(() => new Set(LAB_SENSORS.filter((ch) => sensors[ch].commanded || sensors[ch].health === 'FAILURE')), [sensors]);
   const everActive = useRef(false);
