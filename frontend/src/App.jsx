@@ -291,7 +291,7 @@ export default function App() {
             links={links}
             apiUrl={apiUrl}
             ages={ages}
-            scenarios={DEMO ? [] : scenarios /* demo mode: no fake-scenario row */}
+            scenarios={scenarios /* demo mode too: the fake scenarios stay one click away, collapsed (D149) */}
             scenarioId={scenarioId}
             onSelectScenario={selectScenario}
             onAck={sendAck}
