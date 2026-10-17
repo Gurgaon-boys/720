@@ -35,15 +35,15 @@ export function autoplayStart(p, tl) {
 // Playback state machine. Modes: 'idle' (scroll drives the intro) and 'playing' (the clock does).
 // Events:
 //   toggle  ▶ button or Space: play from here, or stop where it is
-//   scroll  the user scrolled (wheel, touch, scrollbar, scroll keys): scrolling takes over
-//   end     the timeline finished
+//   scroll  the user scrolled (wheel, touch, scrollbar, scroll keys), or the tab was hidden: scrolling takes over
+//   end     the timeline finished: hand off to the dashboard, as Skip does
 //   skip    the Skip button; escape  the Esc key: stop and jump to the dashboard
 // Returns the next mode and whether to jump to the dashboard.
 export function playbackStep(mode, event) {
   switch (event) {
     case 'toggle': return { mode: mode === 'playing' ? 'idle' : 'playing', skip: false };
-    case 'scroll':
-    case 'end': return { mode: 'idle', skip: false };
+    case 'scroll': return { mode: 'idle', skip: false };
+    case 'end':
     case 'skip':
     case 'escape': return { mode: 'idle', skip: true };
     default: return { mode, skip: false };

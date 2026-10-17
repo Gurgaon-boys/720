@@ -35,10 +35,13 @@ test('play button / Space toggles playing and idle', () => {
   assert.deepEqual(playbackStep('playing', 'toggle'), { mode: 'idle', skip: false });
 });
 
-test('scrolling during autoplay takes over; the end stops it', () => {
+test('scrolling during autoplay takes over and stays in the intro', () => {
   assert.deepEqual(playbackStep('playing', 'scroll'), { mode: 'idle', skip: false });
   assert.deepEqual(playbackStep('idle', 'scroll'), { mode: 'idle', skip: false });
-  assert.deepEqual(playbackStep('playing', 'end'), { mode: 'idle', skip: false });
+});
+
+test('the end of autoplay hands off to the dashboard', () => {
+  assert.deepEqual(playbackStep('playing', 'end'), { mode: 'idle', skip: true });
 });
 
 test('Skip and Esc stop playback and jump to the dashboard', () => {

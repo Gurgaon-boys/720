@@ -259,7 +259,8 @@ export default function ScrollIntro({ state, onSkip }) {
     // wheel and touch take over at once; a scrollbar drag shows up as a scroll autoplay didn't make
     const onUserScroll = () => { if (mode === 'playing') dispatch('scroll'); };
     // a hidden page pauses animation frames: stop rather than leap ahead on return
-    const onVisibility = () => { if (document.hidden && mode === 'playing') dispatch('end'); };
+    // a hidden tab only stops autoplay; it never jumps to the dashboard
+    const onVisibility = () => { if (document.hidden && mode === 'playing') dispatch('scroll'); };
 
     const onScroll = () => {
       if (mode === 'playing') {
