@@ -8,8 +8,8 @@ capability names what the SOURCE can do (D135), e.g. "single_witness_real_obd" f
 OBD classifier: there, ALARM is impossible, so its ADVISORY line must not say "watch for ALARM". A capability
 line replaces the generic line with the same key; keys it doesn't define fall back to the generic ones.
 
-context names the engine's situation and works the same way, after the capability: "recovering_after_misfire"
-(the rule layer's post-misfire recovery window, ADVISORY) and "warming_up" (the first 20 s of a simulator run).
+context names the engine's situation and works the same way, after the capability: "recovering_after_misfire" and
+"recovering_after_knock" (the rule layer's post-misfire / post-knock recovery window, ADVISORY) and "warming_up" (the first 20 s of a simulator run).
 """
 
 from __future__ import annotations
