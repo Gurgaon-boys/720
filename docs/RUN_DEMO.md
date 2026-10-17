@@ -60,7 +60,7 @@ cd frontend; $env:VITE_API_URL = "http://127.0.0.1:8000"; npm run dev -- --host 
 
 **Open:** <http://127.0.0.1:5173/?demo=1>
 
-`?demo=1` hides the fake-scenario row and starts on the live simulator. The injection console, the 2D / 3D tabs
+`?demo=1` starts on the live simulator; the fake scenarios stay under the collapsed **Demo scenarios · backend L0, fake** row. The injection console, the 2D / 3D tabs
 and the evidence panel stay. (`$env:VITE_DEMO = "1"` before `npm run dev` does the same without the URL flag.)
 
 **Check the backend:**

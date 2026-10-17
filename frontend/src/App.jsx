@@ -20,6 +20,8 @@ const WATCHDOG_TICK_MS = 250;
 const LIST_RETRY_MS = 5000; // scenario list: retry interval after a failed load
 
 // 3D engine view: its own chunk (three.js), fetched the first time its tab opens
+// Live mic tab (?mic=1 only): its own chunk, fetched the first time the tab opens
+const LiveMic = lazy(() => import('./dashboard/LiveMic.jsx'));
 const Engine3D = lazy(() => import('./dashboard/Engine3D.jsx'));
 // Sabotage Lab (D140): its own chunk too (it reuses the 3D scene)
 const SabotageLab = lazy(() => import('./lab/SabotageLab.jsx'));
@@ -289,7 +291,7 @@ export default function App() {
             links={links}
             apiUrl={apiUrl}
             ages={ages}
-            scenarios={DEMO ? [] : scenarios /* demo mode: no fake-scenario row */}
+            scenarios={scenarios /* demo mode too: the fake scenarios stay one click away, collapsed (D149) */}
             scenarioId={scenarioId}
             onSelectScenario={selectScenario}
             onAck={sendAck}
@@ -307,6 +309,16 @@ export default function App() {
           />
         </PanelBoundary>
         </div>
+        {view === 'mic' && (
+          <div role="tabpanel" id={panelId('mic')} aria-labelledby={tabId('mic')} className="view-mic">
+            {/* optional (?mic=1); mounted only while open, so leaving the tab stops the microphone */}
+            <PanelBoundary name="Live mic">
+              <Suspense fallback={<div className="view-loading">Loading the live mic…</div>}>
+                <LiveMic apiUrl={apiUrl} />
+              </Suspense>
+            </PanelBoundary>
+          </div>
+        )}
         {opened3d && (
           <div role="tabpanel" id={panelId('3d')} aria-labelledby={tabId('3d')} hidden={view !== '3d'} className="view-3d">
             {/* its own boundary: a WebGL or chunk-load failure stays in this tab */}
