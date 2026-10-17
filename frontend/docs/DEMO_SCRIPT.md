@@ -24,7 +24,7 @@ targets; the "Expect" column is what was observed on 2026-10-17 against the real
 | 1:00 | **Acknowledge** | Button waits, then "Acknowledged by operator · condition still active"; tone stops; event list shows *Acknowledged* | "The UI never clears an alarm; ACK goes to the rule layer and comes back as a broadcast." |
 | 1:15 | **Stop injection** | ALARM resets (only if acknowledged; an unacknowledged alarm stays latched); **Watch · "Recovering after misfire: fuel trims re-adapting"** ("No fault witness", not an alarm) for 20–90 s, then NORMAL. The SVM row may say *Injector clog* meanwhile; the rule layer does not raise it | "After the fault it says it is recovering instead of inventing a new fault." |
 | 1:30 | **Valve tick**, any cylinder, 1.00, **Inject** | **Abnormal, unclassified: inspect** with a physics hint, never a named fault; then **Stop injection** | "Valve tick was never trained. 720 says it doesn't know." |
-| 2:00 | **Knock**, cylinder 2, 1.00, **Inject** (last on purpose) | **ALARM Knock · Cyl 2**; ACK and stop here | (knock recovery shows Unclassified for up to ~75 s; don't wait for it) |
+| 2:00 | **Knock**, cylinder 2, 1.00, **Inject** (last on purpose) | **ALARM Knock · Cyl 2**; ACK and stop here | (after Stop injection it shows **Watch · "Recovering after knock: spark timing re-advancing"** for 60–90 s; don't wait for it) |
 | 2:30 | Optional: source picker → **Real car replay** (only if the pre-check below passed) | **REAL · REPLAY** badge; OBD panels lead; lean drift 0.50 gives **Watch · Injector clog**, never ALARM | "Real ECU data. One witness, so a watch, not an alarm." |
 
 **Real car replay pre-check** (do it before going on stage): the picker must list files. On the laptop used for the

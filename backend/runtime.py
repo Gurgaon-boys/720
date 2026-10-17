@@ -238,9 +238,9 @@ class Runtime:
         return getattr(self, "_resets", 0)
 
     def guidance_context(self, decision: dict) -> str | None:
-        """The engine's situation for the guidance line: the post-misfire recovery ADVISORY, or warming up."""
+        """The engine's situation for the guidance line: the post-misfire / post-knock recovery ADVISORY, or warming up."""
         if decision["state"] == "ADVISORY" and decision["fault"] is None and self.rules.recovering:
-            return "recovering_after_misfire"
+            return f"recovering_after_{self.rules.recovering_from}"
         if getattr(self.scenario, "warming_up", False):
             return "warming_up"
         return None

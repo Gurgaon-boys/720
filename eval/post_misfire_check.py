@@ -49,9 +49,15 @@ def first(rep, rec, mask) -> float | None:
 
 
 def one(path: str) -> dict:
+    # the misfire gate alone (the post-knock gate came later: eval/post_knock_check.py)
+    return compare(path, {"recovery": False, "knock_recovery": False}, {"recovery": True, "knock_recovery": False})
+
+
+def compare(path: str, gates_old: dict, gates_new: dict) -> dict:
+    """One recording replayed with two rule-layer configurations (eval.chain.replay keyword arguments)."""
     th = json.loads(HEALTHY_THRESHOLDS.read_text())["bands"]
     rec = load_rec(Path(path))
-    old, new = replay(rec, th, 2, recovery=False), replay(rec, th, 2, recovery=True)
+    old, new = replay(rec, th, 2, **gates_old), replay(rec, th, 2, **gates_new)
     so, sn = states(old), states(new)
     diff = Counter(f"{a} -> {b}" for a, b, c in zip(so, sn, old["counted"]) if a != b and c)
     out = {"meta": rec["meta"], "hours": rec["meta"]["run_s"] / 3600, "old": levels(old), "new": levels(new),
@@ -70,12 +76,17 @@ def one(path: str) -> dict:
 
 
 def main():
+    check(one, OUT, __doc__)
+
+
+def check(one_run, out: Path, doc: str):
+    """Replay every range with one_run(path) (a compare() result) and write the totals to `out`."""
     res = {"created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "label": "SIM 2.1", "column": "A",
-           "what": __doc__.split("\n\n")[0], "ranges": {}}
+           "what": doc.split("\n\n")[0], "ranges": {}}
     with ProcessPoolExecutor(int(os.environ.get("S720_WORKERS", "10"))) as ex:
         for name, sub in RANGES.items():
             paths = sorted(glob.glob(str(CACHE / sub / "*.npz")))
-            rs = list(ex.map(one, paths, chunksize=4))
+            rs = list(ex.map(one_run, paths, chunksize=4))
             diff = Counter()
             for r in rs:
                 diff.update(r["diff"])
@@ -116,8 +127,8 @@ def main():
             if entry["changes"]:
                 print("   ", dict(list(entry["changes"].items())[:8]))
             res["ranges"][name] = entry
-    OUT.write_text(json.dumps(res, indent=1, default=str))
-    print(f"wrote {OUT.relative_to(ROOT)}")
+    out.write_text(json.dumps(res, indent=1, default=str))
+    print(f"wrote {out.relative_to(ROOT)}")
 
 
 if __name__ == "__main__":
