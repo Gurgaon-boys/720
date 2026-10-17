@@ -28,6 +28,16 @@ from backend.events import EventLog
 from backend.watchdog import Watchdog
 from models.guidance import guidance
 
+# Simulator time-lapse (pending T1). "auto" runs the simulator at AUTO_SPEED while nothing new is happening on
+# screen: warming up, recovering after a cleared fault, or waiting for a slow fault (trims) to build; it plays at
+# 1x whenever there is something to read (an injection's first HOLD_S, an unacknowledged ALARM, UNCLASSIFIED with a
+# fault injected, a healthy engine). "manual" holds the operator's speed. Every state message says which (contract
+# 1.6 optional field `time_lapse`), and the dashboard labels it.
+TIME_LAPSE_AUTO_SPEED = 10.0
+TIME_LAPSE_HOLD_S = 3.0   # wall seconds an injection plays at 1x before auto may time-lapse the build-up
+TIME_LAPSE_MAX_LAG_S = 0.5  # state loop this far behind its deadline: step the speed cap down (10 -> 5 -> 1x)
+TIME_LAPSE_RAISE_S = 5.0    # wall seconds without lag before the cap steps back up (no flapping badge)
+
 log = logging.getLogger("backend")
 
 QUEUE_SIZE = 64
@@ -100,6 +110,7 @@ class Runtime:
         self.last_window = None
         self.last_state = None
         self.injection = None  # a new source starts with nothing injected
+        self._injected_mono: float | None = None
         self._epoch = time.monotonic()
         self._generation = getattr(self, "_generation", 0) + 1
         self.events.reset_digest()
@@ -128,11 +139,87 @@ class Runtime:
         self.injection = {"active": True, "fault": fault, "cylinder": None if cylinder is None else int(cylinder),
                           "severity": float(severity),
                           "started_at": self.clock()}
+        self._injected_mono = time.monotonic()
         return self.injection
 
     def clear_faults(self, via: str = "api") -> None:
         self._command("clear", "Clear faults", via, self.scenario.clear_faults)   # disabled sensors stay disabled (D140)
         self.injection = None
+        self._injected_mono = None
+
+    # ------------------------------------------------------------ simulator time-lapse (pending T1)
+
+    @property
+    def time_lapse_mode(self) -> str:
+        """The class default is manual 1x (real time), so offline harnesses and tests keep real time; the server
+        (backend/main.py) switches Auto on unless S720_TIME_LAPSE=off."""
+        return getattr(self, "_tl_mode", "manual")
+
+    def set_time_lapse(self, mode: str, speed: float | None = None, via: str = "api") -> dict:
+        """mode "auto" (default) or "manual" at `speed` (1, 5 or 10). Simulator only; survives an engine reset."""
+        from backend.sources.sim_source import TIME_LAPSE_SPEEDS
+
+        if mode not in ("auto", "manual"):
+            raise ValueError("mode must be 'auto' or 'manual'")
+        if mode == "manual" and (speed is None or float(speed) not in TIME_LAPSE_SPEEDS):
+            raise ValueError(f"manual time-lapse needs a speed in {TIME_LAPSE_SPEEDS}")
+        if not getattr(self.scenario, "supports_time_lapse", False):
+            raise TypeError(f"source {self.scenario.name!r} has no time-lapse (the replay has its own speed)")
+        text = "Time-lapse auto" if mode == "auto" else f"Time-lapse {float(speed):g}x"
+
+        def apply():
+            self._tl_mode, self._tl_manual = mode, float(speed or 1.0)
+        self._command("time_lapse", text, via, apply, mode=mode, speed=None if speed is None else float(speed))
+        return {"mode": mode, "speed": getattr(self.scenario, "speed", 1.0)}
+
+    def _time_lapse(self, decision: dict) -> dict | None:
+        """Choose and apply this tick's simulator speed; the state message's `time_lapse` (None off the simulator)."""
+        src = self.scenario
+        if not getattr(src, "supports_time_lapse", False):   # the carOBD replay has its own set_speed (1/10/30x)
+            return None
+        if self.time_lapse_mode == "manual":
+            speed, reason = getattr(self, "_tl_manual", 1.0), "manual"
+        else:
+            speed, reason = 1.0, None
+            state = decision["state"]
+            unacked = state == "ALARM" and not decision.get("acked")
+            onset = (self.injection is not None and self._injected_mono is not None
+                     and time.monotonic() - self._injected_mono < TIME_LAPSE_HOLD_S)
+            if onset:
+                pass                             # a fresh injection always plays its first HOLD_S at 1x
+            elif getattr(src, "warming_up", False):
+                reason = "warming_up"
+            elif self.injection is None and state != "NORMAL" and not unacked:
+                reason = "recovering"            # a cleared fault settling: trims, spark, the 30 s OBD windows
+            elif (self.injection is not None and state in ("NORMAL", "ADVISORY") and self._injected_mono is not None
+                  and time.monotonic() - self._injected_mono >= TIME_LAPSE_HOLD_S):
+                reason = "building"              # a slow fault building up (fuel trims) before it can be confirmed
+            if reason is not None:
+                speed = TIME_LAPSE_AUTO_SPEED
+        speed = min(speed, self._time_lapse_cap(speed))
+        src.set_speed(speed)
+        return {"mode": self.time_lapse_mode, "speed": src.speed, "reason": reason if src.speed != 1.0 else None}
+
+    def _time_lapse_cap(self, wanted: float) -> float:
+        """The fastest speed this machine keeps up with: steps down (10 -> 5 -> 1x) when the state loop falls
+        TIME_LAPSE_MAX_LAG_S behind, back up after TIME_LAPSE_RAISE_S without lag while a time-lapse is wanted."""
+        from backend.sources.sim_source import TIME_LAPSE_SPEEDS
+
+        cap = getattr(self, "_tl_cap", max(TIME_LAPSE_SPEEDS))
+        now, lag = time.monotonic(), getattr(self, "_state_lag", 0.0)
+        steps = sorted(TIME_LAPSE_SPEEDS)
+        if (wanted > 1.0 and lag > TIME_LAPSE_MAX_LAG_S and cap > 1.0
+                and now - getattr(self, "_tl_step_t", -1e9) > 1.0):    # let the loop catch up before stepping again
+            cap = steps[steps.index(cap) - 1]
+            self._tl_ok_since = self._tl_step_t = now
+            log.warning("time-lapse: state loop %.2f s behind, speed cap now %gx", lag, cap)
+        elif lag > 0.05 or wanted == 1.0:
+            self._tl_ok_since = now
+        elif cap < steps[-1] and now - getattr(self, "_tl_ok_since", now) >= TIME_LAPSE_RAISE_S:
+            cap = steps[steps.index(cap) + 1]
+            self._tl_ok_since = now
+        self._tl_cap = cap
+        return cap
 
     # ------------------------------------------------------------ sensor sabotage (D140)
 
@@ -184,8 +271,10 @@ class Runtime:
             if gen != self._generation:  # scenario switched: start counting again
                 gen, i = self._generation, 0
             delay = self._epoch + i * period - time.monotonic()
-            if delay > 0:
-                await asyncio.sleep(delay)
+            # always yield, even when behind: a loop catching up must not starve HTTP, WebSocket and ACK handling
+            await asyncio.sleep(max(delay, 0.0))
+            if tick == self._tick_state:
+                self._state_lag = max(-delay, 0.0)  # how far behind real time the state loop is (time-lapse guard)
             if gen != self._generation:
                 continue
             try:
@@ -226,9 +315,10 @@ class Runtime:
         health = {"asset_ne107": asset_ne107(decision, self.maintenance_mode), "sensors": self.watchdog.status(now)}
         cap = getattr(self.scenario, "guidance_capability", None)   # e.g. single-witness REAL replay (D135)
         decision = {**decision, "guidance": guidance(decision, health, cap, self.guidance_context(decision))}
+        time_lapse = self._time_lapse(decision)
         latency = round((time.perf_counter() - start) * 1000, 2)
         msg = messages.state_message(sent_at=now, decision=decision, health=health, latency_ms=latency,
-                                     injection=self.injection, **w.fields)
+                                     injection=self.injection, time_lapse=time_lapse, **w.fields)
         self.last_state = msg
         self.events.observe(msg)
         self._send(self.state_hub, "state", msg)
@@ -257,8 +347,9 @@ class Runtime:
         log.info("engine reset (%d): fresh healthy simulator engine, same seed", self._resets)
 
     def _tick_obd(self, i: int) -> None:
-        t = i * OBD_S
-        if self._offline(t) or "obd" not in self.scenario.live_sensors(t):
+        t = (self.scenario.stream_time(i * OBD_S) if getattr(self.scenario, "supports_time_lapse", False)
+             else i * OBD_S)
+        if self._offline(t) or "obd" not in self.scenario.live_sensors(i * OBD_S):
             return
         now = self.clock()
         label = getattr(self.scenario, "source_label", None)
@@ -272,9 +363,13 @@ class Runtime:
             return
         self.watchdog.feed("obd", now)
         cal = getattr(self.scenario, "channel_calibration", {})
-        channels = {name: {"t": [t], "v": [v], "unit": unit, "source": "simulator",
-                           **({"calibration": cal[name]} if name in cal else {})}
-                    for name, (v, unit) in self.scenario.obd_sample(i).items()}
+        # the simulator sends every 1 Hz row of stream time since the last tick (several during a time-lapse)
+        rows = self.scenario.obd_rows(i) if hasattr(self.scenario, "obd_rows") else [(t, self.scenario.obd_sample(i))]
+        if not rows:
+            return
+        channels = {name: {"t": [rt for rt, _ in rows], "v": [vals[name][0] for _, vals in rows], "unit": unit,
+                           "source": "simulator", **({"calibration": cal[name]} if name in cal else {})}
+                    for name, (_, unit) in rows[-1][1].items()}
         self._send(self.obd_hub, "obd", messages.obd_message(sent_at=now, channels=channels, source_label=label))
 
     def _tick_signal(self, j: int) -> None:

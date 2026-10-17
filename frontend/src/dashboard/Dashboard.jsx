@@ -7,6 +7,7 @@ import StatePanel from './StatePanel.jsx';
 import ObdPanel from './ObdPanel.jsx';
 import SignalStrip from './SignalStrip.jsx';
 import SourceBadge from './SourceBadge.jsx';
+import TimeLapse from './TimeLapse.jsx';
 import HealthChips from './HealthChips.jsx';
 import AlarmBanner from './AlarmBanner.jsx';
 import EventTimeline from './EventTimeline.jsx';
@@ -73,6 +74,11 @@ export default function Dashboard({ state, obd, obdWindows, transport, signal, e
             </PanelBoundary>
           )}
         </div>
+        {state?.time_lapse && (
+          <PanelBoundary name="Time-lapse" variant="inline">
+            <TimeLapse state={state} transport={transport} offline={offline} />
+          </PanelBoundary>
+        )}
         {transport?.listReplayFiles && (
           <PanelBoundary name="Source picker" variant="inline">
             <SourcePicker state={state} transport={transport} onSelectSim={onSelectScenario} />

@@ -9,6 +9,7 @@ import { N_CYL, glowLevel } from './engine3d/kinematics.js';
 import EngineScene from './engine3d/EngineScene.jsx';
 import PanelBoundary from './PanelBoundary.jsx';
 import SourceBadge from './SourceBadge.jsx';
+import { TimeLapseBadge } from './TimeLapse.jsx';
 import './engine3d.css';
 
 // 3D engine view (lazy-loaded tab, CLAUDE.md §9). Reads only the `state` message the 2D dashboard
@@ -151,6 +152,7 @@ function EngineView({ state, offline, running: shown }) {
         <div className="e3d-head-left">
           <h2 className="panel-label">3D ENGINE</h2>
           <SourceBadge source={state.source} />
+          <TimeLapseBadge timeLapse={state.time_lapse} />
           <span className="e3d-meta mono">
             {state.run_id} · {geometry ? `4-cyl, firing order ${FIRING_ORDER.join('-')}` : 'engine geometry unknown'}
           </span>

@@ -30,7 +30,7 @@ def errors(name: str, message: dict) -> list[str]:
 
 def state_message(*, sent_at, run_id, source, audioset_pool, engine_tag, mode, t, operating_point, localisation,
                   features_summary, anomaly, models, physics_rules, decision, health, latency_ms, signature,
-                  injection=None, source_label=None, replay=None) -> dict:
+                  injection=None, source_label=None, replay=None, time_lapse=None) -> dict:
     msg = {
         "schema_version": SCHEMA_VERSION,
         "sent_at": sent_at,
@@ -57,6 +57,8 @@ def state_message(*, sent_at, run_id, source, audioset_pool, engine_tag, mode, t
         msg["source_label"] = source_label  # 1.6 (optional): simulated | real_replay[_injected] | real_upload[_injected]
     if replay is not None:
         msg["replay"] = replay  # 1.6 (optional): file, speed, position, witnesses of a REAL replay
+    if time_lapse is not None:
+        msg["time_lapse"] = time_lapse  # 1.6 (optional, additive): simulator speed, auto/manual, why
     return msg
 
 

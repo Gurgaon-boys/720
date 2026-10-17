@@ -49,6 +49,9 @@ OBD_UNITS = {"rpm": "rev/min", "load_pct": "%", "throttle_pct": "%", "map_kpa": 
 _RUNNING = Phase()        # the source itself never goes "offline"; sensors drop out individually
 SABOTAGE_CHANNELS = ("mic", "accel", "crank", "cam")   # sensors an operator may switch off (Sabotage Lab, D140)
 WARMUP_S = 20.0           # guidance "warming up" after a start or POST /reset_engine (classifier needs 20 OBD rows)
+TIME_LAPSE_SPEEDS = (1.0, 5.0, 10.0)   # stream seconds per wall second (pending T1): the engine, features, OBD
+                                       # windows and rule layer all run in stream time, so a time-lapse shortens
+                                       # every wait (warm-up, recovery, trim build-up) without changing a decision
 
 
 class SimSource:
@@ -61,6 +64,7 @@ class SimSource:
     channel_calibration = CHANNEL_CALIBRATION   # obd channel -> real_calibrated | sim_only (contract 1.5)
     real = False
     period = None
+    supports_time_lapse = True          # set_speed / stream_time (pending T1); the replay's own speed is separate
 
     def __init__(self, params: EngineParams | None = None, seed: int = 0, thresholds: dict | None = None,
                  regimes: Regimes | None = None, witness: ClassifierWitness | None = None, reset_n: int = 0):
@@ -85,11 +89,28 @@ class SimSource:
         self._drops: list[tuple] = []                                            # (channel, t0, t1)
         self._disabled: set[str] = set()                                         # operator-disabled sensors
         self._centres, self._baseline = healthy_fingerprint(self.params, self.seed)
+        # time-lapse (pending T1): stream time = _st0 + (wall - _wall0) * speed, wall = the runtime's tick time
+        self.speed = 1.0
+        self._st0 = self._wall0 = self._wall = 0.0
+        self._obd_t: float | None = None        # stream time of the last OBD row sent (obd_rows)
 
     @property
     def warming_up(self) -> bool:
         """The first WARMUP_S of a run: the classifier abstains until its OBD window is full (MIN_OBD_ROWS)."""
         return self.stream_t < WARMUP_S
+
+    def stream_time(self, wall: float) -> float:
+        """Stream time for a runtime tick at `wall` seconds since the source started (1x: the same number)."""
+        self._wall = max(self._wall, wall)
+        return self._st0 + (wall - self._wall0) * self.speed
+
+    def set_speed(self, speed: float) -> None:
+        """Time-lapse speed, from the latest tick on. Stream time never jumps: only its rate changes."""
+        if float(speed) not in TIME_LAPSE_SPEEDS:
+            raise ValueError(f"time-lapse speed must be one of {TIME_LAPSE_SPEEDS}")
+        if float(speed) != self.speed:
+            self._st0, self._wall0 = self.stream_time(self._wall), self._wall
+            self.speed = float(speed)
 
     @classmethod
     def from_env(cls, reset_n: int = 0) -> "SimSource":
@@ -141,13 +162,14 @@ class SimSource:
 
     def live_sensors(self, t: float) -> set[str]:
         """Sensors with data at stream time t: a channel inside a dropout span is not live.
-        Advances just past t, so the chunk that starts at t (and its dropout spans) exists."""
+        Advances just past t, so the chunk that starts at t (and its dropout spans) exists. t is tick (wall) time."""
+        t = self.stream_time(t)
         self._advance(t + 1e-6)
         down = {ch for ch, a, b in self._drops if a <= t < b}
         return set(self.sensors) - down
 
     def window(self, k: int) -> Window | None:
-        self._advance(k * WINDOW_S)
+        self._advance(self.stream_time(k * WINDOW_S))
         if self._ready:
             *earlier, last = self._ready
             self._ready = []
@@ -159,7 +181,7 @@ class SimSource:
         return Window(self._last.t, self._last.phase, self._last.evidence, self._last.fields, fresh=False)
 
     def signal_frames(self, j: int, live: set[str]) -> list[tuple[dict, np.ndarray]]:
-        t0 = round(j * SIGNAL_S, 6)
+        t0 = round(self.stream_time(j * SIGNAL_S), 6)
         self._advance(t0 + SIGNAL_S)
         n = int(SIGNAL_RATE_HZ * SIGNAL_S)
         i0 = int(round((t0 - self._disp_t0) * SIGNAL_RATE_HZ))
@@ -181,9 +203,27 @@ class SimSource:
                              "n_samples": db.size, "n_bins": db.size, "n_frames": 1, "f_max_hz": SIGNAL_RATE_HZ / 2}, db))
         return out
 
+    def obd_rows(self, i: int) -> list[tuple[float, dict]]:
+        """Every 1 Hz OBD row of stream time since the last call, for the runtime's OBD tick at wall time i s:
+        one row at 1x, about `speed` rows during a time-lapse, so the charts keep their 1 Hz stream-time rate."""
+        t_now = self.stream_time(i * 1.0)
+        self._advance(t_now + CHUNK_S)
+        start = t_now if self._obd_t is None or t_now - self._obd_t > 30 else self._obd_t + 1.0
+        rows = []
+        t = start
+        while t <= t_now + 1e-6:
+            rec = next((o for o in reversed(self._obd) if o["t"] <= t + 1e-9), self._obd[0] if self._obd else None)
+            if rec is not None:
+                rows.append((round(t, 3), {k: (round(float(rec[k]), 3 if k == "lambda" else 2), u)
+                                           for k, u in OBD_UNITS.items()}))
+            t += 1.0
+        if rows:
+            self._obd_t = rows[-1][0]
+        return rows
+
     def obd_sample(self, i: int) -> dict:
         """The simulator's ECU values sampled at 1 Hz (sample and hold), name -> (value, unit)."""
-        t = i * 1.0
+        t = self.stream_time(i * 1.0)
         self._advance(t + CHUNK_S)
         rec = next((o for o in reversed(self._obd) if o["t"] <= t + 1e-9), self._obd[0] if self._obd else None)
         if rec is None:
@@ -207,7 +247,7 @@ class SimSource:
             if drop:
                 self._disp = {ch: v[drop:] for ch, v in self._disp.items()}
                 self._disp_t0 += drop / SIGNAL_RATE_HZ
-            self._obd = [o for o in self._obd if o["t"] > t_end - 5.0] + chunk["obd"]
+            self._obd = [o for o in self._obd if o["t"] > t_end - 15.0] + chunk["obd"]
             self._drops = [d for d in self._drops if d[2] > t_end - DROPOUT_KEEP_S]
             self._drops += [(d["channel"], d["t0"], d["t1"]) for d in chunk["dropouts"]]
             self.stream_t = t_end

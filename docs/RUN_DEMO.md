@@ -60,7 +60,7 @@ cd frontend; $env:VITE_API_URL = "http://127.0.0.1:8000"; npm run dev -- --host 
 
 **Open:** <http://127.0.0.1:5173/?demo=1>
 
-`?demo=1` hides the fake-scenario row and starts on the live simulator. The injection console, the 2D / 3D tabs
+`?demo=1` starts on the live simulator; the fake scenarios stay under the collapsed **Demo scenarios** row. The injection console, the 2D / 3D tabs
 and the evidence panel stay. (`$env:VITE_DEMO = "1"` before `npm run dev` does the same without the URL flag.)
 
 **Check the backend:**
@@ -101,16 +101,20 @@ Use the injection console. Each step starts from a healthy engine.
 | 1 | Nothing (healthy) | NORMAL, grey; SVM says healthy; no alarm |
 | 2 | Inject **misfire, cylinder 3, severity 1.0** | ADVISORY, then **ALARM misfire cyl 3** in about 1 s; guidance "Reduce load; inspect coil and plug on cyl 3"; 3D tab: cylinder 3 glows |
 | 3 | **ACK** on the dashboard | Acked by the operator; UaExpert shows `Acked = true` with the same AlarmId; the alarm stays latched while the fault is active |
-| 4 | **Clear** faults | The acknowledged alarm resets once 2 windows no longer match misfire (about 1 s). If the ECU trims are still settling, the dashboard may show UNCLASSIFIED or ADVISORY for a while before NORMAL |
+| 4 | **Clear** faults | The acknowledged alarm resets once 2 windows no longer match misfire (about 1 s). **Watch · "Recovering after misfire"** with the **⏩ TIME-LAPSE 10× · recovering after the fault** badge, NORMAL about 3 s later (31 s of engine time; pending T1) |
 | 5 | Inject **valve tick** (any cylinder, 1.0) | **UNCLASSIFIED** ("abnormal, unclassified: inspect") in about 1 s, never a named fault: valve tick was never trained. Clear |
-| 6 | Inject **injector clog, cylinder 1, severity 0.5** | ADVISORY first, **ALARM injector_clog** after about 22 s (the 30 s fuel-trim window), asset health **MAINTENANCE_REQUIRED**, guidance "Schedule injector inspection; safe to run". ACK, clear |
+| 6 | Inject **injector clog, cylinder 1, severity 0.5** | ADVISORY first; after 3 s at 1× the badge reads **⏩ TIME-LAPSE 10× · fuel trims building up**; **ALARM injector_clog** about 5 s after Inject (24 s of engine time: the 30 s fuel-trim window), asset health **MAINTENANCE_REQUIRED**, guidance "Schedule injector inspection; safe to run". ACK, clear: "Recovering after injector clog", NORMAL about 4 s later (pending T2) |
 | 7 | Inject **knock, cylinder 2, severity 1.0** — **last** | **ALARM knock cyl 2** in about 1 s. ACK and stop here |
 
-**Knock goes last on purpose.** After knock is cleared, the ECU's spark retard recovers slowly, so the dashboard
-shows **Watch · "Recovering after knock: spark timing re-advancing"** (no fault witness, not an alarm) for 60–90 s
-before NORMAL (pending decision K1, `docs/decisions_pending/post_knock_recovery.md`; it used to show UNCLASSIFIED
-for ~20–45 s). Inside that window an anomaly shows as recovery, so a valve tick injected then would not read
-UNCLASSIFIED; don't wait for it on stage.
+**After knock is cleared**, the ECU's spark retard recovers slowly, so the dashboard shows **Watch · "Recovering
+after knock: spark timing re-advancing"** (no fault witness, not an alarm) for 60–90 s of engine time, which Auto
+time-lapse plays in about 6 s (pending K1 and T1, `docs/decisions_pending/`). Inside that window an anomaly shows as
+recovery, so inject the next fault (especially a valve tick) only once it reads NORMAL.
+
+**Time-lapse (pending T1).** Header control: Auto (default) · 1× · 5× · 10×. Auto runs the simulator at 10× only while
+warming up, recovering after a cleared fault, or while fuel trims build up; a fault's onset and an unacknowledged
+ALARM always play at 1×. The dashed **⏩ TIME-LAPSE** badge says so whenever the clock is not real time. Every
+decision is the same as at 1× (all windows count engine time), only sooner. On a slow laptop pick 5×.
 
 With the hard simulator regimes on (`$env:S720_SIM_REGIMES = "eval"`, not the default), an injection can start
 up to 0.5 s late (D107).

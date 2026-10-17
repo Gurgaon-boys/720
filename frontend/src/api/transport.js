@@ -6,6 +6,7 @@
 //                                             injection console (backend: POST /inject, POST /clear_faults);
 //                                             resolve = request accepted, the UI still waits for
 //                                             state.injection (PROPOSED 1.4)
+//   setTimeLapse({mode, speed})               simulator time-lapse (backend only: POST /time_lapse)
 //   resetEngine()                             fresh healthy simulator engine (backend only: POST /reset_engine)
 //   listReplayFiles() / startReplay(file, speed) / setReplaySpeed(speed) / uploadObd(file)
 //                                             REAL carOBD replay (backend only, contract 1.6; the mock has none)

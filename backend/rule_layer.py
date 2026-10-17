@@ -44,6 +44,13 @@ history still holds the knock) or RECOVERY_MAX_S after the last knock
 match. In it an anomaly or nothing at all shows as a recovery ADVISORY (fault null, no witness), never UNCLASSIFIED.
 No physics rule is gated: knock, misfire and clog go through as usual, so ALARMs are unchanged.
 
+Post-clog recovery (pending T2, docs/decisions_pending/time_lapse.md): after an injector clog is fixed, the ECU
+spends its learned extra fuel back out (STFT/LTFT fall from about +s/(4-s) to 0) while the 30 s OBD window still
+holds the clog; the healthy model never saw that, so a cleared clog read UNCLASSIFIED for ~12 s of stream time.
+Built like the knock window: a confirmed injector_clog (a two-witness `match`) arms it; it ends once the trims have
+settled (not before RECOVERY_MIN_S) or RECOVERY_MAX_S after the last clog match. In it only an anomaly or nothing
+at all becomes the recovery ADVISORY; the trim rule is not gated, so a clog that is still there keeps its ALARM.
+
 Bank-wide faults (D145): when the physics rule names no cylinder (trims are bank-wide) and the classifier names different
 cylinders in the windows of the streak, the ALARM's location is null ("bank"), not whichever cylinder came last.
 
@@ -174,11 +181,12 @@ def assess(ev: Evidence) -> Assessment:
 class RuleLayer:
     def __init__(self, first_alarm_id: int = 1, unclassified_windows: int = UNCLASSIFIED_WINDOWS,
                  corroborate_windows: int = CORROBORATE_WINDOWS, recovery: bool = True,
-                 knock_recovery: bool = True) -> None:
+                 knock_recovery: bool = True, clog_recovery: bool = True) -> None:
         self.unclassified_windows = unclassified_windows
         self.corroborate_windows = corroborate_windows    # 0 = no corroboration (the behaviour before D134)
         self.recovery = recovery                          # False = no post-misfire recovery gate (behaviour before it)
         self.knock_recovery = knock_recovery              # False = no post-knock recovery gate (behaviour before it)
+        self.clog_recovery = clog_recovery                # False = no post-clog recovery window (behaviour before it)
         self._named: list[dict | None] = []                # newest last: a fired trained-fault physics rule per window
         self.alarm: ActiveAlarm | None = None
         self._streak_fault: str | None = None
@@ -191,17 +199,33 @@ class RuleLayer:
         self._unclassified_n = 0
         self._misfire_t: float | None = None   # stream time of the last confirmed misfire window (arms recovery)
         self._knock_t: float | None = None     # stream time of the last confirmed knock window (arms recovery)
+        self._clog_t: float | None = None      # stream time of the last confirmed injector_clog window (arms recovery)
         self.recovering = False                # this window is in a recovery window (post-misfire or post-knock)
-        self.recovering_from: str | None = None  # "misfire" | "knock" (misfire first: it also gates the trim rule)
+        self.recovering_from: str | None = None  # "misfire" | "knock" | "injector_clog" (misfire first: it gates trims)
         self._streak_cyls: list = []           # classifier cylinders of the current match streak (bank-wide check)
 
     def _recovery(self, ev: Evidence) -> Evidence:
-        """Decide whether this window is in a recovery window (post-misfire first, then post-knock)."""
+        """Decide whether this window is in a recovery window (post-misfire first, then post-knock, post-clog)."""
         ev = self._misfire_recovery(ev)
         knock = self._knock_recovering(ev)
-        self.recovering_from = "misfire" if self.recovering else "knock" if knock else None
+        clog = self._clog_recovering(ev)
+        self.recovering_from = ("misfire" if self.recovering else "knock" if knock
+                                else "injector_clog" if clog else None)
         self.recovering = self.recovering_from is not None
         return ev
+
+    def _clog_recovering(self, ev: Evidence) -> bool:
+        """Post-clog recovery window: until the trims have settled (not before RECOVERY_MIN_S, while the 30 s OBD
+        window still holds the last confirmed clog window) or RECOVERY_MAX_S after it."""
+        if self._clog_t is None:
+            return False
+        expired = ev.t is not None and ev.t - self._clog_t > RECOVERY_MAX_S
+        settled = (ev.trims is not None and ev.trims["settled"]
+                   and (ev.t is None or ev.t - self._clog_t >= RECOVERY_MIN_S))
+        if expired or settled:
+            self._clog_t = None
+            return False
+        return True
 
     def _knock_recovering(self, ev: Evidence) -> bool:
         """Post-knock recovery window: until spark timing has settled (not before KNOCK_RECOVERY_MIN_S, while the
@@ -253,6 +277,8 @@ class RuleLayer:
             self._misfire_t, self.recovering, self.recovering_from = ev.t, False, None  # (re)arms the misfire window
         elif a.kind == "match" and a.fault == "knock" and ev.t is not None and self.knock_recovery:
             self._knock_t, self.recovering, self.recovering_from = ev.t, False, None    # (re)arms the knock window
+        elif a.kind == "match" and a.fault == "injector_clog" and ev.t is not None and self.clog_recovery:
+            self._clog_t, self.recovering, self.recovering_from = ev.t, False, None     # (re)arms the clog window
         elif self.recovering and (a.kind in ("unclassified", "healthy", "conflict")
                                   or (self.recovering_from == "misfire" and a.kind == "advisory"
                                       and a.fault == "injector_clog")):
